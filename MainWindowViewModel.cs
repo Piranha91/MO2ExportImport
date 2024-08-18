@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using MO2ExportImport.Models;
 using ReactiveUI;
 using System.IO;
 using System.Reactive;
@@ -13,6 +14,27 @@ namespace MO2ExportImport.ViewModels
         private const string SettingsFilePath = "settings.json";
         private string _exportDestinationFolder;
         private ReactiveObject _currentView;
+        private bool _ignoreDisabled;
+        public bool IgnoreDisabled
+        {
+            get => _ignoreDisabled;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _ignoreDisabled, value);
+                SaveSettings(); // Save settings whenever IgnoreDisabled changes
+            }
+        }
+
+        private bool _ignoreSeparators;
+        public bool IgnoreSeparators
+        {
+            get => _ignoreSeparators;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _ignoreSeparators, value);
+                SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
 
         public string ExportDestinationFolder
         {
@@ -70,16 +92,20 @@ namespace MO2ExportImport.ViewModels
             if (File.Exists(SettingsFilePath))
             {
                 var settingsJson = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<Models.Settings>(settingsJson);
+                var settings = JsonSerializer.Deserialize<Settings>(settingsJson);
                 ExportDestinationFolder = settings?.ExportDestinationFolder;
+                IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
+                IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
             }
         }
 
         private void SaveSettings()
         {
-            var settings = new Models.Settings
+            var settings = new Settings
             {
-                ExportDestinationFolder = ExportDestinationFolder
+                ExportDestinationFolder = ExportDestinationFolder,
+                IgnoreDisabled = IgnoreDisabled,
+                IgnoreSeparators = IgnoreSeparators
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

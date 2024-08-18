@@ -20,12 +20,29 @@
         <StackPanel Grid.Row="0">
             <Button Content="Select Source" Command="{Binding SelectSourceCommand}" Margin="10"/>
             <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="10"/>
+            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" Margin="10"/>
+            <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10"/>
         </StackPanel>
 
+
         <!-- ListBox with constrained height in the remaining space -->
-        <ListBox Grid.Row="1" ItemsSource="{Binding ModList}" SelectionMode="Extended" Margin="10"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 SelectionChanged="ListBox_SelectionChanged" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding ModList}" Margin="10"
+         ScrollViewer.VerticalScrollBarVisibility="Auto" 
+         SelectionMode="Extended">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="IsSelected" Value="{Binding Selected, Mode=TwoWay}" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding Enabled}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
 
         <!-- Export Selected Button -->
         <Button Grid.Row="2" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="10" HorizontalAlignment="Right"/>
