@@ -1,0 +1,17 @@
+﻿<Window x:Class="MO2ExportImport.Views.ExportPopupView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Export Confirmation" Height="200" Width="400">
+    <StackPanel>
+        <Button Content="Calculate Space" Command="{Binding CalculateSpaceCommand}" Margin="10"/>
+
+        <!-- Display space info with dynamic color -->
+        <TextBlock Text="{Binding SpaceInfo}" Margin="10" Foreground="{Binding SpaceInfoColor}" TextWrapping="Wrap"/>
+
+        <!-- Control buttons -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="Export" Command="{Binding ExportCommand}" Margin="5" IsEnabled="{Binding IsExportEnabled}"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="5"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

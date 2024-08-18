@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AlphaFS" Version="2.2.6" />
+    <PackageReference Include="ReactiveUI" Version="20.1.1" />
+    <PackageReference Include="ReactiveUI.WPF" Version="20.1.1" />
+  </ItemGroup>
+
+</Project>
