@@ -138,7 +138,6 @@ namespace MO2ExportImport.ViewModels
                 .Where(mod => mod.Selected && 
                     (!_mainViewModel.IgnoreDisabled || mod.Enabled) &&
                     (!_mainViewModel.IgnoreSeparators || !mod.IsSeparator))
-                .Select(x => x.Name)
                 .ToList();
             // Create and display the ExportPopupView
             var exportPopupView = new ExportPopupView();

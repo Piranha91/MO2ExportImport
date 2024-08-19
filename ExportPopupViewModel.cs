@@ -15,7 +15,7 @@ namespace MO2ExportImport.ViewModels
     public class ExportPopupViewModel : ReactiveObject
     {
         private readonly string _mo2Directory;
-        private readonly IEnumerable<string> _selectedMods;
+        private readonly IEnumerable<Mod> _selectedMods;
         private readonly string _selectedProfile;
         private readonly string _exportDestinationFolder;
         private string _spaceInfo;
@@ -43,10 +43,11 @@ namespace MO2ExportImport.ViewModels
         }
 
         public ReactiveCommand<Unit, Unit> CalculateSpaceCommand { get; }
-        public ReactiveCommand<Unit, Unit> ExportCommand { get; }
+        public ReactiveCommand<Unit, Unit> ExportModsAndListCommand { get; }
+        public ReactiveCommand<Unit, Unit> ExportListCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ExportPopupViewModel(ExportPopupView window, MainViewModel mainViewModel, string mo2Directory, IEnumerable<string> selectedMods, string exportDestinationFolder, string selectedProfile)
+        public ExportPopupViewModel(ExportPopupView window, MainViewModel mainViewModel, string mo2Directory, IEnumerable<Mod> selectedMods, string exportDestinationFolder, string selectedProfile)
         {
             _window = window;
             _mainViewModel = mainViewModel;
@@ -57,7 +58,8 @@ namespace MO2ExportImport.ViewModels
             _exportDestinationFolder = exportDestinationFolder;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
-            ExportCommand = ReactiveCommand.CreateFromTask(Export);
+            ExportModsAndListCommand = ReactiveCommand.CreateFromTask(ExportModsAndList);
+            ExportListCommand = ReactiveCommand.CreateFromTask(ExportList);
             CancelCommand = ReactiveCommand.Create(Cancel);
 
             // Initially disable the Export button
@@ -71,7 +73,7 @@ namespace MO2ExportImport.ViewModels
             // Calculate the total size of the selected mod folders
             foreach (var mod in _selectedMods)
             {
-                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod);
+                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.Name);
                 if (System.IO.Directory.Exists(modPath))
                 {
                     totalSize += System.IO.Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
@@ -104,19 +106,12 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private async Task Export()
+        private async Task ExportModsAndList()
         {
             var pluginsSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "plugins.txt");
             var modlistSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");
 
-            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, "ExportLog.json"));
-            string exportFolderPath = _mainViewModel.ExportDestinationFolder;
-
-            if (!isMergeOperation)
-            {
-                exportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
-                Alphaleonis.Win32.Filesystem.Directory.CreateDirectory(exportFolderPath);
-            }
+            (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();
 
             var exportLog = new
             {
@@ -136,8 +131,8 @@ namespace MO2ExportImport.ViewModels
             // Copy other files
             foreach (var mod in _selectedMods)
             {
-                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod);
-                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod);
+                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.Name);
+                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.Name);
 
                 if (!Alphaleonis.Win32.Filesystem.Directory.Exists(modDestinationPath))
                 {
@@ -153,24 +148,88 @@ namespace MO2ExportImport.ViewModels
             // Attempt to rename the directory
             if (isMergeOperation)
             {
-                var newExportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
-
-                try
-                {
-                    Alphaleonis.Win32.Filesystem.Directory.Move(exportFolderPath, newExportFolderPath);
-                    exportFolderPath = newExportFolderPath;
-                    renameMessage = "\n\nDirectory renamed successfully.";
-                }
-                catch (IOException ex)
-                {
-                    renameMessage = $"\n\nThe directory could not be renamed due to a file access error: {ex.Message}";
-                    // Log the error or take other appropriate action here if needed
-                }
+                renameMessage = TryRenameDirectory(exportFolderPath);
             }
 
             MessageBox.Show($"Export completed successfully.{renameMessage}", "Export Completed", MessageBoxButton.OK, MessageBoxImage.Information);
+            _window.Close();
         }
 
+
+        private async Task ExportList()
+        {
+            var selectedModsToExport = _selectedMods
+                .Where(mod => mod.Selected && (!_mainViewModel.IgnoreDisabled || mod.Enabled) && (!_mainViewModel.IgnoreSeparators || !mod.IsSeparator))
+                .ToList();
+
+            (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();
+
+            // Create the JSON file with mod paths
+            var exportData = new
+            {
+                ModsRootPath = System.IO.Path.Combine(_mo2Directory, "mods"),
+                SelectedMods = selectedModsToExport
+            };
+
+            var jsonFilePath = System.IO.Path.Combine(exportFolderPath, "modlist.json");
+            var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+            System.IO.File.WriteAllText(jsonFilePath, json);
+
+            await CopyModAndPluginListFiles(exportFolderPath);
+
+            MessageBox.Show($"Export completed successfully.", "Export Completed", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            _window.Close();
+        }
+
+        private (string, bool) CreateExportFolder()
+        {
+            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, "ExportLog.json"));
+            string exportFolderPath = _mainViewModel.ExportDestinationFolder;
+
+            if (!isMergeOperation)
+            {
+                exportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+                Alphaleonis.Win32.Filesystem.Directory.CreateDirectory(exportFolderPath);
+            }
+
+            return (exportFolderPath, isMergeOperation);
+        }
+
+        private async Task CopyModAndPluginListFiles(string exportFolderPath)
+        {
+            var profilePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile);
+            var modlistSourcePath = System.IO.Path.Combine(profilePath, "modlist.txt");
+            var pluginsSourcePath = System.IO.Path.Combine(profilePath, "plugins.txt");
+
+            var copyTasks = new List<Task>();
+
+            // Overwrite plugins.txt and modlist.txt
+            copyTasks.Add(Task.Run(() => System.IO.File.Copy(pluginsSourcePath, System.IO.Path.Combine(exportFolderPath, "plugins.txt"), true)));
+            copyTasks.Add(Task.Run(() => System.IO.File.Copy(modlistSourcePath, System.IO.Path.Combine(exportFolderPath, "modlist.txt"), true)));
+
+            // Wait for all copy tasks to complete
+            await Task.WhenAll(copyTasks);
+        }
+
+        private string TryRenameDirectory(string exportFolderPath)
+        {
+            var newExportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+            string renameMessage = string.Empty;
+            try
+            {
+                Alphaleonis.Win32.Filesystem.Directory.Move(exportFolderPath, newExportFolderPath);
+                exportFolderPath = newExportFolderPath;
+                renameMessage = "\n\nDirectory renamed successfully.";
+            }
+            catch (IOException ex)
+            {
+                renameMessage = $"\n\nThe directory could not be renamed due to a file access error: {ex.Message}";
+                // Log the error or take other appropriate action here if needed
+            }
+
+            return renameMessage;
+        }
 
         private void DirectoryCopy(string sourceDirName, string destDirName)
         {

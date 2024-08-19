@@ -9,9 +9,11 @@
         <TextBlock Text="{Binding SpaceInfo}" Margin="10" Foreground="{Binding SpaceInfoColor}" TextWrapping="Wrap"/>
 
         <!-- Control buttons -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
-            <Button Content="Export" Command="{Binding ExportCommand}" Margin="5" IsEnabled="{Binding IsExportEnabled}"/>
-            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="5"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <Button Content="Export Mods and List" Command="{Binding ExportModsAndListCommand}" IsEnabled="{Binding IsExportEnabled}" Margin="10"/>
+            <Button Content="Export List" Command="{Binding ExportListCommand}" Margin="10"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="10"/>
         </StackPanel>
+
     </StackPanel>
 </Window>
