@@ -12,38 +12,11 @@ namespace MO2ExportImport.ViewModels
         public string ProgramVersion { get; } = "1.0";
 
         private const string SettingsFilePath = "settings.json";
-        private string _exportDestinationFolder;
+
+        private readonly ExportViewModel _exportViewModel;
+        private readonly ImportViewModel _importViewModel;
+
         private ReactiveObject _currentView;
-        private bool _ignoreDisabled;
-        public bool IgnoreDisabled
-        {
-            get => _ignoreDisabled;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _ignoreDisabled, value);
-                SaveSettings(); // Save settings whenever IgnoreDisabled changes
-            }
-        }
-
-        private bool _ignoreSeparators;
-        public bool IgnoreSeparators
-        {
-            get => _ignoreSeparators;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _ignoreSeparators, value);
-                SaveSettings(); // Save settings whenever IgnoreSeparators changes
-            }
-        }
-
-        public string ExportDestinationFolder
-        {
-            get => _exportDestinationFolder;
-            set {
-                this.RaiseAndSetIfChanged(ref _exportDestinationFolder, value);
-                SaveSettings(); // Save settings whenever ExportDestinationFolder changes
-            }
-        }
 
         public ReactiveObject CurrentView
         {
@@ -53,39 +26,30 @@ namespace MO2ExportImport.ViewModels
 
         public ReactiveCommand<Unit, Unit> NavigateToExportCommand { get; }
         public ReactiveCommand<Unit, Unit> NavigateToImportCommand { get; }
-        public ReactiveCommand<Unit, Unit> BrowseFolderCommand { get; }
 
         public MainViewModel()
         {
+            _exportViewModel = new(this);
+            _importViewModel = new();
             LoadSettings(); // Load settings on startup
 
             NavigateToExportCommand = ReactiveCommand.Create(NavigateToExport);
             NavigateToImportCommand = ReactiveCommand.Create(NavigateToImport);
-            BrowseFolderCommand = ReactiveCommand.CreateFromTask(BrowseFolder);
 
             // Set initial view
-            CurrentView = new ExportViewModel(this);
+            CurrentView = _exportViewModel;
         }
 
         private void NavigateToExport()
         {
-            CurrentView = new ExportViewModel(this);
+            CurrentView = _exportViewModel;
         }
 
         private void NavigateToImport()
         {
-            CurrentView = new ImportViewModel(); // Implement ImportViewModel similarly to ExportViewModel
+            CurrentView = _importViewModel;
         }
 
-        private async Task BrowseFolder()
-        {
-            var dialog = new OpenFolderDialog();
-            var result = dialog.ShowDialog();
-            if (result != null && result.Value)
-            {
-                ExportDestinationFolder = dialog.FolderName;
-            }
-        }
 
         private void LoadSettings()
         {
@@ -93,19 +57,19 @@ namespace MO2ExportImport.ViewModels
             {
                 var settingsJson = File.ReadAllText(SettingsFilePath);
                 var settings = JsonSerializer.Deserialize<Settings>(settingsJson);
-                ExportDestinationFolder = settings?.ExportDestinationFolder;
-                IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
-                IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
+                _exportViewModel.ExportDestinationFolder = settings?.ExportDestinationFolder ?? string.Empty;
+                _exportViewModel.IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
+                _exportViewModel.IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
             }
         }
 
-        private void SaveSettings()
+        public void SaveSettings()
         {
             var settings = new Settings
             {
-                ExportDestinationFolder = ExportDestinationFolder,
-                IgnoreDisabled = IgnoreDisabled,
-                IgnoreSeparators = IgnoreSeparators
+                ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,
+                IgnoreDisabled = _exportViewModel.IgnoreDisabled,
+                IgnoreSeparators = _exportViewModel.IgnoreSeparators
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

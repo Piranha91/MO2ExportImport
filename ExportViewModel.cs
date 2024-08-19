@@ -21,6 +21,16 @@ namespace MO2ExportImport.ViewModels
         private string _selectedProfile;
         private ObservableCollection<string> _profiles;
         private ObservableCollection<string> _modList;
+        private string _exportDestinationFolder;
+        public string ExportDestinationFolder
+        {
+            get => _exportDestinationFolder;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _exportDestinationFolder, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever ExportDestinationFolder changes
+            }
+        }
 
         public ObservableCollection<string> Profiles
         {
@@ -38,10 +48,33 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private bool _ignoreDisabled;
+        public bool IgnoreDisabled
+        {
+            get => _ignoreDisabled;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _ignoreDisabled, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreDisabled changes
+            }
+        }
+
+        private bool _ignoreSeparators;
+        public bool IgnoreSeparators
+        {
+            get => _ignoreSeparators;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _ignoreSeparators, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
+
         public ObservableCollection<Mod> ModList { get; set; } = new ObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
         public ReactiveCommand<Unit, Unit> ExportSelectedCommand { get; }
+        public ReactiveCommand<Unit, Unit> BrowseFolderCommand { get; }
 
         public ExportViewModel(MainViewModel mainViewModel)
         {
@@ -56,7 +89,7 @@ namespace MO2ExportImport.ViewModels
 
             // Set up the canExport observable
             var canExport = this.WhenAnyValue(
-                x => x._mainViewModel.ExportDestinationFolder)
+                x => x.ExportDestinationFolder)
                 .CombineLatest(
                     ModList.ToObservableChangeSet()
                            .AutoRefresh(mod => mod.Selected)
@@ -65,6 +98,8 @@ namespace MO2ExportImport.ViewModels
                 );
 
             ExportSelectedCommand = ReactiveCommand.Create(ExportSelected, canExport);
+
+            BrowseFolderCommand = ReactiveCommand.CreateFromTask(BrowseFolder);
         }
 
             private async Task SelectSource()
@@ -136,14 +171,24 @@ namespace MO2ExportImport.ViewModels
         {
             var selectedModsToExport = ModList
                 .Where(mod => mod.Selected && 
-                    (!_mainViewModel.IgnoreDisabled || mod.Enabled) &&
-                    (!_mainViewModel.IgnoreSeparators || !mod.IsSeparator))
+                    (!IgnoreDisabled || mod.Enabled) &&
+                    (!IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
             // Create and display the ExportPopupView
             var exportPopupView = new ExportPopupView();
-            var exportPopupViewModel = new ExportPopupViewModel(exportPopupView, _mainViewModel, _mo2Directory, selectedModsToExport, _mainViewModel.ExportDestinationFolder, _selectedProfile);
+            var exportPopupViewModel = new ExportPopupViewModel(exportPopupView, this, _mo2Directory, selectedModsToExport, ExportDestinationFolder, _selectedProfile, _mainViewModel.ProgramVersion);
             exportPopupView.DataContext = exportPopupViewModel;
             exportPopupView.ShowDialog();
+        }
+
+        private async Task BrowseFolder()
+        {
+            var dialog = new OpenFolderDialog();
+            var result = dialog.ShowDialog();
+            if (result != null && result.Value)
+            {
+                ExportDestinationFolder = dialog.FolderName;
+            }
         }
     }
 }

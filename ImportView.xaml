@@ -3,9 +3,37 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:reactiveui="http://reactiveui.net"
-             mc:Ignorable="d">
-    <StackPanel>
-        <!-- Implement the UI similar to ExportView -->
-    </StackPanel>
+             xmlns:local="clr-namespace:MO2ExportImport.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- MO2 Directory Selection -->
+        <StackPanel Orientation="Horizontal" Margin="10">
+            <Button Content="Select MO2 Directory" Command="{Binding SelectMo2DirectoryCommand}" Margin="5"/>
+            <TextBlock Text="{Binding Mo2Directory}" VerticalAlignment="Center" Margin="5,0"/>
+        </StackPanel>
+
+        <!-- Profile Selection -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="10">
+            <TextBlock Text="Profile:" VerticalAlignment="Center" Margin="5"/>
+            <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="5"/>
+        </StackPanel>
+
+        <!-- Export Directory Selection -->
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="10">
+            <Button Content="Select Export Directory" Command="{Binding SelectExportDirectoryCommand}" Margin="5"/>
+            <TextBlock Text="{Binding ExportDirectory}" VerticalAlignment="Center" Margin="5,0"/>
+        </StackPanel>
+
+        <!-- Import Button -->
+        <Button Grid.Row="3" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10"/>
+    </Grid>
 </UserControl>

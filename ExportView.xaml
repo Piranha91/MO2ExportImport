@@ -14,6 +14,7 @@
             <!-- For the ListBox to take remaining space -->
             <RowDefinition Height="Auto"/>
             <!-- For the Export button -->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Top section with button and ComboBox -->
@@ -46,5 +47,12 @@
 
         <!-- Export Selected Button -->
         <Button Grid.Row="2" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="10" HorizontalAlignment="Right"/>
+
+        <!-- Bottom panel for Export Destination Folder selection -->
+        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Orientation="Horizontal" Background="LightGray" VerticalAlignment="Center">
+            <TextBlock Text="Export Destination:" VerticalAlignment="Center"/>
+            <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0"/>
+            <Button Content="Browse" Command="{Binding BrowseFolderCommand}"/>
+        </StackPanel>
     </Grid>
 </UserControl>

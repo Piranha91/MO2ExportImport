@@ -22,7 +22,8 @@ namespace MO2ExportImport.ViewModels
         private Brush _spaceInfoColor;
         private bool _isExportEnabled;
         private readonly ExportPopupView _window;
-        private readonly MainViewModel _mainViewModel;
+        private readonly ExportViewModel _exportViewModel;
+        private readonly string _programVersion;
 
         public string SpaceInfo
         {
@@ -47,15 +48,16 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ExportListCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ExportPopupViewModel(ExportPopupView window, MainViewModel mainViewModel, string mo2Directory, IEnumerable<Mod> selectedMods, string exportDestinationFolder, string selectedProfile)
+        public ExportPopupViewModel(ExportPopupView window, ExportViewModel exportViewModel, string mo2Directory, IEnumerable<Mod> selectedMods, string exportDestinationFolder, string selectedProfile, string programVersion)
         {
             _window = window;
-            _mainViewModel = mainViewModel;
+            _exportViewModel = exportViewModel;
 
             _mo2Directory = mo2Directory;
             _selectedMods = selectedMods;
             _selectedProfile = selectedProfile;
             _exportDestinationFolder = exportDestinationFolder;
+            _programVersion = programVersion;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
             ExportModsAndListCommand = ReactiveCommand.CreateFromTask(ExportModsAndList);
@@ -116,7 +118,7 @@ namespace MO2ExportImport.ViewModels
             var exportLog = new
             {
                 DateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                ProgramVersion = _mainViewModel.ProgramVersion
+                ProgramVersion = _programVersion
             };
 
             var exportLogJson = JsonSerializer.Serialize(exportLog, new JsonSerializerOptions { WriteIndented = true });
@@ -159,7 +161,7 @@ namespace MO2ExportImport.ViewModels
         private async Task ExportList()
         {
             var selectedModsToExport = _selectedMods
-                .Where(mod => mod.Selected && (!_mainViewModel.IgnoreDisabled || mod.Enabled) && (!_mainViewModel.IgnoreSeparators || !mod.IsSeparator))
+                .Where(mod => mod.Selected && (!_exportViewModel.IgnoreDisabled || mod.Enabled) && (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
 
             (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();
@@ -184,12 +186,12 @@ namespace MO2ExportImport.ViewModels
 
         private (string, bool) CreateExportFolder()
         {
-            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, "ExportLog.json"));
-            string exportFolderPath = _mainViewModel.ExportDestinationFolder;
+            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_exportDestinationFolder, "ExportLog.json"));
+            string exportFolderPath = _exportDestinationFolder;
 
             if (!isMergeOperation)
             {
-                exportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+                exportFolderPath = System.IO.Path.Combine(_exportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
                 Alphaleonis.Win32.Filesystem.Directory.CreateDirectory(exportFolderPath);
             }
 
@@ -214,7 +216,7 @@ namespace MO2ExportImport.ViewModels
 
         private string TryRenameDirectory(string exportFolderPath)
         {
-            var newExportFolderPath = System.IO.Path.Combine(_mainViewModel.ExportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+            var newExportFolderPath = System.IO.Path.Combine(_exportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
             string renameMessage = string.Empty;
             try
             {

@@ -14,9 +14,6 @@ namespace MO2ExportImport
             InitializeComponent();
             _mainViewModel = new MainViewModel();
             DataContext = _mainViewModel;
-
-            // Example of setting the ContentControl to the ExportView
-            MainContentControl.Content = new ExportView(_mainViewModel); // Pass MainViewModel here
         }
     }
 }

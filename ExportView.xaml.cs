@@ -5,10 +5,9 @@ namespace MO2ExportImport.Views
 {
     public partial class ExportView : UserControl
     {
-        public ExportView(MainViewModel mainViewModel)
+        public ExportView()
         {
             InitializeComponent();
-            DataContext = new ExportViewModel(mainViewModel);
         }
     }
 }
