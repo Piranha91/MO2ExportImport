@@ -30,7 +30,7 @@ namespace MO2ExportImport.ViewModels
         public MainViewModel()
         {
             _exportViewModel = new(this);
-            _importViewModel = new();
+            _importViewModel = new(this);
             LoadSettings(); // Load settings on startup
 
             NavigateToExportCommand = ReactiveCommand.Create(NavigateToExport);
@@ -60,6 +60,7 @@ namespace MO2ExportImport.ViewModels
                 _exportViewModel.ExportDestinationFolder = settings?.ExportDestinationFolder ?? string.Empty;
                 _exportViewModel.IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
                 _exportViewModel.IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
+                _importViewModel.Mo2Directory = settings?.ImportTargetMO2Dir ?? string.Empty;
             }
         }
 
@@ -69,7 +70,8 @@ namespace MO2ExportImport.ViewModels
             {
                 ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,
                 IgnoreDisabled = _exportViewModel.IgnoreDisabled,
-                IgnoreSeparators = _exportViewModel.IgnoreSeparators
+                IgnoreSeparators = _exportViewModel.IgnoreSeparators,
+                ImportTargetMO2Dir = _importViewModel.Mo2Directory
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

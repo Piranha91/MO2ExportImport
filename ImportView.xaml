@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:MO2ExportImport.Views"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
@@ -12,6 +11,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -27,13 +27,18 @@
             <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="5"/>
         </StackPanel>
 
-        <!-- Export Directory Selection -->
+        <!-- Import Source Folder Selection -->
         <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="10">
-            <Button Content="Select Export Directory" Command="{Binding SelectExportDirectoryCommand}" Margin="5"/>
-            <TextBlock Text="{Binding ExportDirectory}" VerticalAlignment="Center" Margin="5,0"/>
+            <Button Content="Select Import Source Folder" Command="{Binding SelectImportSourceFolderCommand}" Margin="5"/>
+            <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
         </StackPanel>
 
+        <!-- Mod List -->
+        <ListBox Name="ModListBox" Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
+         DisplayMemberPath="Name" Margin="10"
+         SelectionChanged="OnSelectionChanged"/>
+
         <!-- Import Button -->
-        <Button Grid.Row="3" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10"/>
+        <Button Grid.Row="4" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>
