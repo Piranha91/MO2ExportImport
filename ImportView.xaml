@@ -9,10 +9,15 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- MO2 Directory Selection -->
             <RowDefinition Height="Auto"/>
+            <!-- Profile Selection -->
+            <RowDefinition Height="Auto"/>
+            <!-- Import Source Folder Button -->
             <RowDefinition Height="*"/>
+            <!-- Mods ListBox -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <!-- Import Button -->
         </Grid.RowDefinitions>
 
         <!-- MO2 Directory Selection -->
@@ -34,9 +39,9 @@
         </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Name="ModListBox" Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
-         DisplayMemberPath="Name" Margin="10"
-         SelectionChanged="OnSelectionChanged"/>
+        <ListBox Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
+                 DisplayMemberPath="Name" Margin="10"
+                 SelectionChanged="OnSelectionChanged"/>
 
         <!-- Import Button -->
         <Button Grid.Row="4" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10" IsEnabled="{Binding IsImportEnabled}"/>
