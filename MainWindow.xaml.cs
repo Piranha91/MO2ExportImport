@@ -14,6 +14,15 @@ namespace MO2ExportImport
             InitializeComponent();
             _mainViewModel = new MainViewModel();
             DataContext = _mainViewModel;
+
+            // Subscribe to the Closed event
+            this.Closed += MainWindow_Closed;
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            // Call CloseLog method from the ViewModel
+            _mainViewModel?.CloseLog();
         }
     }
 }

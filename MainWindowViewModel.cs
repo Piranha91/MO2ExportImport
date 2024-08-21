@@ -3,6 +3,7 @@ using MO2ExportImport.Models;
 using ReactiveUI;
 using System.IO;
 using System.Reactive;
+using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Windows;
 
@@ -17,6 +18,7 @@ namespace MO2ExportImport.ViewModels
         private readonly ExportViewModel _exportViewModel;
         private readonly ImportViewModel _importViewModel;
 
+        private StreamWriter _logWriter;
         private ReactiveObject _currentView;
 
         public ReactiveObject CurrentView
@@ -30,8 +32,10 @@ namespace MO2ExportImport.ViewModels
 
         public MainViewModel()
         {
+            InitializeLog();
+
             _exportViewModel = new(this);
-            _importViewModel = new(this);
+            _importViewModel = new(this, _logWriter);
             LoadSettings(); // Load settings on startup
 
             // Ensure Backups folder exists on startup
@@ -65,6 +69,7 @@ namespace MO2ExportImport.ViewModels
                 _exportViewModel.IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
                 _exportViewModel.IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
                 _importViewModel.Mo2Directory = settings?.ImportTargetMO2Dir ?? string.Empty;
+                _importViewModel.SelectedImportMode = settings?.ImportMode ?? ImportMode.Spliced;
             }
         }
 
@@ -75,7 +80,8 @@ namespace MO2ExportImport.ViewModels
                 ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,
                 IgnoreDisabled = _exportViewModel.IgnoreDisabled,
                 IgnoreSeparators = _exportViewModel.IgnoreSeparators,
-                ImportTargetMO2Dir = _importViewModel.Mo2Directory
+                ImportTargetMO2Dir = _importViewModel.Mo2Directory,
+                ImportMode = _importViewModel.SelectedImportMode
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
@@ -96,6 +102,21 @@ namespace MO2ExportImport.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred while checking or creating the Backups folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void InitializeLog()
+        {
+            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log.txt");
+            _logWriter = new StreamWriter(logFilePath, append: false); // Overwrite log on each start
+        }
+
+        public void CloseLog()
+        {
+            if (_logWriter != null)
+            {
+                _logWriter.Close();
+                _logWriter = null;
             }
         }
     }

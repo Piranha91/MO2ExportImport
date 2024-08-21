@@ -21,6 +21,7 @@ namespace MO2ExportImport.ViewModels
         private string _modsRootPath;
         private bool _isImportEnabled;
         private bool _modsLoaded;
+        private StreamWriter _logWriter;
 
         public string Mo2Directory
         {
@@ -62,6 +63,24 @@ namespace MO2ExportImport.ViewModels
             set => this.RaiseAndSetIfChanged(ref _modsLoaded, value);
         }
 
+        private ImportMode _selectedImportMode;
+
+        public ObservableCollection<ImportMode> ImportModes { get; } = new ObservableCollection<ImportMode>
+        {
+            ImportMode.End,
+            ImportMode.Spliced
+        };
+
+        public ImportMode SelectedImportMode
+        {
+            get => _selectedImportMode;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedImportMode, value);
+                _mainViewModel.SaveSettings(); // Save the selected import mode to settings
+            }
+        }
+
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
 
@@ -69,9 +88,10 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> SelectImportSourceFolderCommand { get; }
         public ReactiveCommand<Unit, Unit> LaunchImportPopupCommand { get; }
 
-        public ImportViewModel(MainViewModel mainViewModel)
+        public ImportViewModel(MainViewModel mainViewModel, StreamWriter logWriter)
         {
             _mainViewModel = mainViewModel;
+            _logWriter = logWriter;
             SelectMo2DirectoryCommand = ReactiveCommand.Create(SelectMo2Directory);
             SelectImportSourceFolderCommand = ReactiveCommand.Create(SelectImportSourceFolder);
             LaunchImportPopupCommand = ReactiveCommand.Create(LaunchImportPopup, this.WhenAnyValue(x => x.IsImportEnabled));
@@ -91,7 +111,7 @@ namespace MO2ExportImport.ViewModels
                 {
                     _modsLoaded = false;
                 }
-            });
+            });      
         }
 
         public void OnViewLoaded(ImportView view)
@@ -285,7 +305,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.Selected))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList, SelectedImportMode, _logWriter);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

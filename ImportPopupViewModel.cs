@@ -18,6 +18,8 @@ namespace MO2ExportImport.ViewModels
         private bool _isImportEnabled;
         private readonly ImportPopupView _view;
         private string _selectedProfile;
+        private ImportMode _importMode;
+        private StreamWriter _logWriter;
 
         public bool IsImportEnabled
         {
@@ -57,13 +59,15 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, StreamWriter logWriter)
         {
             _view = view;
             _mo2Directory = mo2Directory;
             _modSourceDirectory = modSourceDirectory;
             _modList = modList;
             _selectedProfile = selectedProfile;
+            _importMode = importMode;
+            _logWriter = logWriter;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
             ImportCommand = ReactiveCommand.Create(ImportMods, this.WhenAnyValue(x => x.IsImportEnabled));
@@ -120,12 +124,162 @@ namespace MO2ExportImport.ViewModels
 
         private void ImportMods()
         {
-            // Logic for importing mods
+            BackupSelectedProfiles(); // Start logging
 
-            // Step 1: Backup the selected profiles
-            BackupSelectedProfiles();
+            try
+            {
+                foreach (var profile in ProfilesToImport())
+                {
+                    string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
+                    if (!Directory.Exists(profileDir))
+                    {
+                        continue; // Skip if profile directory does not exist
+                    }
 
-            // Step 2: Proceed with the import logic
+                    // Load and reverse the ProfileModList and ProfilePluginsList for correct processing
+                    var profileModListPath = Path.Combine(profileDir, "modlist.txt");
+                    var profileModList = LoadModList(profileModListPath);
+
+                    var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
+                    var profilePluginsList = LoadModList(profilePluginsListPath, reverseOrder: false);
+
+                    // Load the SourceModList and SourcePluginsList
+                    var sourceModListPath = Path.Combine(_modSourceDirectory, "modlist.txt");
+                    var sourceModList = LoadModList(sourceModListPath, reverseOrder: false);
+
+                    var sourcePluginsListPath = Path.Combine(_modSourceDirectory, "plugins.txt");
+                    var sourcePluginsList = LoadModList(sourcePluginsListPath, reverseOrder: false);
+
+                    // Filter SourceModList to include only mods with corresponding directories
+                    var validSourceMods = sourceModList
+                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'))))
+                        .ToList();
+
+                    // Collect valid plugins based on validSourceMods
+                    var validPlugins = new List<string>();
+                    foreach (var mod in validSourceMods)
+                    {
+                        var modDirectory = Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'));
+                        if (Directory.Exists(modDirectory))
+                        {
+                            var pluginFiles = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                                .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
+                                            f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
+                                            f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
+                                .Select(Path.GetFileName)
+                                .ToList();
+
+                            foreach (var plugin in pluginFiles)
+                            {
+                                // Match ignoring the leading asterisk in SourcePluginsList
+                                var matchingPlugin = sourcePluginsList.FirstOrDefault(sp =>
+                                    sp.TrimStart('*').Equals(plugin, StringComparison.OrdinalIgnoreCase));
+
+                                if (matchingPlugin != null)
+                                {
+                                    validPlugins.Add(matchingPlugin); // Retain the original activation status
+                                }
+                            }
+                        }
+                    }
+
+                    // Handle ImportMode for modlist.txt
+                    var ignorePositions = new List<string>();
+                    foreach (var currentMod in validSourceMods)
+                    {
+                        if (_importMode == ImportMode.End)
+                        {
+                            var previousItem = profileModList.LastOrDefault() ?? "start";
+                            profileModList.Add(currentMod);
+                            Log($"Added {currentMod} to end of modlist.txt after {previousItem}");
+                        }
+                        else // Spliced
+                        {
+                            var previousItem = AddModInSplicedMode(profileModList, validSourceMods, currentMod, ignorePositions);
+                            Log($"Spliced {currentMod} into modlist.txt after {previousItem}");
+                        }
+                    }
+
+                    // Handle ImportMode for plugins.txt
+                    ignorePositions.Clear();
+                    foreach (var currentPlugin in validPlugins)
+                    {
+                        if (_importMode == ImportMode.End)
+                        {
+                            var previousItem = profilePluginsList.LastOrDefault() ?? "start";
+                            profilePluginsList.Add(currentPlugin);
+                            Log($"Added {currentPlugin} to end of plugins.txt after {previousItem}");
+                        }
+                        else // Spliced
+                        {
+                            var previousItem = AddModInSplicedMode(profilePluginsList, validPlugins, currentPlugin, ignorePositions);
+                            Log($"Spliced {currentPlugin} into plugins.txt after {previousItem}");
+                        }
+                    }
+
+                    // Reverse the ProfileModList back to original order before saving
+                    profileModList.Reverse();
+
+                    // Reinsert the special comment line at the beginning
+                    profileModList.Insert(0, "# This file was automatically generated by Mod Organizer.");
+                    profilePluginsList.Insert(0, "# This file was automatically generated by Mod Organizer.");
+
+                    // For debugging: Save to DebugOutput instead of overwriting the files
+                    string debugOutputDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DebugOutput", DateTime.Now.ToString("yyyy-MM-dd_HH-mm"), profile);
+                    Directory.CreateDirectory(debugOutputDir);
+
+                    File.WriteAllLines(Path.Combine(debugOutputDir, "modlist.txt"), profileModList);
+                    File.WriteAllLines(Path.Combine(debugOutputDir, "plugins.txt"), profilePluginsList);
+                }
+
+                MessageBox.Show("Import completed successfully. Check DebugOutput for results.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Log($"An error occurred during the import process: {ex.Message}");
+                MessageBox.Show($"An error occurred during the import process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private List<string> LoadModList(string filePath, bool reverseOrder = true)
+        {
+            if (!File.Exists(filePath))
+            {
+                return new List<string>();
+            }
+
+            var lines = File.ReadAllLines(filePath).Where(line => !line.StartsWith("#")).ToList();
+
+            if (reverseOrder)
+            {
+                lines.Reverse(); // Reverse the list in place if needed
+            }
+
+            return lines;
+        }
+
+        private string AddModInSplicedMode(List<string> profileList, List<string> sourceList, string currentMod, List<string> ignorePositions)
+        {
+            for (int i = sourceList.IndexOf(currentMod) - 1; i >= 0; i--)
+            {
+                string precedingMod = sourceList[i];
+                if (ignorePositions.Contains(precedingMod))
+                {
+                    continue;
+                }
+
+                int indexInProfile = profileList.IndexOf(precedingMod);
+                if (indexInProfile != -1)
+                {
+                    profileList.Insert(indexInProfile + 1, currentMod);
+                    return precedingMod;
+                }
+            }
+
+            // If no precedingMod is found or inserted, add to end
+            profileList.Add(currentMod);
+            ignorePositions.Add(currentMod);
+            return "end";
         }
 
         private void ClosePopup()
@@ -187,7 +341,7 @@ namespace MO2ExportImport.ViewModels
                     }
                 }
 
-                MessageBox.Show("Backup completed successfully.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information);
+                //MessageBox.Show("Backup completed successfully.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -195,5 +349,26 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private IEnumerable<string> ProfilesToImport()
+        {
+            if (_selectedProfile == "All")
+            {
+                return Directory.GetDirectories(Path.Combine(_mo2Directory, "profiles")).Select(Path.GetFileName);
+            }
+            else
+            {
+                return new List<string> { _selectedProfile };
+            }
+        }
+
+        private void Log(string message)
+        {
+            _logWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+        }
+
+        private void CloseLog()
+        {
+            _logWriter?.Close();
+        }
     }
 }

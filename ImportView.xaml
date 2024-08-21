@@ -14,6 +14,8 @@
             <!-- Profile Selection -->
             <RowDefinition Height="Auto"/>
             <!-- Import Source Folder Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Import Mode Button -->
             <RowDefinition Height="*"/>
             <!-- Mods ListBox -->
             <RowDefinition Height="Auto"/>
@@ -38,12 +40,17 @@
             <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
         </StackPanel>
 
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="10">
+            <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
+            <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" Width="150" Margin="5"/>
+        </StackPanel>
+
         <!-- Mod List -->
-        <ListBox Name ="ModListBox"  Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
+        <ListBox Name ="ModListBox"  Grid.Row="4" ItemsSource="{Binding ModList}" SelectionMode="Extended"
                  DisplayMemberPath="Name" Margin="10"
                  SelectionChanged="OnSelectionChanged"/>
 
         <!-- Import Button -->
-        <Button Grid.Row="4" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10" IsEnabled="{Binding IsImportEnabled}"/>
+        <Button Grid.Row="5" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>
