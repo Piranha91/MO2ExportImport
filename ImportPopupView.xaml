@@ -1,12 +1,29 @@
-﻿<Window x:Class="MO2ExportImport.ImportPopupView"
+﻿<Window x:Class="MO2ExportImport.Views.ImportPopupView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MO2ExportImport"
-        mc:Ignorable="d"
-        Title="ImportPopupView" Height="450" Width="800">
+        Title="Import Mods" Height="300" Width="400">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Calculate Space Button -->
+        <Button Grid.Row="0" Content="Calculate Space" Command="{Binding CalculateSpaceCommand}" Margin="10" HorizontalAlignment="Center"/>
+
+        <!-- Display calculated space and available space -->
+        <StackPanel Grid.Row="1" Margin="10">
+            <TextBlock Text="{Binding RequiredSpaceText}" Margin="5"/>
+            <TextBlock Text="{Binding AvailableSpaceText}" Margin="5"/>
+            <TextBlock Text="{Binding SpaceStatusText}" Margin="5" Foreground="{Binding SpaceStatusColor}"/>
+        </StackPanel>
+
+        <!-- Import and Cancel Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <Button Content="Import" Command="{Binding ImportCommand}" IsEnabled="{Binding IsImportEnabled}" Margin="5"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="5"/>
+        </StackPanel>
     </Grid>
 </Window>

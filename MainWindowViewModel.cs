@@ -4,6 +4,7 @@ using ReactiveUI;
 using System.IO;
 using System.Reactive;
 using System.Text.Json;
+using System.Windows;
 
 namespace MO2ExportImport.ViewModels
 {
@@ -32,6 +33,9 @@ namespace MO2ExportImport.ViewModels
             _exportViewModel = new(this);
             _importViewModel = new(this);
             LoadSettings(); // Load settings on startup
+
+            // Ensure Backups folder exists on startup
+            EnsureBackupsFolderExists();
 
             NavigateToExportCommand = ReactiveCommand.Create(NavigateToExport);
             NavigateToImportCommand = ReactiveCommand.Create(NavigateToImport);
@@ -76,6 +80,23 @@ namespace MO2ExportImport.ViewModels
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(SettingsFilePath, settingsJson);
+        }
+        private void EnsureBackupsFolderExists()
+        {
+            try
+            {
+                string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string backupsFolderPath = Path.Combine(exeDirectory, "Backups");
+
+                if (!Directory.Exists(backupsFolderPath))
+                {
+                    Directory.CreateDirectory(backupsFolderPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while checking or creating the Backups folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

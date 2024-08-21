@@ -29,6 +29,7 @@ namespace MO2ExportImport.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref _mo2Directory, value);
                 _mainViewModel.SaveSettings();  // Assuming there's a Save method in Settings to persist the changes
+                LoadProfiles(); // Load profiles whenever Mo2Directory is set
                 UpdateImportEnabled();
             }
         }
@@ -181,7 +182,7 @@ namespace MO2ExportImport.ViewModels
             }
             else
             {
-                _modsRootPath = string.Empty;
+                _modsRootPath = ImportSourceFolder;
                 var modDirs = Directory.GetDirectories(ImportSourceFolder);
                 foreach (var dir in modDirs)
                 {
@@ -284,7 +285,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.Selected))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, SelectedProfile, ImportSourceFolder);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

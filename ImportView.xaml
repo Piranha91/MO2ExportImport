@@ -39,7 +39,7 @@
         </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
+        <ListBox Name ="ModListBox"  Grid.Row="3" ItemsSource="{Binding ModList}" SelectionMode="Extended"
                  DisplayMemberPath="Name" Margin="10"
                  SelectionChanged="OnSelectionChanged"/>
 
