@@ -3,6 +3,7 @@ using DynamicData.Binding;
 using Microsoft.Win32;
 using MO2ExportImport.Views;
 using ReactiveUI;
+using Splat.ModeDetection;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -174,7 +175,7 @@ namespace MO2ExportImport.ViewModels
                        .Select(line =>
                        {
                            var enabled = line.StartsWith("+");
-                           var name = line.Substring(1).Trim();
+                           var name = FormatHandler.TrimModActivationStatus(line);
                            return new Mod(name, enabled);
                        })
                        .Reverse(); // Invert the order

@@ -5,8 +5,10 @@ using System.Linq;
 using System.Reactive;
 using System.Windows;
 using System.Windows.Media;
+using DynamicData;
 using MO2ExportImport.Views;
 using ReactiveUI;
+using static MO2ExportImport.FormatHandler;
 
 namespace MO2ExportImport.ViewModels
 {
@@ -152,28 +154,35 @@ namespace MO2ExportImport.ViewModels
 
                     // Filter SourceModList to include only mods with corresponding directories
                     var validSourceMods = sourceModList
-                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'))))
+                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod))))
                         .ToList();
 
                     // Collect valid plugins based on validSourceMods
+                    var profilePluginsSearchList = FormatHandler.TrimPluginActivationStatus(profilePluginsList).ToArray();
+
                     var validPlugins = new List<string>();
                     foreach (var mod in validSourceMods)
                     {
-                        var modDirectory = Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'));
+                        var modDirectory = Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod));
                         if (Directory.Exists(modDirectory))
                         {
-                            var pluginFiles = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                            var pluginFilesInMod = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
                                             f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
                                             f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
                                 .Select(Path.GetFileName)
                                 .ToList();
 
-                            foreach (var plugin in pluginFiles)
+                            foreach (var pluginFileName in pluginFilesInMod)
                             {
+                                // Ignore plugins that already exist in destination load order
+                                if (profilePluginsSearchList.Contains(pluginFileName))
+                                {
+                                    continue;
+                                }
+
                                 // Match ignoring the leading asterisk in SourcePluginsList
-                                var matchingPlugin = sourcePluginsList.FirstOrDefault(sp =>
-                                    sp.TrimStart('*').Equals(plugin, StringComparison.OrdinalIgnoreCase));
+                                var matchingPlugin = sourcePluginsList.FirstOrDefault(x => FormatHandler.TrimPluginActivationStatus(x) == pluginFileName);
 
                                 if (matchingPlugin != null)
                                 {
@@ -191,12 +200,12 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profileModList.LastOrDefault() ?? "start";
                             profileModList.Add(currentMod);
-                            Log($"Added {currentMod.TrimStart('+', '-')} to end of modlist.txt after {previousItem}");
+                            Log($"Added { FormatHandler.TrimModActivationStatus(currentMod)} to end of modlist.txt after {previousItem}");
                         }
                         else // Spliced
                         {
-                            var previousItem = AddModInSplicedMode(profileModList, validSourceMods, currentMod, ignorePositions);
-                            Log($"Spliced {currentMod.TrimStart('+', '-')} into modlist.txt after {previousItem}");
+                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, currentMod, ignorePositions, StringType.Mod);
+                            Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod)} into modlist.txt after {previousItem}");
                         }
                     }
 
@@ -208,12 +217,12 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profilePluginsList.LastOrDefault() ?? "start";
                             profilePluginsList.Add(currentPlugin);
-                            Log($"Added {currentPlugin.TrimStart('*')} to end of plugins.txt after {previousItem}");
+                            Log($"Added {FormatHandler.TrimPluginActivationStatus(currentPlugin)} to end of plugins.txt after {previousItem}");
                         }
                         else // Spliced
                         {
-                            var previousItem = AddModInSplicedMode(profilePluginsList, validPlugins, currentPlugin, ignorePositions);
-                            Log($"Spliced {currentPlugin.TrimStart('*')} into plugins.txt after {previousItem}");
+                            var previousItem = AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin);
+                            Log($"Spliced {FormatHandler.TrimPluginActivationStatus(currentPlugin)} into plugins.txt after {previousItem}");
                         }
                     }
 
@@ -239,8 +248,8 @@ namespace MO2ExportImport.ViewModels
 
                     foreach (var mod in validSourceMods)
                     {
-                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'));
-                        var destinationModPath = Path.Combine(modsOutputDir, mod.TrimStart('+', '-'));
+                        var sourceModPath = Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod));
+                        var destinationModPath = Path.Combine(modsOutputDir, FormatHandler.TrimModActivationStatus(mod));
 
                         if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
                         {
@@ -250,11 +259,11 @@ namespace MO2ExportImport.ViewModels
                                 bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
                                 if (success)
                                 {
-                                    Log($"Copied mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                                    Log($"Copied mod {FormatHandler.TrimModActivationStatus(mod)} to {destinationModPath}");
                                 }
                                 else
                                 {
-                                    Log($"Failed to copy mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                                    Log($"Failed to copy mod {FormatHandler.TrimModActivationStatus(mod)} to {destinationModPath}");
                                 }
                             }));
                         }
@@ -265,6 +274,7 @@ namespace MO2ExportImport.ViewModels
                 }
 
                 MessageBox.Show("Import completed successfully. Check DebugOutput for results.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                ClosePopup();
             }
             catch (Exception ex)
             {
@@ -290,27 +300,30 @@ namespace MO2ExportImport.ViewModels
             return lines;
         }
 
-        private string AddModInSplicedMode(List<string> profileList, List<string> sourceList, string currentMod, List<string> ignorePositions)
+        private string AddEntryInSplicedMode(List<string> profileList, List<string> sourceList, string currentEntry, List<string> ignoredEntries, StringType stringType)
         {
-            for (int i = sourceList.IndexOf(currentMod) - 1; i >= 0; i--)
+            var searchEntry = FormatHandler.TrimActivationStatus(currentEntry, stringType);
+            var profileSearchList = FormatHandler.TrimActivationStatus(profileList, stringType).ToArray();
+
+            for (int i = sourceList.IndexOf(currentEntry) - 1; i >= 0; i--)
             {
-                string precedingMod = sourceList[i];
-                if (ignorePositions.Contains(precedingMod))
+                string precedingSearchEntry = FormatHandler.TrimActivationStatus(sourceList[i], stringType);
+                if (ignoredEntries.Contains(precedingSearchEntry))
                 {
                     continue;
                 }
 
-                int indexInProfile = profileList.IndexOf(precedingMod);
+                int indexInProfile = profileSearchList.IndexOf(precedingSearchEntry);
                 if (indexInProfile != -1)
                 {
-                    profileList.Insert(indexInProfile + 1, currentMod);
-                    return precedingMod;
+                    profileList.Insert(indexInProfile + 1, currentEntry);
+                    return precedingSearchEntry;
                 }
             }
 
-            // If no precedingMod is found or inserted, add to end
-            profileList.Add(currentMod);
-            ignorePositions.Add(currentMod);
+            // If no precedingEntry is found or inserted, add to end
+            profileList.Add(currentEntry);
+            //ignoredEntries.Add(currentEntry); Commented out for now. Double checking my logic, I don't think this makes sense to include.
             return "end";
         }
 
