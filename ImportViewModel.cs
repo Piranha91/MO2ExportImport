@@ -305,7 +305,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.Selected))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList, SelectedImportMode, _logWriter);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList, SelectedImportMode, _logWriter, _mainViewModel.ProgramVersion);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
