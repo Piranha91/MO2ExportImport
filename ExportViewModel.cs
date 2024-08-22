@@ -21,6 +21,20 @@ namespace MO2ExportImport.ViewModels
         private string _selectedProfile;
         private ObservableCollection<string> _profiles;
         private ObservableCollection<string> _modList;
+        private string _filterText;
+        public string FilterText
+        {
+            get => _filterText;
+            set => this.RaiseAndSetIfChanged(ref _filterText, value);
+        }
+
+        private ObservableCollection<Mod> _filteredModList;
+        public ObservableCollection<Mod> FilteredModList
+        {
+            get => _filteredModList;
+            private set => this.RaiseAndSetIfChanged(ref _filteredModList, value);
+        }
+
         private string _exportDestinationFolder;
         public string ExportDestinationFolder
         {
@@ -82,6 +96,11 @@ namespace MO2ExportImport.ViewModels
 
             Profiles = new ObservableCollection<string>();
             ModList = new ObservableCollection<Mod>();
+
+            _filteredModList = new ObservableCollection<Mod>(ModList);
+
+            this.WhenAnyValue(x => x.FilterText)
+                .Subscribe(_ => ApplyFilter());
 
             SelectSourceCommand = ReactiveCommand.CreateFromTask(SelectSource);
 
@@ -165,6 +184,11 @@ namespace MO2ExportImport.ViewModels
                     ModList.Add(mod);
                 }
             }
+
+            _filteredModList = new ObservableCollection<Mod>(ModList);
+
+            this.WhenAnyValue(x => x.FilterText)
+                .Subscribe(_ => ApplyFilter());
         }
 
         private void ExportSelected()
@@ -188,6 +212,30 @@ namespace MO2ExportImport.ViewModels
             if (result != null && result.Value)
             {
                 ExportDestinationFolder = dialog.FolderName;
+            }
+        }
+
+        private void ApplyFilter()
+        {
+            if (string.IsNullOrEmpty(FilterText))
+            {
+                // If the filter is empty, show all mods
+                FilteredModList = new ObservableCollection<Mod>(ModList);
+            }
+            else
+            {
+                // Apply the filter, but maintain the current selections
+                var matchedMods = ModList
+                    .Where(mod => mod.Name.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                // Keep the previously selected mods in the filtered list
+                foreach (var mod in ModList.Where(mod => mod.Selected && !matchedMods.Contains(mod)))
+                {
+                    matchedMods.Add(mod);
+                }
+
+                FilteredModList = new ObservableCollection<Mod>(matchedMods);
             }
         }
     }

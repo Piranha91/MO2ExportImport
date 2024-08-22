@@ -5,6 +5,11 @@
     <StackPanel>
         <Button Content="Calculate Space" Command="{Binding CalculateSpaceCommand}" Margin="10"/>
 
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Export Folder Name:" Margin="10,0,0,5"/>
+            <TextBox Text="{Binding ExportDestinationFolderName}" Margin="10,0,0,10" MinWidth="250" />
+        </StackPanel>
+
         <!-- Display space info with dynamic color -->
         <TextBlock Text="{Binding SpaceInfo}" Margin="10" Foreground="{Binding SpaceInfoColor}" TextWrapping="Wrap"/>
 

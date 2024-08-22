@@ -17,13 +17,20 @@ namespace MO2ExportImport.ViewModels
         private readonly string _mo2Directory;
         private readonly IEnumerable<Mod> _selectedMods;
         private readonly string _selectedProfile;
-        private readonly string _exportDestinationFolder;
+        private string _exportDestinationRootFolder;
         private string _spaceInfo;
         private Brush _spaceInfoColor;
         private bool _isExportEnabled;
         private readonly ExportPopupView _window;
         private readonly ExportViewModel _exportViewModel;
         private readonly string _programVersion;
+
+        private string _exportDestinationFolderName;
+        public string ExportDestinationFolderName
+        {
+            get => _exportDestinationFolderName;
+            set => this.RaiseAndSetIfChanged(ref _exportDestinationFolderName, value);
+        }
 
         public string SpaceInfo
         {
@@ -56,7 +63,7 @@ namespace MO2ExportImport.ViewModels
             _mo2Directory = mo2Directory;
             _selectedMods = selectedMods;
             _selectedProfile = selectedProfile;
-            _exportDestinationFolder = exportDestinationFolder;
+            _exportDestinationRootFolder = exportDestinationFolder;
             _programVersion = programVersion;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
@@ -66,6 +73,8 @@ namespace MO2ExportImport.ViewModels
 
             // Initially disable the Export button
             IsExportEnabled = false;
+
+            ExportDestinationFolderName = DateTime.Now.ToString("yyyy MM dd (HH mm)");
         }
 
         private void CalculateSpace()
@@ -84,7 +93,7 @@ namespace MO2ExportImport.ViewModels
             }
 
             // Determine the root drive of the export destination folder
-            var exportRoot = System.IO.Path.GetPathRoot(_exportDestinationFolder);
+            var exportRoot = System.IO.Path.GetPathRoot(_exportDestinationRootFolder);
             var drive = new System.IO.DriveInfo(exportRoot);
 
             // Convert sizes to GB or MB
@@ -138,12 +147,20 @@ namespace MO2ExportImport.ViewModels
 
                 if (!Alphaleonis.Win32.Filesystem.Directory.Exists(modDestinationPath))
                 {
-                    copyTasks.Add(Task.Run(() => DirectoryCopy(modSourcePath, modDestinationPath)));
+                    copyTasks.Add(FileOperation.CopyFolderWithUIAsync(modSourcePath, modDestinationPath));
                 }
             }
 
             // Wait for all copy tasks to complete
-            await Task.WhenAll(copyTasks);
+            try
+            {
+                await Task.WhenAll(copyTasks);
+            }
+            catch (IOException ex)
+            {
+                // Log or display error message
+                MessageBox.Show($"Error during copy operation: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 
             string renameMessage = string.Empty;
 
@@ -186,12 +203,12 @@ namespace MO2ExportImport.ViewModels
 
         private (string, bool) CreateExportFolder()
         {
-            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_exportDestinationFolder, "ExportLog.json"));
-            string exportFolderPath = _exportDestinationFolder;
+            bool isMergeOperation = System.IO.File.Exists(System.IO.Path.Combine(_exportDestinationRootFolder, "ExportLog.json"));
+            string exportFolderPath = _exportDestinationRootFolder;
 
             if (!isMergeOperation)
             {
-                exportFolderPath = System.IO.Path.Combine(_exportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+                exportFolderPath = System.IO.Path.Combine(_exportDestinationRootFolder, ExportDestinationFolderName);
                 Alphaleonis.Win32.Filesystem.Directory.CreateDirectory(exportFolderPath);
             }
 
@@ -207,16 +224,24 @@ namespace MO2ExportImport.ViewModels
             var copyTasks = new List<Task>();
 
             // Overwrite plugins.txt and modlist.txt
-            copyTasks.Add(Task.Run(() => System.IO.File.Copy(pluginsSourcePath, System.IO.Path.Combine(exportFolderPath, "plugins.txt"), true)));
-            copyTasks.Add(Task.Run(() => System.IO.File.Copy(modlistSourcePath, System.IO.Path.Combine(exportFolderPath, "modlist.txt"), true)));
+            copyTasks.Add(FileOperation.CopyFileWithUIAsync(pluginsSourcePath, System.IO.Path.Combine(exportFolderPath, "plugins.txt")));
+            copyTasks.Add(FileOperation.CopyFileWithUIAsync(modlistSourcePath, System.IO.Path.Combine(exportFolderPath, "modlist.txt")));
 
             // Wait for all copy tasks to complete
-            await Task.WhenAll(copyTasks);
+            try
+            {
+                await Task.WhenAll(copyTasks);
+            }
+            catch (IOException ex)
+            {
+                // Log or display error message
+                MessageBox.Show($"Error during copy operation: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private string TryRenameDirectory(string exportFolderPath)
         {
-            var newExportFolderPath = System.IO.Path.Combine(_exportDestinationFolder, DateTime.Now.ToString("yyyy MM dd (HH mm)"));
+            var newExportFolderPath = System.IO.Path.Combine(_exportDestinationRootFolder, ExportDestinationFolderName);
             string renameMessage = string.Empty;
             try
             {

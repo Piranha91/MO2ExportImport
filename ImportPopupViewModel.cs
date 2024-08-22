@@ -122,7 +122,7 @@ namespace MO2ExportImport.ViewModels
             return bytes / (1024.0 * 1024.0 * 1024.0);
         }
 
-        private void ImportMods()
+        private async void ImportMods()
         {
             BackupSelectedProfiles(); // Start logging
 
@@ -235,6 +235,8 @@ namespace MO2ExportImport.ViewModels
                     string modsOutputDir = Path.Combine(debugOutputDir, "mods");
                     Directory.CreateDirectory(modsOutputDir);
 
+                    var copyTasks = new List<Task>();
+
                     foreach (var mod in validSourceMods)
                     {
                         var sourceModPath = Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'));
@@ -242,17 +244,24 @@ namespace MO2ExportImport.ViewModels
 
                         if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
                         {
-                            bool success = FileOperation.CopyFolderWithUI(sourceModPath, destinationModPath);
-                            if (success)
+                            // Add the async copy task to the list
+                            copyTasks.Add(Task.Run(async () =>
                             {
-                                Log($"Copied mod {mod.TrimStart('+', '-')} to {destinationModPath}");
-                            }
-                            else
-                            {
-                                Log($"Failed to copy mod {mod.TrimStart('+', '-')} to {destinationModPath}");
-                            }
+                                bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
+                                if (success)
+                                {
+                                    Log($"Copied mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                                }
+                                else
+                                {
+                                    Log($"Failed to copy mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                                }
+                            }));
                         }
                     }
+
+                    // Wait for all copy tasks to complete
+                    await Task.WhenAll(copyTasks);
                 }
 
                 MessageBox.Show("Import completed successfully. Check DebugOutput for results.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);

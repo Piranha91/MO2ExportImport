@@ -4,12 +4,54 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:reactiveui="http://reactiveui.net"
+             xmlns:main="clr-namespace:MO2ExportImport"
              mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <main:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />
+        <!-- Define a custom style for ListBoxItem -->
+        <Style TargetType="ListBoxItem">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Trigger for when the item is selected -->
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                            </Trigger>
+                            <!-- Trigger for when the item is selected but the ListBox is out of focus -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="true"/>
+                                    <Condition Property="IsFocused" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                            </MultiTrigger>
+                            <!-- Trigger for mouse over -->
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="LightGreen"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <!-- Define row definitions -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- For buttons and ComboBox -->
+            <RowDefinition Height="Auto"/>
+            <!-- For filter -->
             <RowDefinition Height="*"/>
             <!-- For the ListBox to take remaining space -->
             <RowDefinition Height="Auto"/>
@@ -27,9 +69,24 @@
 
 
         <!-- ListBox with constrained height in the remaining space -->
-        <ListBox Grid.Row="1" ItemsSource="{Binding ModList}" Margin="10"
-         ScrollViewer.VerticalScrollBarVisibility="Auto" 
-         SelectionMode="Extended">
+        <Grid Grid.Row="1">
+            <TextBox x:Name="FilterTextBox"
+             Width="200"
+             Margin="5"
+             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="Filter mods..."
+               IsHitTestVisible="False"
+               Foreground="Gray"
+               VerticalAlignment="Center"
+               HorizontalAlignment="Left"
+               Margin="10,0,0,0"
+               Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
+        </Grid>
+
+        <ListBox Grid.Row="2" ItemsSource="{Binding FilteredModList}" Margin="10"
+  ScrollViewer.VerticalScrollBarVisibility="Auto" 
+  SelectionMode="Extended">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="IsSelected" Value="{Binding Selected, Mode=TwoWay}" />
@@ -46,10 +103,10 @@
         </ListBox>
 
         <!-- Export Selected Button -->
-        <Button Grid.Row="2" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="10" HorizontalAlignment="Right"/>
+        <Button Grid.Row="3" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="10" HorizontalAlignment="Right"/>
 
         <!-- Bottom panel for Export Destination Folder selection -->
-        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Orientation="Horizontal" Background="LightGray" VerticalAlignment="Center">
+        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="4" Orientation="Horizontal" Background="LightGray" VerticalAlignment="Center">
             <TextBlock Text="Export Destination:" VerticalAlignment="Center"/>
             <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0"/>
             <Button Content="Browse" Command="{Binding BrowseFolderCommand}"/>
