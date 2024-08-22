@@ -133,8 +133,11 @@ namespace MO2ExportImport.ViewModels
                 foreach (var profile in ProfilesToImport())
                 {
                     string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
+                    Log($"Importing to profile {profile}:");
+
                     if (!Directory.Exists(profileDir))
                     {
+                        Log($"Error: Cannot find {profileDir}:");
                         continue; // Skip if profile directory does not exist
                     }
 
@@ -178,6 +181,7 @@ namespace MO2ExportImport.ViewModels
                                 // Ignore plugins that already exist in destination load order
                                 if (profilePluginsSearchList.Contains(pluginFileName))
                                 {
+                                    Log($"Skipped {pluginFileName} because it is already present in the destination load order");
                                     continue;
                                 }
 
