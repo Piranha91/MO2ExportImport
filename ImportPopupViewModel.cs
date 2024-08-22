@@ -191,12 +191,12 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profileModList.LastOrDefault() ?? "start";
                             profileModList.Add(currentMod);
-                            Log($"Added {currentMod} to end of modlist.txt after {previousItem}");
+                            Log($"Added {currentMod.TrimStart('+', '-')} to end of modlist.txt after {previousItem}");
                         }
                         else // Spliced
                         {
                             var previousItem = AddModInSplicedMode(profileModList, validSourceMods, currentMod, ignorePositions);
-                            Log($"Spliced {currentMod} into modlist.txt after {previousItem}");
+                            Log($"Spliced {currentMod.TrimStart('+', '-')} into modlist.txt after {previousItem}");
                         }
                     }
 
@@ -208,12 +208,12 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profilePluginsList.LastOrDefault() ?? "start";
                             profilePluginsList.Add(currentPlugin);
-                            Log($"Added {currentPlugin} to end of plugins.txt after {previousItem}");
+                            Log($"Added {currentPlugin.TrimStart('*')} to end of plugins.txt after {previousItem}");
                         }
                         else // Spliced
                         {
                             var previousItem = AddModInSplicedMode(profilePluginsList, validPlugins, currentPlugin, ignorePositions);
-                            Log($"Spliced {currentPlugin} into plugins.txt after {previousItem}");
+                            Log($"Spliced {currentPlugin.TrimStart('*')} into plugins.txt after {previousItem}");
                         }
                     }
 
@@ -230,6 +230,29 @@ namespace MO2ExportImport.ViewModels
 
                     File.WriteAllLines(Path.Combine(debugOutputDir, "modlist.txt"), profileModList);
                     File.WriteAllLines(Path.Combine(debugOutputDir, "plugins.txt"), profilePluginsList);
+
+                    // Now copy the valid mods into debugOutputDir\mods
+                    string modsOutputDir = Path.Combine(debugOutputDir, "mods");
+                    Directory.CreateDirectory(modsOutputDir);
+
+                    foreach (var mod in validSourceMods)
+                    {
+                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.TrimStart('+', '-'));
+                        var destinationModPath = Path.Combine(modsOutputDir, mod.TrimStart('+', '-'));
+
+                        if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
+                        {
+                            bool success = FileOperation.CopyFolderWithUI(sourceModPath, destinationModPath);
+                            if (success)
+                            {
+                                Log($"Copied mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                            }
+                            else
+                            {
+                                Log($"Failed to copy mod {mod.TrimStart('+', '-')} to {destinationModPath}");
+                            }
+                        }
+                    }
                 }
 
                 MessageBox.Show("Import completed successfully. Check DebugOutput for results.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -360,6 +383,38 @@ namespace MO2ExportImport.ViewModels
                 return new List<string> { _selectedProfile };
             }
         }
+
+        private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        {
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+            if (!dir.Exists)
+            {
+                throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {sourceDirName}");
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            Directory.CreateDirectory(destDirName);
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach (FileInfo file in files)
+            {
+                string tempPath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(tempPath, false);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dirs)
+                {
+                    string tempPath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
+                }
+            }
+        }
+
 
         private void Log(string message)
         {
