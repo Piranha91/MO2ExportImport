@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="MO2ExportImport.Views.UndoOperationMenuView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MO2ExportImport"
+             xmlns:behaviors="clr-namespace:MO2ExportImport.Behaviors"
+             mc:Ignorable="d" 
+             Loaded="UserControl_Loaded"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="Test" Grid.Column="0" Grid.Row="0"/>
+        <!-- List of Import Operations -->
+        <ListBox ItemsSource="{Binding ImportOperations}" 
+         SelectedItem="{Binding SelectedOperation}"
+         HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Display the DateTime of the ImportOperation -->
+                        <TextBlock Text="{Binding ImportTime, StringFormat='yyyy MM dd (HH:mm)'}" />
+
+                        <!-- Red "x" Button to delete the entry -->
+                        <Button Content="X" 
+                        Foreground="Red"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        FontWeight="Bold"
+                        Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                        CommandParameter="{Binding}"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Margin="5,0,0,0" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- List of Mods Added in Selected Operation -->
+        <ListBox Grid.Column="1" Grid.Row="0" ItemsSource="{Binding AddedModNames}"
+                 SelectionMode="Extended"
+                 behaviors:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedMods}">
+        </ListBox>
+
+        <!-- Undo Button -->
+        <Button Grid.Column="0" Content="Undo" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
+                Command="{Binding UndoCommand}" Margin="10"
+                IsEnabled="{Binding IsUndoEnabled}"/>
+    </Grid>
+</UserControl>

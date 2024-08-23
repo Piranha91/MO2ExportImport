@@ -17,6 +17,7 @@ namespace MO2ExportImport.ViewModels
 
         private readonly ExportViewModel _exportViewModel;
         private readonly ImportViewModel _importViewModel;
+        private readonly UndoOperationMenuViewModel _undoOperationMenuViewModel;
 
         private StreamWriter _logWriter;
         private ReactiveObject _currentView;
@@ -29,6 +30,7 @@ namespace MO2ExportImport.ViewModels
 
         public ReactiveCommand<Unit, Unit> NavigateToExportCommand { get; }
         public ReactiveCommand<Unit, Unit> NavigateToImportCommand { get; }
+        public ReactiveCommand<Unit, Unit> NavigateToUndoCommand { get; }
 
         public MainViewModel()
         {
@@ -36,6 +38,7 @@ namespace MO2ExportImport.ViewModels
 
             _exportViewModel = new(this);
             _importViewModel = new(this, _logWriter);
+            _undoOperationMenuViewModel = new();
             LoadSettings(); // Load settings on startup
 
             // Ensure Backups folder exists on startup
@@ -43,6 +46,7 @@ namespace MO2ExportImport.ViewModels
 
             NavigateToExportCommand = ReactiveCommand.Create(NavigateToExport);
             NavigateToImportCommand = ReactiveCommand.Create(NavigateToImport);
+            NavigateToUndoCommand = ReactiveCommand.Create(NavigateToUndo);
 
             // Set initial view
             CurrentView = _exportViewModel;
@@ -56,6 +60,11 @@ namespace MO2ExportImport.ViewModels
         private void NavigateToImport()
         {
             CurrentView = _importViewModel;
+        }
+
+        private void NavigateToUndo()
+        {
+            CurrentView = _undoOperationMenuViewModel;
         }
 
 

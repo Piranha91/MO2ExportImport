@@ -24,6 +24,7 @@
         <StackPanel Grid.Column="0" Background="LightGray">
             <Button Content="Export" Command="{Binding NavigateToExportCommand}" Margin="10"/>
             <Button Content="Import" Command="{Binding NavigateToImportCommand}" Margin="10"/>
+            <Button Content="Undo" Command="{Binding NavigateToUndoCommand}" Margin="10"/>
         </StackPanel>
 
         <!-- Content area to display the UserControls -->
@@ -34,6 +35,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type local:ImportViewModel}">
                     <views:ImportView/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type local:UndoOperationMenuViewModel}">
+                    <views:UndoOperationMenuView/>
                 </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
