@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MO2ExportImport.ViewModels"
         xmlns:views="clr-namespace:MO2ExportImport.Views"
-        Title="MO2 Export/Import" Height="450" Width="800">
+        Title="MO2 Splicer" Height="450" Width="800">
 
     <Grid>
         <!-- Define the layout grid with two rows and two columns -->
