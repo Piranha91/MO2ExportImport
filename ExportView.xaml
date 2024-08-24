@@ -9,6 +9,8 @@
 
     <UserControl.Resources>
         <main:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />
+        <main:TopOffsetConverter x:Key="TopOffsetConverter"/>
+
         <!-- Define a custom style for ListBoxItem -->
         <Style TargetType="ListBoxItem">
             <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -76,7 +78,8 @@
              Width="200"
              Margin="5"
              VerticalContentAlignment="Center"
-             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+             TextChanged="FilterTextBox_TextChanged"/>
 
             <TextBlock Text="Filter mods..."
                IsHitTestVisible="False"
@@ -90,11 +93,43 @@
         <Button Grid.Row="3" Grid.RowSpan="2" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="0 0 10 0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
 
         <ListBox Grid.Row="4" ItemsSource="{Binding FilteredModList}" Margin="10"
-  ScrollViewer.VerticalScrollBarVisibility="Auto" 
-  SelectionMode="Extended">
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 SelectionMode="Extended" 
+                 Name="ModsListBox"
+                 VirtualizingStackPanel.IsVirtualizing="False"
+                 SelectionChanged="ModsListBox_SelectionChanged">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="IsSelected" Value="{Binding Selected, Mode=TwoWay}" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <!-- Trigger for when the item is selected -->
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                                    </Trigger>
+                                    <!-- Trigger for when the item is selected but the ListBox is out of focus -->
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSelected" Value="true"/>
+                                            <Condition Property="IsFocused" Value="false"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                                    </MultiTrigger>
+                                    <!-- Trigger for mouse over -->
+                                    <Trigger Property="IsMouseOver" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightGray"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
@@ -106,6 +141,23 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- Canvas to draw the blue lines -->
+        <Canvas Grid.Row="4" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
+        Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
+            <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Rectangle Width="4" Fill="Blue" Height="2" Canvas.Left="0"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Canvas>
 
         <!-- Export Selected Button -->
 

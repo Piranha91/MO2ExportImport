@@ -35,12 +35,12 @@
                         BorderThickness="1"
                             BorderBrush="Gray"
                             Background="{StaticResource BackgroundBrush}">
-                            <ContentPresenter Content="{TemplateBinding Content}"
+                        <ContentPresenter Content="{TemplateBinding Content}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           Margin="5"/>
                     </Border>
-                    
+
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{StaticResource AccentBrush}" />
@@ -62,7 +62,6 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
     </Style>
 
     <!-- Window Style -->

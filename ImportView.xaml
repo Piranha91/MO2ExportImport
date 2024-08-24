@@ -36,7 +36,7 @@
                             </MultiTrigger>
                             <!-- Trigger for mouse over -->
                             <Trigger Property="IsMouseOver" Value="true">
-                                <Setter TargetName="Border" Property="Background" Value="LightGreen"/>
+                                <Setter TargetName="Border" Property="Background" Value="LightGray"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
