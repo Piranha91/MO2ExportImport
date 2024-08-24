@@ -62,26 +62,26 @@
         </Grid.RowDefinitions>
 
         <!-- MO2 Directory Selection -->
-        <StackPanel Orientation="Horizontal" Margin="10">
+        <StackPanel Orientation="Horizontal" Margin="5">
             <Button Content="Select MO2 Directory" Command="{Binding SelectMo2DirectoryCommand}" Margin="5"/>
             <TextBlock Text="{Binding Mo2Directory}" VerticalAlignment="Center" Margin="5,0"/>
         </StackPanel>
 
         <!-- Profile Selection -->
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="10">
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
             <TextBlock Text="Profile:" VerticalAlignment="Center" Margin="5"/>
             <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="5"/>
         </StackPanel>
 
         <!-- Import Source Folder Selection -->
-        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="10">
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
             <Button Content="Select Import Source Folder" Command="{Binding SelectImportSourceFolderCommand}" Margin="5"/>
             <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="10">
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
             <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
-            <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" Width="150" Margin="5"/>
+            <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" MinWidth="70" Margin="5"/>
         </StackPanel>
 
         <!-- Mod List -->
@@ -90,6 +90,6 @@
                  SelectionChanged="OnSelectionChanged"/>
 
         <!-- Import Button -->
-        <Button Grid.Row="5" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="10" IsEnabled="{Binding IsImportEnabled}"/>
+        <Button Grid.Row="5" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>

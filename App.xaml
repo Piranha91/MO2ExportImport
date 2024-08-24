@@ -4,6 +4,11 @@
              xmlns:local="clr-namespace:MO2ExportImport"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <!-- Add the Theme.xaml ResourceDictionary -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources\Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

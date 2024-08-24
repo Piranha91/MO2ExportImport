@@ -48,31 +48,34 @@
     <Grid>
         <!-- Define row definitions -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <!-- For buttons and ComboBox -->
-            <RowDefinition Height="Auto"/>
-            <!-- For filter -->
-            <RowDefinition Height="*"/>
-            <!-- For the ListBox to take remaining space -->
-            <RowDefinition Height="Auto"/>
-            <!-- For the Export button -->
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- For MO2 Selection -->
+            <RowDefinition Height="Auto"/> <!-- For Profile Selection -->
+            <RowDefinition Height="Auto"/> <!-- For Checkbox Options -->
+            <RowDefinition Height="Auto"/> <!-- For filter -->
+            <RowDefinition Height="*"/>  <!-- For the ListBox to take remaining space -->          
+            <RowDefinition Height="Auto"/> <!-- For the Export button -->
+            <RowDefinition Height="Auto"/> <!-- For the Export destination-->
         </Grid.RowDefinitions>
 
         <!-- Top section with button and ComboBox -->
-        <StackPanel Grid.Row="0">
-            <Button Content="Select Source" Command="{Binding SelectSourceCommand}" Margin="10"/>
+        <Button Grid.Row="0" Content="Select MO2 Directory" Command="{Binding SelectSourceCommand}" Margin="10"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <TextBlock Text="Profile:" Margin="10" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="10"/>
-            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" Margin="10"/>
-            <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10"/>
         </StackPanel>
 
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10">
+            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
+            <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
+        </StackPanel>
 
         <!-- ListBox with constrained height in the remaining space -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="3">
             <TextBox x:Name="FilterTextBox"
              Width="200"
              Margin="5"
+             VerticalContentAlignment="Center"
              Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
 
             <TextBlock Text="Filter mods..."
@@ -84,7 +87,9 @@
                Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
         </Grid>
 
-        <ListBox Grid.Row="2" ItemsSource="{Binding FilteredModList}" Margin="10"
+        <Button Grid.Row="3" Grid.RowSpan="2" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="0 0 10 0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+
+        <ListBox Grid.Row="4" ItemsSource="{Binding FilteredModList}" Margin="10"
   ScrollViewer.VerticalScrollBarVisibility="Auto" 
   SelectionMode="Extended">
             <ListBox.ItemContainerStyle>
@@ -103,12 +108,11 @@
         </ListBox>
 
         <!-- Export Selected Button -->
-        <Button Grid.Row="3" Content="Export Selected" Command="{Binding ExportSelectedCommand}" Margin="10" HorizontalAlignment="Right"/>
 
         <!-- Bottom panel for Export Destination Folder selection -->
-        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="4" Orientation="Horizontal" Background="LightGray" VerticalAlignment="Center">
+        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="6" Orientation="Horizontal"  VerticalAlignment="Center" Margin="5 0 0 5">
             <TextBlock Text="Export Destination:" VerticalAlignment="Center"/>
-            <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0"/>
+            <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0" VerticalContentAlignment="Center"/>
             <Button Content="Browse" Command="{Binding BrowseFolderCommand}"/>
         </StackPanel>
     </Grid>
