@@ -83,6 +83,13 @@ namespace MO2ExportImport.ViewModels
             if (operation == null)
                 return;
 
+            var Result = MessageBox.Show("This is NOT the Undo button. Only delete Import Logs after you've pressed the Undo button and have verified that the import has been reversed.", "Delete Import Log?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (Result == MessageBoxResult.No)
+            {
+                return;
+            }
+
+
             // Delete the file
             if (File.Exists(operation.ThisFilePath))
             {
