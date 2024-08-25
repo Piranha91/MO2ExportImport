@@ -89,6 +89,7 @@ namespace MO2ExportImport.ViewModels
                 return;
             }
 
+            List<string> errors = new();
 
             // Delete the file
             if (File.Exists(operation.ThisFilePath))
@@ -99,7 +100,7 @@ namespace MO2ExportImport.ViewModels
                 }
                 catch (Exception e)
                 {
-                    ScrollableMessageBox.Show("Could not delete Operation Log at " + operation.ThisFilePath + Environment.NewLine + e.Message);
+                    errors.Add("Could not delete Operation Log at " + operation.ThisFilePath + Environment.NewLine + e.Message);                  
                 }
 
                 var parentFolder = Directory.GetParent(operation.ThisFilePath)?.FullName;
@@ -111,7 +112,7 @@ namespace MO2ExportImport.ViewModels
                     }
                     catch (Exception e)
                     {
-                        ScrollableMessageBox.Show("Could not delete folder " + parentFolder + Environment.NewLine + e.Message);
+                        errors.Add("Could not delete folder " + parentFolder + Environment.NewLine + e.Message);
                     }
                 }
             }
@@ -123,6 +124,11 @@ namespace MO2ExportImport.ViewModels
             {
                 SelectedMods.Clear();
                 AddedModNames.Clear();
+            }
+
+            if (errors.Any())
+            {
+                ScrollableMessageBox.Show(errors);
             }
         }
 
@@ -209,16 +215,16 @@ namespace MO2ExportImport.ViewModels
                 {
                     _operationNotes.Add("Could not edit profile " + profileName + ". Profile does not exist.");
                 }
-
-                if (_operationNotes.Any())
-                {
-                    ScrollableMessageBox.Show(_operationNotes, "Warning");
-                }
-                else
-                {
-                    MessageBox.Show("Import has been undone");
-                }
             }
+
+            string caption = "Warning";
+            if (!_operationNotes.Any())
+            {
+                _operationNotes.Add("Import has been undone");
+                caption = "Success";
+            }
+
+            ScrollableMessageBox.Show(_operationNotes, caption);
         }
     }
 }
