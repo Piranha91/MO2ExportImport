@@ -182,7 +182,6 @@ namespace MO2ExportImport.ViewModels
                 var profileDir = Path.Combine(SelectedOperation.DestinationMO2Dir, "profiles", profileName);
                 if (Directory.Exists(profileDir))
                 {
-                    // Load and reverse the ProfileModList and ProfilePluginsList for correct processing
                     var profileModListPath = Path.Combine(profileDir, "modlist.txt");
                     var profileModList = CommonFuncs.LoadModList(profileModListPath);
 
@@ -197,14 +196,13 @@ namespace MO2ExportImport.ViewModels
                         profilePluginsList = profilePluginsList.Where(x => !associatedPlugins.Contains(FormatHandler.TrimPluginActivationStatus(x))).ToList();
                     }
 
-                    try
+                    if (!CommonFuncs.SaveModList(profileModListPath, profileModList, out var modExStr))
                     {
-                        File.WriteAllLines(profileModListPath, profileModList);
-                        File.WriteAllLines(profilePluginsListPath, profilePluginsList);
+                        _operationNotes.Add(modExStr);
                     }
-                    catch (Exception e)
+                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList, out var pluginExStr))
                     {
-                        _operationNotes.Add("Could not save lists for profle " + profileName + "\n" + e.Message);
+                        _operationNotes.Add(pluginExStr);
                     }
                 }
                 else
