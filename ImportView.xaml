@@ -82,12 +82,45 @@
         <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
             <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
             <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" MinWidth="70" Margin="5"/>
+            <Grid Margin="5 0 0 0">
+                <TextBox x:Name="FilterTextBox"
+     Width="200"
+     Margin="5"
+     VerticalContentAlignment="Center"
+     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+     TextChanged="FilterTextBox_TextChanged"/>
+
+                <TextBlock Text="Filter mods..."
+       IsHitTestVisible="False"
+       Foreground="Gray"
+       VerticalAlignment="Center"
+       HorizontalAlignment="Left"
+       Margin="10,0,0,0"
+       Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
+            </Grid>
         </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Name ="ModListBox"  Grid.Row="4" ItemsSource="{Binding ModList}" SelectionMode="Extended"
+        <ListBox Name ="ModsListBox"  Grid.Row="4" ItemsSource="{Binding FilteredModList}" SelectionMode="Extended"
                  DisplayMemberPath="Name" Margin="10"
-                 SelectionChanged="OnSelectionChanged"/>
+                 SelectionChanged="ModsListBox_SelectionChanged"/>
+
+        <!-- Canvas to draw the blue lines -->
+        <Canvas Grid.Row="4" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
+Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
+            <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Rectangle Width="4" Fill="Blue" Height="2" Canvas.Left="0"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Canvas>
 
         <!-- Import Button -->
         <Button Grid.Row="5" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>

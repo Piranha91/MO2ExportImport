@@ -18,7 +18,8 @@ namespace MO2ExportImport.ViewModels
     {
         private readonly string _mo2Directory;
         private string _modSourceDirectory;
-        private readonly ObservableCollection<Mod> _modList;
+        private string _importProfileSourceDirectory;
+        private readonly ObservableCollection<Mod> _selectedModList;
         private bool _isImportEnabled;
         private readonly ImportPopupView _view;
         private string _selectedProfile;
@@ -66,12 +67,13 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, StreamWriter logWriter, string programVersion)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, StreamWriter logWriter, string programVersion)
         {
             _view = view;
             _mo2Directory = mo2Directory;
             _modSourceDirectory = modSourceDirectory;
-            _modList = modList;
+            _importProfileSourceDirectory = importProfileSourceDirectory;
+            _selectedModList = modList;
             _selectedProfile = selectedProfile;
             _importMode = importMode;
             _logWriter = logWriter;
@@ -88,7 +90,7 @@ namespace MO2ExportImport.ViewModels
         {
             try
             {
-                var totalSize = _modList.Where(x => x.Selected)
+                var totalSize = _selectedModList.Where(x => x.Selected)
                                         .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.Name)));
 
                 var requiredSpaceInGB = ConvertBytesToGB(totalSize);
@@ -161,14 +163,15 @@ namespace MO2ExportImport.ViewModels
                     var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath);
 
                     // Load the SourceModList and SourcePluginsList
-                    var sourceModListPath = Path.Combine(_modSourceDirectory, "modlist.txt");
+                    var sourceModListPath = Path.Combine(_importProfileSourceDirectory, "modlist.txt");
                     var sourceModList = CommonFuncs.LoadModList(sourceModListPath);
 
-                    var sourcePluginsListPath = Path.Combine(_modSourceDirectory, "plugins.txt");
+                    var sourcePluginsListPath = Path.Combine(_importProfileSourceDirectory, "plugins.txt");
                     var sourcePluginsList = CommonFuncs.LoadPluginList(sourcePluginsListPath);
 
                     // Filter SourceModList to include only mods with corresponding directories
                     var validSourceMods = sourceModList
+                        .Where(mod => _selectedModList.Select(x => x.Name).Contains(FormatHandler.TrimModActivationStatus(mod)))
                         .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod))))
                         .ToList();
 

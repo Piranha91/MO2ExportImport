@@ -81,6 +81,20 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private string _filterText;
+        public string FilterText
+        {
+            get => _filterText;
+            set => this.RaiseAndSetIfChanged(ref _filterText, value);
+        }
+
+        private ObservableCollection<Mod> _filteredModList;
+        public ObservableCollection<Mod> FilteredModList
+        {
+            get => _filteredModList;
+            private set => this.RaiseAndSetIfChanged(ref _filteredModList, value);
+        }
+
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
 
@@ -106,12 +120,17 @@ namespace MO2ExportImport.ViewModels
                 if (x.Any())
                 {
                     _modsLoaded = true;
+                    _filteredModList = new ObservableCollection<Mod>(ModList);
+                    ApplyFilter();
                 }
                 else
                 {
                     _modsLoaded = false;
                 }
-            });      
+            });
+
+            this.WhenAnyValue(x => x.FilterText)
+                .Subscribe(_ => ApplyFilter());
         }
 
         public void OnViewLoaded(ImportView view)
@@ -120,10 +139,10 @@ namespace MO2ExportImport.ViewModels
             {
                 if (x)
                 {
-                    view.ModListBox.SelectedItems.Clear();
-                    foreach (var item in view.ModListBox.Items)
+                    view.ModsListBox.SelectedItems.Clear();
+                    foreach (var item in view.ModsListBox.Items)
                     {
-                        view.ModListBox.SelectedItems.Add(item);
+                        view.ModsListBox.SelectedItems.Add(item);
                     }
                 }
             });
@@ -305,7 +324,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.Selected))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, SelectedProfile, ModList, SelectedImportMode, _logWriter, _mainViewModel.ProgramVersion);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, _logWriter, _mainViewModel.ProgramVersion);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
@@ -320,6 +339,29 @@ namespace MO2ExportImport.ViewModels
             public string ModsRootPath { get; set; }
             public List<Mod> SelectedMods { get; set; }
         }
-    }
 
+        private void ApplyFilter()
+        {
+            if (string.IsNullOrEmpty(FilterText))
+            {
+                // If the filter is empty, show all mods
+                FilteredModList = new ObservableCollection<Mod>(ModList);
+            }
+            else
+            {
+                // Apply the filter, but maintain the current selections
+                var matchedMods = ModList
+                    .Where(mod => mod.Name.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                // Keep the previously selected mods in the filtered list
+                foreach (var mod in ModList.Where(mod => mod.Selected && !matchedMods.Contains(mod)))
+                {
+                    matchedMods.Add(mod);
+                }
+
+                FilteredModList = new ObservableCollection<Mod>(matchedMods);
+            }
+        }
+    }
 }
