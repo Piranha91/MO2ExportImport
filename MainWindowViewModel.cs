@@ -74,11 +74,14 @@ namespace MO2ExportImport.ViewModels
             {
                 var settingsJson = File.ReadAllText(SettingsFilePath);
                 var settings = JsonSerializer.Deserialize<Settings>(settingsJson);
+
                 _exportViewModel.ExportDestinationFolder = settings?.ExportDestinationFolder ?? string.Empty;
-                _exportViewModel.IgnoreDisabled = settings?.IgnoreDisabled ?? true; // Default to true if not set
-                _exportViewModel.IgnoreSeparators = settings?.IgnoreSeparators ?? false; // Default to false if not set
+                _exportViewModel.IgnoreDisabled = settings?.ExportIgnoreDisabled ?? true; // Default to true if not set
+                _exportViewModel.IgnoreSeparators = settings?.ExportIgnoreSeparators ?? false; // Default to false if not set
                 _importViewModel.Mo2Directory = settings?.ImportTargetMO2Dir ?? string.Empty;
                 _importViewModel.SelectedImportMode = settings?.ImportMode ?? ImportMode.Spliced;
+                _importViewModel.IgnoreDisabled = settings?.ImportIgnoreDisabled ?? true; // Default to true if not set
+                _importViewModel.IgnoreSeparators = settings?.ImportIgnoreSeparators ?? false; // Default to false if not set
             }
         }
 
@@ -87,10 +90,12 @@ namespace MO2ExportImport.ViewModels
             var settings = new Settings
             {
                 ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,
-                IgnoreDisabled = _exportViewModel.IgnoreDisabled,
-                IgnoreSeparators = _exportViewModel.IgnoreSeparators,
+                ExportIgnoreDisabled = _exportViewModel.IgnoreDisabled,
+                ExportIgnoreSeparators = _exportViewModel.IgnoreSeparators,
                 ImportTargetMO2Dir = _importViewModel.Mo2Directory,
-                ImportMode = _importViewModel.SelectedImportMode
+                ImportMode = _importViewModel.SelectedImportMode,
+                ImportIgnoreDisabled = _importViewModel.IgnoreDisabled,
+                ImportIgnoreSeparators = _importViewModel.IgnoreSeparators
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

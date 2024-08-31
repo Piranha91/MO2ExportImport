@@ -90,8 +90,8 @@ namespace MO2ExportImport.ViewModels
         {
             try
             {
-                var totalSize = _selectedModList.Where(x => x.Selected)
-                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.Name)));
+                var totalSize = _selectedModList.Where(x => x.SelectedInUI)
+                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.ListName)));
 
                 var requiredSpaceInGB = ConvertBytesToGB(totalSize);
                 RequiredSpaceText = $"Total size: {requiredSpaceInGB:F2} GB";
@@ -171,7 +171,7 @@ namespace MO2ExportImport.ViewModels
 
                     // Filter SourceModList to include only mods with corresponding directories
                     var validSourceMods = sourceModList
-                        .Where(mod => _selectedModList.Select(x => x.Name).Contains(FormatHandler.TrimModActivationStatus(mod)))
+                        .Where(mod => _selectedModList.Select(x => x.ListName).Contains(FormatHandler.TrimModActivationStatus(mod)))
                         .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod))))
                         .ToList();
 

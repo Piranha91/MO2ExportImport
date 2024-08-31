@@ -54,6 +54,8 @@
             <RowDefinition Height="Auto"/>
             <!-- Import Source Folder Button -->
             <RowDefinition Height="Auto"/>
+            <!-- Import Options boxes -->
+            <RowDefinition Height="Auto"/>
             <!-- Import Mode Button -->
             <RowDefinition Height="*"/>
             <!-- Mods ListBox -->
@@ -80,6 +82,11 @@
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
+            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
+            <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="5">
             <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
             <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" MinWidth="70" Margin="5"/>
             <Grid Margin="5 0 0 0">
@@ -101,12 +108,12 @@
         </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Name ="ModsListBox"  Grid.Row="4" ItemsSource="{Binding FilteredModList}" SelectionMode="Extended"
+        <ListBox Name ="ModsListBox"  Grid.Row="5" ItemsSource="{Binding FilteredModList}" SelectionMode="Extended"
                  DisplayMemberPath="Name" Margin="10"
                  SelectionChanged="ModsListBox_SelectionChanged"/>
 
         <!-- Canvas to draw the blue lines -->
-        <Canvas Grid.Row="4" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
+        <Canvas Grid.Row="5" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
 Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
                 <ItemsControl.ItemsPanel>
@@ -123,6 +130,6 @@ Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
         </Canvas>
 
         <!-- Import Button -->
-        <Button Grid.Row="5" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
+        <Button Grid.Row="6" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>

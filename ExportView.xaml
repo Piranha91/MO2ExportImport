@@ -100,7 +100,7 @@
                  SelectionChanged="ModsListBox_SelectionChanged">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
-                    <Setter Property="IsSelected" Value="{Binding Selected, Mode=TwoWay}" />
+                    <Setter Property="IsSelected" Value="{Binding SelectedInUI, Mode=TwoWay}" />
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
@@ -136,7 +136,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding Enabled}" IsEnabled="False" Margin="0,0,10,0"/>
-                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

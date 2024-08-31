@@ -84,7 +84,7 @@ namespace MO2ExportImport.ViewModels
             // Calculate the total size of the selected mod folders
             foreach (var mod in _selectedMods)
             {
-                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.Name);
+                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.ListName);
                 if (System.IO.Directory.Exists(modPath))
                 {
                     totalSize += System.IO.Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
@@ -142,8 +142,8 @@ namespace MO2ExportImport.ViewModels
             // Copy other files
             foreach (var mod in _selectedMods)
             {
-                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.Name);
-                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.Name);
+                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.ListName);
+                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.ListName);
 
                 if (!Alphaleonis.Win32.Filesystem.Directory.Exists(modDestinationPath))
                 {
@@ -178,7 +178,7 @@ namespace MO2ExportImport.ViewModels
         private async Task ExportList()
         {
             var selectedModsToExport = _selectedMods
-                .Where(mod => mod.Selected && (!_exportViewModel.IgnoreDisabled || mod.Enabled) && (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
+                .Where(mod => mod.SelectedInUI && (!_exportViewModel.IgnoreDisabled || mod.EnabledInMO2) && (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
 
             (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();

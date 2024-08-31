@@ -112,9 +112,9 @@ namespace MO2ExportImport.ViewModels
                 x => x.ExportDestinationFolder)
                 .CombineLatest(
                     ModList.ToObservableChangeSet()
-                           .AutoRefresh(mod => mod.Selected)
+                           .AutoRefresh(mod => mod.SelectedInUI)
                            .ToCollection(),
-                    (folder, mods) => !string.IsNullOrEmpty(folder) && mods.Any(mod => mod.Selected)
+                    (folder, mods) => !string.IsNullOrEmpty(folder) && mods.Any(mod => mod.SelectedInUI)
                 );
 
             ExportSelectedCommand = ReactiveCommand.Create(ExportSelected, canExport);
@@ -174,9 +174,8 @@ namespace MO2ExportImport.ViewModels
                        .Where(line => !line.StartsWith("#")) // Exclude comment lines
                        .Select(line =>
                        {
-                           var enabled = line.StartsWith("+");
                            var name = FormatHandler.TrimModActivationStatus(line);
-                           return new Mod(name, enabled);
+                           return new Mod(name);
                        })
                        .Reverse(); // Invert the order
 
@@ -195,8 +194,8 @@ namespace MO2ExportImport.ViewModels
         private void ExportSelected()
         {
             var selectedModsToExport = ModList
-                .Where(mod => mod.Selected && 
-                    (!IgnoreDisabled || mod.Enabled) &&
+                .Where(mod => mod.SelectedInUI && 
+                    (!IgnoreDisabled || mod.EnabledInMO2) &&
                     (!IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
             // Create and display the ExportPopupView
@@ -227,11 +226,11 @@ namespace MO2ExportImport.ViewModels
             {
                 // Apply the filter, but maintain the current selections
                 var matchedMods = ModList
-                    .Where(mod => mod.Name.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Where(mod => mod.ListName.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
                     .ToList();
 
                 // Keep the previously selected mods in the filtered list
-                foreach (var mod in ModList.Where(mod => mod.Selected && !matchedMods.Contains(mod)))
+                foreach (var mod in ModList.Where(mod => mod.SelectedInUI && !matchedMods.Contains(mod)))
                 {
                     matchedMods.Add(mod);
                 }
