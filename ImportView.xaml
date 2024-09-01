@@ -86,6 +86,7 @@
         <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
             <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
             <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
+            <CheckBox Content="Add [NoDelete] Flags" IsChecked="{Binding AddNoDeleteFlags}" Margin="10 0 0 0"/>
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="5">

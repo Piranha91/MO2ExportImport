@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Shapes;
@@ -24,6 +25,7 @@ namespace MO2ExportImport
         public bool IsSeparator { get; set; }
         public bool IsNoDelete { get; set; }
         public string? NoDeleteIndex { get; set; } = null;
+        [JsonIgnore] public string DestinationName { get; set; } // same as DirectoryName unless adding a [NoDelete] tag
 
         public bool SelectedInUI
         {
@@ -47,6 +49,7 @@ namespace MO2ExportImport
                 DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, "-").Trim();
             }
             DirectoryName = DisplayName;
+            DestinationName = DirectoryName;
             #endregion
 
             IsSeparator = name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
@@ -70,15 +73,5 @@ namespace MO2ExportImport
                 }
             }
         }
-
-        /*
-        public Mod()
-        {
-            Name = string.Empty;
-            this.WhenAnyValue(x => x.Selected).Skip(1).Subscribe(isSelected =>
-            {
-                MessageBox.Show($"{Name} is {(isSelected ? "selected" : "deselected")}", "Selection Changed", MessageBoxButton.OK, MessageBoxImage.Information);
-            });
-        }*/
     }
 }

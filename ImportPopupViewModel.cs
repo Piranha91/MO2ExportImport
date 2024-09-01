@@ -24,6 +24,7 @@ namespace MO2ExportImport.ViewModels
         private readonly ImportPopupView _view;
         private string _selectedProfile;
         private ImportMode _importMode;
+        private bool _addNoDeleteFlags;
         private StreamWriter _logWriter;
         private string _programVersion;
 
@@ -67,7 +68,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, StreamWriter logWriter, string programVersion)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, StreamWriter logWriter, string programVersion)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -76,6 +77,7 @@ namespace MO2ExportImport.ViewModels
             _selectedModList = modList;
             _selectedProfile = selectedProfile;
             _importMode = importMode;
+            _addNoDeleteFlags = addNoDeleteFlags;
             _logWriter = logWriter;
             _programVersion = programVersion;
 
@@ -170,10 +172,20 @@ namespace MO2ExportImport.ViewModels
                     var sourcePluginsList = CommonFuncs.LoadPluginList(sourcePluginsListPath);
 
                     // Filter SourceModList to include only mods with corresponding directories
-                    var validSourceMods = sourceModList
-                        .Where(mod => _selectedModList.Select(x => x.DirectoryName).Contains(FormatHandler.TrimModActivationStatus(mod)))
-                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod))))
+                    var validSourceMods = _selectedModList
+                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.DirectoryName)))
                         .ToList();
+
+                    if (_addNoDeleteFlags)
+                    {
+                        foreach (var mod in validSourceMods)
+                        {
+                            if (!mod.DestinationName.StartsWith("[NoDelete"))
+                            {
+                                mod.DestinationName = "[NoDelete] " + mod.DestinationName;
+                            }
+                        }
+                    }
 
                     // Collect valid plugins based on validSourceMods
                     var profilePluginsSearchList = FormatHandler.TrimPluginActivationStatus(profilePluginsList).ToArray();
@@ -181,8 +193,7 @@ namespace MO2ExportImport.ViewModels
                     var validPlugins = new List<string>();
                     foreach (var mod in validSourceMods)
                     {
-                        var modName = FormatHandler.TrimModActivationStatus(mod);
-                        var modDirectory = Path.Combine(_modSourceDirectory, modName);
+                        var modDirectory = Path.Combine(_modSourceDirectory, mod.DirectoryName);
                         if (Directory.Exists(modDirectory))
                         {
                             var pluginFilesInMod = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
@@ -207,7 +218,7 @@ namespace MO2ExportImport.ViewModels
                                 if (matchingPlugin != null)
                                 {
                                     validPlugins.Add(matchingPlugin); // Retain the original activation status
-                                    profileManifest.AddedPluginNames.Add(new(FormatHandler.TrimPluginActivationStatus(matchingPlugin), modName));
+                                    profileManifest.AddedPluginNames.Add(new(FormatHandler.TrimPluginActivationStatus(matchingPlugin), mod.DestinationName));
                                 }
                             }
                         }
@@ -220,13 +231,13 @@ namespace MO2ExportImport.ViewModels
                         if (_importMode == ImportMode.End)
                         {
                             var previousItem = profileModList.LastOrDefault() ?? "start";
-                            profileModList.Add(currentMod);
-                            Log($"Added { FormatHandler.TrimModActivationStatus(currentMod)} to end of modlist.txt after {previousItem}");
+                            profileModList.Add(currentMod.DestinationName);
+                            Log($"Added { FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
                         }
                         else // Spliced
                         {
-                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, currentMod, ignorePositions, StringType.Mod);
-                            Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod)} into modlist.txt after {previousItem}");
+                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, currentMod.DestinationName, ignorePositions, StringType.Mod);
+                            Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
                     }
 
@@ -263,8 +274,8 @@ namespace MO2ExportImport.ViewModels
 
                     foreach (var mod in validSourceMods)
                     {
-                        var sourceModPath = Path.Combine(_modSourceDirectory, FormatHandler.TrimModActivationStatus(mod));
-                        var destinationModPath = Path.Combine(modsOutputDir, FormatHandler.TrimModActivationStatus(mod));
+                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.DirectoryName);
+                        var destinationModPath = Path.Combine(modsOutputDir, mod.DestinationName);
 
                         if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
                         {
@@ -274,11 +285,11 @@ namespace MO2ExportImport.ViewModels
                                 bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
                                 if (success)
                                 {
-                                    Log($"Copied mod {FormatHandler.TrimModActivationStatus(mod)} to {destinationModPath}");
+                                    Log($"Copied mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
                                 }
                                 else
                                 {
-                                    Log($"Failed to copy mod {FormatHandler.TrimModActivationStatus(mod)} to {destinationModPath}");
+                                    Log($"Failed to copy mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
                                 }
                             }));
                         }
@@ -287,7 +298,7 @@ namespace MO2ExportImport.ViewModels
                     // Wait for all copy tasks to complete
                     await Task.WhenAll(copyTasks);
 
-                    profileManifest.AddedModNames.AddRange(FormatHandler.TrimModActivationStatus(validSourceMods));  
+                    profileManifest.AddedModNames.AddRange(validSourceMods.Select(x => x.DestinationName));  
                     manifest.ProfileImports.Add(profileManifest);
                 }
 

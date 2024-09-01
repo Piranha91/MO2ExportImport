@@ -11,6 +11,7 @@ namespace MO2ExportImport.Models
         public ImportMode ImportMode { get; set; } = ImportMode.Spliced;
         public bool ImportIgnoreDisabled { get; set; } = true; // Default value
         public bool ImportIgnoreSeparators { get; set; } = false; // Default value
+        public bool ImportAddNoDeleteFlags { get; set; } = false; // Default value
 
     }
 }

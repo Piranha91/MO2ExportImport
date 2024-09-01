@@ -104,6 +104,17 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private bool _addNoDeleteFlags;
+        public bool AddNoDeleteFlags
+        {
+            get => _addNoDeleteFlags;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _addNoDeleteFlags, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
+
         private string _filterText;
         public string FilterText
         {
@@ -391,7 +402,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, _logWriter, _mainViewModel.ProgramVersion);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, _logWriter, _mainViewModel.ProgramVersion);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
