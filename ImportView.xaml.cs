@@ -213,7 +213,7 @@ namespace MO2ExportImport.Views
                 double rectanglePosition = selectedPositionRatio * (HighlightCanvas.ActualHeight - (2 * scrollbarButtonHeight)) + scrollbarButtonHeight;
 
                 // Create and place the rectangle
-                double rectangleHeight = 6; // Thickness of the rectangle
+                double rectangleHeight = 2; // Thickness of the rectangle
                 double scrollbarWidth = scrollbarButtonHeight; // Use the scrollbar width for the rectangle width
                 double canvasWidth = HighlightCanvas.ActualWidth;
                 double lineLeft = canvasWidth - scrollbarWidth;
