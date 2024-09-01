@@ -10,6 +10,7 @@
     <UserControl.Resources>
         <main:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />
         <main:TopOffsetConverter x:Key="TopOffsetConverter"/>
+        <main:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <!-- Define a custom style for ListBoxItem -->
         <Style TargetType="ListBoxItem">
@@ -141,6 +142,17 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- "Please Wait" TextBlock -->
+        <TextBlock x:Name="PleaseWaitText"
+                   Grid.Row="4"
+               Text="Please Wait"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Foreground="Red"
+               FontSize="20"
+               Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+               IsHitTestVisible="False" />
 
         <!-- Canvas to draw the blue lines -->
         <Canvas Grid.Row="4" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 

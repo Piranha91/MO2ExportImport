@@ -102,6 +102,20 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private bool _isPleaseWaitVisible;
+        public bool IsPleaseWaitVisible
+        {
+            get => _isPleaseWaitVisible;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _isPleaseWaitVisible, value);
+                if (value)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
+                }
+            }
+        }
+
         public ObservableCollection<Mod> ModList { get; set; } = new ObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
@@ -111,6 +125,8 @@ namespace MO2ExportImport.ViewModels
         public ExportViewModel(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
+
+            IsPleaseWaitVisible = false;
 
             Profiles = new ObservableCollection<string>();
             ModList = new ObservableCollection<Mod>();
@@ -184,6 +200,8 @@ namespace MO2ExportImport.ViewModels
         private void LoadModList()
         {
             if (string.IsNullOrEmpty(_selectedProfile)) return;
+
+            IsPleaseWaitVisible = true;
 
             ModList.Clear();
             var modlistPath = Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");

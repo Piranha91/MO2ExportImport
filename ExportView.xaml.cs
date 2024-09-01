@@ -27,6 +27,7 @@ namespace MO2ExportImport.Views
                     _lastHighlightUpdate = DateTime.Now;
                     _pendingHighlightUpdate = false;
                     _shouldClearExisting = false; // Reset the flag after the update
+                    PleaseWaitText.Visibility = Visibility.Collapsed;
                 }
             };
 
@@ -46,6 +47,8 @@ namespace MO2ExportImport.Views
         private DispatcherTimer _highlightThrottleTimer;
         private bool _pendingHighlightUpdate = false;
         private bool _shouldClearExisting = false;
+
+        private bool _isPleaseWaitVisible = false;
 
         private void ModsListBox_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
