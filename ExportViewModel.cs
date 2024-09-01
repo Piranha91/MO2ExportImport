@@ -174,8 +174,7 @@ namespace MO2ExportImport.ViewModels
                        .Where(line => !line.StartsWith("#")) // Exclude comment lines
                        .Select(line =>
                        {
-                           var name = FormatHandler.TrimModActivationStatus(line);
-                           return new Mod(name);
+                           return new Mod(line);
                        })
                        .Reverse(); // Invert the order
 
@@ -226,7 +225,7 @@ namespace MO2ExportImport.ViewModels
             {
                 // Apply the filter, but maintain the current selections
                 var matchedMods = ModList
-                    .Where(mod => mod.ListName.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Where(mod => mod.DisplayName.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
                     .ToList();
 
                 // Keep the previously selected mods in the filtered list

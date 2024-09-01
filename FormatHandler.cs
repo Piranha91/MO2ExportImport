@@ -8,9 +8,14 @@ namespace MO2ExportImport
 {
     public class FormatHandler
     {
-        public static string TrimModActivationStatus(string modName)
+        public static string TrimModActivationStatus(string modListName)
         {
-            return modName.TrimStart('+', '-');
+            return modListName.TrimStart('+', '-', '*');
+        }
+
+        public static bool GetModActivationStatus(string modListName)
+        {
+            return modListName.StartsWith('+') || modListName.StartsWith('*');
         }
 
         public static IEnumerable<string> TrimModActivationStatus(IEnumerable<string> modNames)

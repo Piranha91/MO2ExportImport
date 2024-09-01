@@ -26,27 +26,29 @@
          HorizontalContentAlignment="Stretch">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Border BorderBrush="Black" BorderThickness="1" CornerRadius="5">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Display the DateTime of the ImportOperation -->
-                        <TextBlock Text="{Binding ImportTime, StringFormat='yyyy MM dd (HH:mm)'}" />
+                            <!-- Display the DateTime of the ImportOperation -->
+                            <TextBlock Text="{Binding ImportTime, StringFormat='yyyy MM dd (HH:mm)'}" VerticalAlignment="Center" />
 
-                        <!-- Red "x" Button to delete the entry -->
-                        <Button Content="X" 
-                        Foreground="Red"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        FontWeight="Bold"
-                        Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                        CommandParameter="{Binding}"
-                        Grid.Column="1"
-                        VerticalAlignment="Center"
-                        Margin="5,0,0,0" />
-                    </Grid>
+                            <!-- Red "x" Button to delete the entry -->
+                            <Button Content="X" 
+                            Foreground="Red"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            FontWeight="Bold"
+                            Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            CommandParameter="{Binding}"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Margin="5,0,0,0" />
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

@@ -14,9 +14,11 @@ namespace MO2ExportImport
     {
         private bool _selectedInUI;
         private const string _separatorSuffix = "_separator";
+        private const string _separatorDispString = "-----";
         private const string _noDeleteString = "[NoDelete]";
 
         public string ListName { get; set; }
+        public string DirectoryName { get; set; }
         public string DisplayName { get; set; }
         public bool EnabledInMO2 { get; set; }
         public bool IsSeparator { get; set; }
@@ -34,16 +36,24 @@ namespace MO2ExportImport
             ListName = name;
             DisplayName = name;
 
-            var EnabledInMO2 = ListName.StartsWith("+");
+            #region Activation Status
+            EnabledInMO2 = ListName.StartsWith("+") || ListName.StartsWith("*");
             if (EnabledInMO2)
             {
                 DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, "+").Trim();
             }
+            else
+            {
+                DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, "-").Trim();
+            }
+            DirectoryName = DisplayName;
+            #endregion
 
             IsSeparator = name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
             if (IsSeparator)
             {
                 DisplayName = StringExtensions.RemoveAtEnd(DisplayName, _separatorSuffix).Trim();
+                DisplayName = _separatorDispString + DisplayName + _separatorDispString;
             }
 
             IsNoDelete = DisplayName.StartsWith(_noDeleteString);

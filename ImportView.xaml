@@ -109,10 +109,19 @@
 
         <!-- Mod List -->
         <ListBox Name ="ModsListBox"  Grid.Row="5" ItemsSource="{Binding FilteredModList}" SelectionMode="Extended"
-                 DisplayMemberPath="Name" Margin="10"
-                 SelectionChanged="ModsListBox_SelectionChanged"/>
+                 Margin="10"
+                 SelectionChanged="ModsListBox_SelectionChanged">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding EnabledInMO2}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
 
-        <!-- Canvas to draw the blue lines -->
+            <!-- Canvas to draw the blue lines -->
         <Canvas Grid.Row="5" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
 Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
