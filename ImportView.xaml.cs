@@ -16,10 +16,34 @@ namespace MO2ExportImport.Views
         private bool isScrolling = false;
         private DispatcherTimer textChangedTimer;
 
+        private DateTime _lastHighlightUpdate = DateTime.MinValue;
+        private DispatcherTimer _highlightThrottleTimer;
+        private bool _pendingHighlightUpdate = false;
+        private bool _shouldClearExisting = false;
+
+        private bool _isPleaseWaitVisible = false;
+
         public ImportView()
         {
             InitializeComponent();
             Loaded += ImportView_Loaded;
+
+            _highlightThrottleTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
+            _highlightThrottleTimer.Tick += (s, e) =>
+            {
+                _highlightThrottleTimer.Stop();
+                if (_pendingHighlightUpdate)
+                {
+                    UpdateHighlightPositions(_shouldClearExisting);
+                    _lastHighlightUpdate = DateTime.Now;
+                    _pendingHighlightUpdate = false;
+                    _shouldClearExisting = false; // Reset the flag after the update
+                    PleaseWaitText.Visibility = Visibility.Collapsed;
+                }
+            };
 
             // Initialize the DispatcherTimer
             textChangedTimer = new DispatcherTimer();
@@ -57,33 +81,39 @@ namespace MO2ExportImport.Views
         {
             if (DataContext is ImportViewModel viewModel)
             {
-                // Refresh the selection status of each mod
-                //foreach (Mod mod in viewModel.ModList)
-                //{
-                //    mod.Selected = viewModel.ModList.Contains(mod);
-                //}
-
-                // prevent erroneous selection of ListBox items in large lists due to Virtualization
-                if (isScrolling)
-                {
-                    return;
-                }
-
                 // Determine if the selection was modified (e.g., Ctrl+click or Shift+click)
                 bool isModifiedSelection = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ||
                                            Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) ||
                                            Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers != ModifierKeys.None;
 
+                // Calculate the value for shouldClearExisting
+                bool shouldClearExisting = !isModifiedSelection;
+
+                // Update the selected item count for the view model
                 // If the selection is modified, do not clear existing rectangles
                 if (e.AddedItems.Count > 0 || e.RemovedItems.Count > 0)
                 {
-                    UpdateHighlightPositions(!isModifiedSelection);
+                    if ((DateTime.Now - _lastHighlightUpdate).TotalMilliseconds > 50)
+                    {
+                        // If 50ms have passed, update immediately
+                        _lastHighlightUpdate = DateTime.Now;
+                        UpdateHighlightPositions(shouldClearExisting);
+                    }
+                    else
+                    {
+                        // Otherwise, flag that an update is pending
+                        _pendingHighlightUpdate = true;
+
+                        // If shouldClearExisting is true at any time within the 50ms period, we want to preserve that state
+                        _shouldClearExisting = _shouldClearExisting || shouldClearExisting;
+
+                        if (!_highlightThrottleTimer.IsEnabled)
+                        {
+                            _highlightThrottleTimer.Start();
+                        }
+                    }
                 }
 
-                // Trigger the update for the Import button's enabled status
-                viewModel.UpdateImportEnabled();
-
-                // Update the selected item count for the view model
                 viewModel.UpdateSelectedCount();
             }
         }

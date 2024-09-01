@@ -9,6 +9,8 @@
 
     <UserControl.Resources>
         <main:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />
+        <main:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
         <!-- Define a custom style for ListBoxItem -->
         <Style TargetType="ListBoxItem">
             <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -108,9 +110,46 @@
         </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Name ="ModsListBox"  Grid.Row="5" ItemsSource="{Binding FilteredModList}" SelectionMode="Extended"
-                 Margin="10"
-                 SelectionChanged="ModsListBox_SelectionChanged">
+        <ListBox Grid.Row="5" ItemsSource="{Binding FilteredModList}" Margin="10"
+         ScrollViewer.VerticalScrollBarVisibility="Auto"
+         SelectionMode="Extended" 
+         Name="ModsListBox"
+         VirtualizingStackPanel.IsVirtualizing="False"
+         SelectionChanged="ModsListBox_SelectionChanged">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="IsSelected" Value="{Binding SelectedInUI, Mode=TwoWay}" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <!-- Trigger for when the item is selected -->
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                                    </Trigger>
+                                    <!-- Trigger for when the item is selected but the ListBox is out of focus -->
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSelected" Value="true"/>
+                                            <Condition Property="IsFocused" Value="false"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
+                                    </MultiTrigger>
+                                    <!-- Trigger for mouse over -->
+                                    <Trigger Property="IsMouseOver" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightGray"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -121,7 +160,18 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-            <!-- Canvas to draw the blue lines -->
+        <!-- "Please Wait" TextBlock -->
+        <TextBlock x:Name="PleaseWaitText"
+           Grid.Row="5"
+       Text="Please Wait"
+       HorizontalAlignment="Center"
+       VerticalAlignment="Center"
+       Foreground="Red"
+       FontSize="20"
+       Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+       IsHitTestVisible="False" />
+
+        <!-- Canvas to draw the blue lines -->
         <Canvas Grid.Row="5" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
 Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">

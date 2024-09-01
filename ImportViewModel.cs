@@ -124,6 +124,20 @@ namespace MO2ExportImport.ViewModels
             set => this.RaiseAndSetIfChanged(ref _importButtonLabel, value);
         }
 
+        private bool _isPleaseWaitVisible;
+        public bool IsPleaseWaitVisible
+        {
+            get => _isPleaseWaitVisible;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _isPleaseWaitVisible, value);
+                if (value)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
+                }
+            }
+        }
+
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
 
@@ -233,6 +247,8 @@ namespace MO2ExportImport.ViewModels
 
         private void AnalyzeImportSourceFolder()
         {
+            IsPleaseWaitVisible = true;
+
             ModList.Clear();
             _modsRootPath = string.Empty;
 
