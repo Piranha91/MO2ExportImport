@@ -23,6 +23,8 @@ namespace MO2ExportImport.Views
 
         private bool _isPleaseWaitVisible = false;
 
+        private DispatcherTimer _resizeThrottleTimer;
+
         public ImportView()
         {
             InitializeComponent();
@@ -49,6 +51,13 @@ namespace MO2ExportImport.Views
             textChangedTimer = new DispatcherTimer();
             textChangedTimer.Interval = TimeSpan.FromSeconds(0.05); // Set the interval
             textChangedTimer.Tick += TextChangedTimer_Tick;
+
+            this.SizeChanged += ImportView_SizeChanged;
+            _resizeThrottleTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(25) // Adjust as needed
+            };
+            _resizeThrottleTimer.Tick += ResizeThrottleTimer_Tick;
         }
 
         private void ImportView_Loaded(object sender, RoutedEventArgs e)
@@ -75,6 +84,21 @@ namespace MO2ExportImport.Views
                 // FilterText is not empty, remove all rectangles
                 HighlightCanvas.Children.Clear();
             }
+        }
+
+        private void ImportView_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Start the throttle timer when a resize is detected
+            if (!_resizeThrottleTimer.IsEnabled)
+            {
+                _resizeThrottleTimer.Start();
+            }
+        }
+
+        private void ResizeThrottleTimer_Tick(object sender, EventArgs e)
+        {
+            _resizeThrottleTimer.Stop(); // Stop the timer after one tick
+            UpdateHighlightPositions(true); // Update the highlight positions based on the new size
         }
 
         private void ModsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -216,11 +240,11 @@ namespace MO2ExportImport.Views
                 double rectangleHeight = 2; // Thickness of the rectangle
                 double scrollbarWidth = scrollbarButtonHeight; // Use the scrollbar width for the rectangle width
                 double canvasWidth = HighlightCanvas.ActualWidth;
-                double lineLeft = canvasWidth - scrollbarWidth;
+                double lineLeft = canvasWidth - scrollbarWidth + scrollbarWidth / 2;
 
                 var line = new Rectangle
                 {
-                    Width = scrollbarWidth,
+                    Width = scrollbarWidth / 2,
                     Height = rectangleHeight,
                     Fill = Brushes.Blue
                 };
