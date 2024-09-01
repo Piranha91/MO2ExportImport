@@ -294,7 +294,13 @@ namespace MO2ExportImport.ViewModels
             var modsToRemove = new List<string>();
             var modsWithPluginsToRemove = new List<string>();
 
-            foreach (var mod in ModList.Where(x => x.SelectedInUI).ToList())
+            var selectedModsToExport = ModList
+                .Where(mod => mod.SelectedInUI &&
+                    (!IgnoreDisabled || mod.EnabledInMO2) &&
+                    (!IgnoreSeparators || !mod.IsSeparator))
+                .ToList();
+
+            foreach (var mod in selectedModsToExport)
             {
                 var modPathInMo2 = Path.Combine(Mo2Directory, "mods", mod.DisplayName);
                 if (Directory.Exists(modPathInMo2))
