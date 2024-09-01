@@ -82,6 +82,9 @@ namespace MO2ExportImport.Views
 
                 // Trigger the update for the Import button's enabled status
                 viewModel.UpdateImportEnabled();
+
+                // Update the selected item count for the view model
+                viewModel.UpdateSelectedCount();
             }
         }
 

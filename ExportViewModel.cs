@@ -85,6 +85,23 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private string _exportButtonLabel;
+        public string ExportButtonLabel
+        {
+            get => _exportButtonLabel;
+            set => this.RaiseAndSetIfChanged(ref _exportButtonLabel, value);
+        }
+
+        private bool _isLoadingList;
+        public bool IsLoadingList
+        {
+            get => _isLoadingList;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _isLoadingList, value);
+            }
+        }
+
         public ObservableCollection<Mod> ModList { get; set; } = new ObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
@@ -97,6 +114,8 @@ namespace MO2ExportImport.ViewModels
 
             Profiles = new ObservableCollection<string>();
             ModList = new ObservableCollection<Mod>();
+
+            UpdateSelectedCount();
 
             _filteredModList = new ObservableCollection<Mod>(ModList);
 
@@ -186,8 +205,20 @@ namespace MO2ExportImport.ViewModels
 
             _filteredModList = new ObservableCollection<Mod>(ModList);
 
+            IsLoadingList = true;
+            foreach (var mod in _filteredModList)
+            {
+                if (mod.ListName == _filteredModList.Last().ListName)
+                {
+                    IsLoadingList = false;
+                }
+                mod.SelectedInUI = true;
+            }
+
             this.WhenAnyValue(x => x.FilterText)
                 .Subscribe(_ => ApplyFilter());
+
+            UpdateSelectedCount();
         }
 
         private void ExportSelected()
@@ -236,6 +267,12 @@ namespace MO2ExportImport.ViewModels
 
                 FilteredModList = new ObservableCollection<Mod>(matchedMods);
             }
+        }
+
+        public void UpdateSelectedCount()
+        {
+            int selectedCount = FilteredModList?.Where(x => x.SelectedInUI).Count() ?? 0;
+            ExportButtonLabel = "Export " + selectedCount.ToString() + " Selected Mod" + (selectedCount != 1 ? "s" : "");
         }
     }
 }

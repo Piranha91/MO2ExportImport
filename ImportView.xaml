@@ -139,6 +139,6 @@ Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
         </Canvas>
 
         <!-- Import Button -->
-        <Button Grid.Row="6" Content="Import" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
+        <Button Grid.Row="6" Content="{Binding ImportButtonLabel}" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>

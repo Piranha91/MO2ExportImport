@@ -22,6 +22,7 @@ namespace MO2ExportImport.ViewModels
         private bool _isImportEnabled;
         private bool _modsLoaded;
         private StreamWriter _logWriter;
+        private string _importButtonLabel;
 
         public string Mo2Directory
         {
@@ -117,6 +118,12 @@ namespace MO2ExportImport.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _filteredModList, value);
         }
 
+        public string ImportButtonLabel
+        {
+            get => _importButtonLabel;
+            set => this.RaiseAndSetIfChanged(ref _importButtonLabel, value);
+        }
+
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
 
@@ -136,6 +143,7 @@ namespace MO2ExportImport.ViewModels
             SelectedProfile = "All";
             IsImportEnabled = false; // Initially disable import until both directories are selected
 
+            UpdateSelectedCount();
 
             ModList.ToObservableChangeSet().Subscribe(x =>
             {
@@ -344,6 +352,12 @@ namespace MO2ExportImport.ViewModels
             }
 
             MessageBox.Show(sb.ToString(), "Mods Removed from Import", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        public void UpdateSelectedCount()
+        {
+            int selectedCount = FilteredModList?.Where(x => x.SelectedInUI).Count() ?? 0;
+            ImportButtonLabel = "Import " + selectedCount.ToString() + " Selected Mod" + (selectedCount != 1 ? "s" : "");
         }
 
         private void LaunchImportPopup()

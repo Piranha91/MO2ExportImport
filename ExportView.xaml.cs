@@ -14,6 +14,22 @@ namespace MO2ExportImport.Views
         {
             InitializeComponent();
 
+            _highlightThrottleTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
+            _highlightThrottleTimer.Tick += (s, e) =>
+            {
+                _highlightThrottleTimer.Stop();
+                if (_pendingHighlightUpdate)
+                {
+                    UpdateHighlightPositions(_shouldClearExisting);
+                    _lastHighlightUpdate = DateTime.Now;
+                    _pendingHighlightUpdate = false;
+                    _shouldClearExisting = false; // Reset the flag after the update
+                }
+            };
+
             ModsListBox.SelectionChanged += ModsListBox_SelectionChanged;
 
             // Initialize the DispatcherTimer
@@ -25,6 +41,11 @@ namespace MO2ExportImport.Views
         private bool isScrolling = false;
         private HashSet<object> manuallySelectedItems = new HashSet<object>();
         private DispatcherTimer textChangedTimer;
+
+        private DateTime _lastHighlightUpdate = DateTime.MinValue;
+        private DispatcherTimer _highlightThrottleTimer;
+        private bool _pendingHighlightUpdate = false;
+        private bool _shouldClearExisting = false;
 
         private void ModsListBox_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
@@ -44,17 +65,51 @@ namespace MO2ExportImport.Views
                 return;
             }
 
-            // Determine if the selection was modified (e.g., Ctrl+click or Shift+click)
-            bool isModifiedSelection = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ||
-                                       Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) ||
-                                       Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers != ModifierKeys.None;
-
-            // If the selection is modified, do not clear existing rectangles
-            if (e.AddedItems.Count > 0 || e.RemovedItems.Count > 0)
+            if (DataContext is ExportViewModel viewModel)
             {
-                UpdateHighlightPositions(!isModifiedSelection);
+                // Check if the selection was changed programmatically
+                if (viewModel.IsLoadingList)
+                {
+                    return; // Ignore the event if triggered programmatically
+                }
+
+                // Determine if the selection was modified (e.g., Ctrl+click or Shift+click)
+                bool isModifiedSelection = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ||
+                                           Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) ||
+                                           Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers != ModifierKeys.None;
+
+                // Calculate the value for shouldClearExisting
+                bool shouldClearExisting = !isModifiedSelection;
+
+                // Update the selected item count for the view model
+                // If the selection is modified, do not clear existing rectangles
+                if (e.AddedItems.Count > 0 || e.RemovedItems.Count > 0)
+                {
+                    if ((DateTime.Now - _lastHighlightUpdate).TotalMilliseconds > 50)
+                    {
+                        // If 50ms have passed, update immediately
+                        _lastHighlightUpdate = DateTime.Now;
+                        UpdateHighlightPositions(shouldClearExisting);
+                    }
+                    else
+                    {
+                        // Otherwise, flag that an update is pending
+                        _pendingHighlightUpdate = true;
+
+                        // If shouldClearExisting is true at any time within the 50ms period, we want to preserve that state
+                        _shouldClearExisting = _shouldClearExisting || shouldClearExisting;
+
+                        if (!_highlightThrottleTimer.IsEnabled)
+                        {
+                            _highlightThrottleTimer.Start();
+                        }
+                    }
+                }
+
+                viewModel.UpdateSelectedCount();
             }
         }
+
 
         private void UpdateHighlightPositions(bool clearExisting = true)
         {
