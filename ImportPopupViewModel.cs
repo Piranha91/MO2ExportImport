@@ -180,10 +180,7 @@ namespace MO2ExportImport.ViewModels
                     {
                         foreach (var mod in validSourceMods)
                         {
-                            if (!mod.DestinationName.StartsWith("[NoDelete"))
-                            {
-                                mod.DestinationName = "[NoDelete] " + mod.DestinationName;
-                            }
+                            mod.DestinationName = MakeNoDelete(mod.DestinationName);
                         }
                     }
 
@@ -226,6 +223,18 @@ namespace MO2ExportImport.ViewModels
 
                     // Handle ImportMode for modlist.txt
                     var ignorePositions = new List<string>();
+
+                    // add NoDelete as a "virtual" prefix to the selected mods in SourceModList so that splicing mode can correctly find 
+                    var selectedModNames = validSourceMods.Select(x => x.ListName).ToArray();
+                    for (int i = 0; i < sourceModList.Count; i++)
+                    {
+                        if (!selectedModNames.Contains(sourceModList[i]))
+                        {
+                            continue;
+                        }
+                        sourceModList[i] = MakeNoDelete(sourceModList[i]);
+                    }
+
                     foreach (var currentMod in validSourceMods)
                     {
                         if (_importMode == ImportMode.End)
@@ -236,7 +245,8 @@ namespace MO2ExportImport.ViewModels
                         }
                         else // Spliced
                         {
-                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, currentMod.DestinationName, ignorePositions, StringType.Mod);
+                            var modListDestinationName = FormatHandler.GetModActivationStatusCharStr(currentMod.ListName) + currentMod.DestinationName;
+                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, modListDestinationName, ignorePositions, StringType.Mod);
                             Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
                     }
@@ -447,6 +457,22 @@ namespace MO2ExportImport.ViewModels
                     string tempPath = Path.Combine(destDirName, subdir.Name);
                     DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
                 }
+            }
+        }
+
+        private static string MakeNoDelete(string modName)
+        {
+            string activationStatusStr = FormatHandler.GetModActivationStatusCharStr(modName);
+
+            string modNameStr = FormatHandler.TrimModActivationStatus(modName);
+
+            if (modNameStr.StartsWith("[NoDelete"))
+            {
+                return modName;
+            }
+            else
+            {
+                return activationStatusStr + "[NoDelete] " + modNameStr;
             }
         }
 

@@ -288,10 +288,10 @@ namespace MO2ExportImport.ViewModels
                 {
                     var modName = Path.GetFileName(dir);
                     var modListEntry = modList.Where(x => FormatHandler.TrimModActivationStatus(x) == modName).FirstOrDefault();
-                    var mod = new Mod(modName) { SelectedInUI = true }; // Enabled and Selected by default
+                    var mod = new Mod(modListEntry ?? modName) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
                     if (modListEntry != null)
                     {
-                        mod.EnabledInMO2 = FormatHandler.GetModActivationStatus(modListEntry);
+                        mod.EnabledInMO2 = FormatHandler.GetModActivationStatus(modListEntry) ?? false;
                     }
                     ModList.Add(mod);
                 }

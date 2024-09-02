@@ -13,9 +13,27 @@ namespace MO2ExportImport
             return modListName.TrimStart('+', '-', '*');
         }
 
-        public static bool GetModActivationStatus(string modListName)
+        public static bool? GetModActivationStatus(string modListName)
         {
+            bool hasActivationStatus = modListName.StartsWith('+') || modListName.StartsWith('*') || modListName.StartsWith('-');
+            if (!hasActivationStatus)
+            {
+                return null;
+            }
             return modListName.StartsWith('+') || modListName.StartsWith('*');
+        }
+
+        public static string GetModActivationStatusCharStr(string modListName)
+        {
+            bool hasActivationStatus = modListName.StartsWith('+') || modListName.StartsWith('*') || modListName.StartsWith('-');
+            if (hasActivationStatus)
+            {
+                return modListName[0].ToString();
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
 
         public static IEnumerable<string> TrimModActivationStatus(IEnumerable<string> modNames)
