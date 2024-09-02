@@ -18,6 +18,12 @@ namespace MO2ExportImport.ViewModels
     public class UndoOperationMenuViewModel : ReactiveObject
     {
         public ObservableCollection<ImportOperation> ImportOperations { get; } = new ObservableCollection<ImportOperation>();
+        private string _currentOperationInfo;
+        public string CurrentOperationInfo
+        {
+            get => _currentOperationInfo;
+            set => this.RaiseAndSetIfChanged(ref _currentOperationInfo, value);
+        }
         public ObservableCollection<string> AddedModNames { get; } = new ObservableCollection<string>();
         public ObservableCollection<string> SelectedMods { get; } = new ObservableCollection<string>();
 
@@ -134,9 +140,15 @@ namespace MO2ExportImport.ViewModels
 
         private void LoadModsForSelectedOperation()
         {
+            AddedModNames.Clear();
+            CurrentOperationInfo = string.Empty;
+
             if (SelectedOperation != null)
             {
-                AddedModNames.Clear();
+                CurrentOperationInfo =
+                    "From: " + SelectedOperation.ModSourceDirName + Environment.NewLine +
+                    "To: " + SelectedOperation.DestinationMO2Dir;
+
                 foreach (var mod in SelectedOperation.AddedModNames)
                 {
                     AddedModNames.Add(mod);

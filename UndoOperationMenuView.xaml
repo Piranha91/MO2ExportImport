@@ -10,6 +10,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
@@ -19,9 +20,9 @@
             <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Text="Test" Grid.Column="0" Grid.Row="0"/>
         <!-- List of Import Operations -->
-        <ListBox ItemsSource="{Binding ImportOperations}" 
+        <ListBox ItemsSource="{Binding ImportOperations}" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
          SelectedItem="{Binding SelectedOperation}"
          HorizontalContentAlignment="Stretch">
             <ListBox.ItemTemplate>
@@ -54,13 +55,14 @@
         </ListBox>
 
         <!-- List of Mods Added in Selected Operation -->
-        <ListBox Grid.Column="1" Grid.Row="0" ItemsSource="{Binding AddedModNames}"
-                 SelectionMode="Extended"
-                 behaviors:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedMods}">
+        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentOperationInfo}"/>
+        <ListBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AddedModNames}"
+         SelectionMode="Extended"
+         behaviors:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedMods}">
         </ListBox>
 
         <!-- Undo Button -->
-        <Button Grid.Column="0" Content="Undo" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
+        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Undo" HorizontalAlignment="Center"
                 Command="{Binding UndoCommand}" Margin="10"
                 IsEnabled="{Binding IsUndoEnabled}"/>
     </Grid>
