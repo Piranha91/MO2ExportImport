@@ -10,7 +10,7 @@
     <Grid>
         <!-- Define the layout grid with two rows and two columns -->
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="160"/>
             <!-- Left panel -->
             <ColumnDefinition Width="*"/>
             <!-- Main content area -->
@@ -24,9 +24,21 @@
         <Rectangle Grid.Column="0" Fill="LightGray" RadiusX="10" RadiusY="10"/>
         <Rectangle Grid.Column="0" Fill="LightGray" Width="25" HorizontalAlignment="Left"/>
         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-            <Button Content="Export" Command="{Binding NavigateToExportCommand}" Margin="20"/>
-            <Button Content="Import" Command="{Binding NavigateToImportCommand}" Margin="20"/>
-            <Button Content="Undo" Command="{Binding NavigateToUndoCommand}" Margin="20"/>
+            <StackPanel Orientation="Horizontal" Margin="0 10 0 10">
+                <TextBlock Text="●" Foreground="{Binding ExportBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0" FontSize="16"/>
+                <Button Content="Export" MinWidth="100" Command="{Binding NavigateToExportCommand}" VerticalAlignment="Center" />
+                <TextBlock Text="●" Foreground="{Binding ExportBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0" FontSize="16"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0 10 0 10">
+                <TextBlock Text="●" Foreground="{Binding ImportBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0"  FontSize="16"/>
+                <Button Content="Import" MinWidth="100" Command="{Binding NavigateToImportCommand}" VerticalAlignment="Center" />
+                <TextBlock Text="●" Foreground="{Binding ImportBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0"  FontSize="16"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0 10 0 10">
+                <TextBlock Text="●" Foreground="{Binding UndoBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0"  FontSize="16"/>
+                <Button Content="Undo" MinWidth="100" Command="{Binding NavigateToUndoCommand}" VerticalAlignment="Center" />
+                <TextBlock Text="●" Foreground="{Binding UndoBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0"  FontSize="16"/>
+            </StackPanel>
         </StackPanel>
         
         <!-- Content area to display the UserControls -->

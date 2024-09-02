@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Media;
 
 namespace MO2ExportImport.ViewModels
 {
@@ -32,6 +33,30 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> NavigateToImportCommand { get; }
         public ReactiveCommand<Unit, Unit> NavigateToUndoCommand { get; }
 
+        private static SolidColorBrush _activeColor = new(Colors.DarkGreen);
+        private static SolidColorBrush _inactiveColor = new(Colors.Transparent);
+
+        private SolidColorBrush _exportBorderColor = _activeColor;
+        public SolidColorBrush ExportBorderColor
+        {
+            get => _exportBorderColor;
+            set => this.RaiseAndSetIfChanged(ref _exportBorderColor, value);
+        }
+
+        private SolidColorBrush _importBorderColor = _inactiveColor;
+        public SolidColorBrush ImportBorderColor
+        {
+            get => _importBorderColor;
+            set => this.RaiseAndSetIfChanged(ref _importBorderColor, value);
+        }
+
+        private SolidColorBrush _undoBorderColor = _inactiveColor;
+        public SolidColorBrush UndoBorderColor
+        {
+            get => _undoBorderColor;
+            set => this.RaiseAndSetIfChanged(ref _undoBorderColor, value);
+        }
+
         public MainViewModel()
         {
             InitializeLog();
@@ -55,16 +80,29 @@ namespace MO2ExportImport.ViewModels
         private void NavigateToExport()
         {
             CurrentView = _exportViewModel;
+            ResetColors();
+            ExportBorderColor = _activeColor;
         }
 
         private void NavigateToImport()
         {
             CurrentView = _importViewModel;
+            ResetColors();
+            ImportBorderColor = _activeColor;
         }
 
         private void NavigateToUndo()
         {
             CurrentView = _undoOperationMenuViewModel;
+            ResetColors();
+            UndoBorderColor = _activeColor;
+        }
+
+        private void ResetColors()
+        {
+            ExportBorderColor = _inactiveColor;
+            UndoBorderColor = _inactiveColor;
+            ImportBorderColor = _inactiveColor;
         }
 
 
