@@ -126,6 +126,11 @@ namespace MO2ExportImport.ViewModels
 
         public void SaveSettings()
         {
+            if (_exportViewModel == null || _importViewModel == null || _undoOperationMenuViewModel == null)
+            {
+                return;
+            }
+
             var settings = new Settings
             {
                 ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,

@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 
@@ -130,6 +131,18 @@ namespace MO2ExportImport.ViewModels
 
             Profiles = new ObservableCollection<string>();
             ModList = new ObservableCollection<Mod>();
+
+            string exePath = Assembly.GetExecutingAssembly()?.Location ?? string.Empty;
+            string dirPath = Path.GetDirectoryName(exePath) ?? string.Empty;
+
+            if (dirPath != string.Empty)
+            {
+                ExportDestinationFolder = Path.Combine(dirPath, "Exports");
+                if (!Directory.Exists(ExportDestinationFolder))
+                {
+                    Directory.CreateDirectory(ExportDestinationFolder);
+                }
+            }
 
             UpdateSelectedCount();
 
