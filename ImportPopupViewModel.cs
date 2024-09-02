@@ -280,6 +280,14 @@ namespace MO2ExportImport.ViewModels
                         Log(pluginExStr);
                     }
 
+                    // Make the LoadOrder.txt file based on the new Plugins.txt file
+                    var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
+                    var profileLoadOrder = FormatHandler.TrimPluginActivationStatus(profilePluginsList).ToList();
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profileLoadOrder, out var loadorderExStr))
+                    {
+                        Log(loadorderExStr);
+                    }
+
                     // Now copy the valid mods into the mods folder
 
                     var copyTasks = new List<Task>();
@@ -403,6 +411,13 @@ namespace MO2ExportImport.ViewModels
                             File.Copy(pluginsFilePath, Path.Combine(profileBackupDir, "plugins.txt"), overwrite: true);
                         }
 
+                        // Backup loadorder.txt
+                        string loadOrderPath = Path.Combine(profileDir, "loadorder.txt");
+                        if (File.Exists(loadOrderPath))
+                        {
+                            File.Copy(loadOrderPath, Path.Combine(profileBackupDir, "loadorder.txt"), overwrite: true);
+                        }
+
                         // Backup modlist.txt
                         string modlistFilePath = Path.Combine(profileDir, "modlist.txt");
                         if (File.Exists(modlistFilePath))
@@ -411,8 +426,6 @@ namespace MO2ExportImport.ViewModels
                         }
                     }
                 }
-
-                //MessageBox.Show("Backup completed successfully.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

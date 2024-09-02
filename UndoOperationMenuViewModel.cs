@@ -210,12 +210,16 @@ namespace MO2ExportImport.ViewModels
                     var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
                     var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath);
 
+                    var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
+                    var profileLoadOrder = CommonFuncs.LoadPluginList(profileLoadOrderPath);
+
                     foreach (var mod in profile.AddedModNames)
                     {
                         var associatedPlugins = profile.AddedPluginNames.Where(x => x.ParentMod == mod).Select(x => x.PluginName).ToList();
 
                         profileModList = profileModList.Where(x => FormatHandler.TrimModActivationStatus(x) != mod).ToList();
                         profilePluginsList = profilePluginsList.Where(x => !associatedPlugins.Contains(FormatHandler.TrimPluginActivationStatus(x))).ToList();
+                        profileLoadOrder = profileLoadOrder.Where(x => !associatedPlugins.Contains(x)).ToList();
                     }
 
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList, out var modExStr))
@@ -225,6 +229,10 @@ namespace MO2ExportImport.ViewModels
                     if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList, out var pluginExStr))
                     {
                         _operationNotes.Add(pluginExStr);
+                    }
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profileLoadOrder, out var loadOrderExStr))
+                    {
+                        _operationNotes.Add(loadOrderExStr);
                     }
                 }
                 else
