@@ -63,6 +63,10 @@ namespace MO2ExportImport.ViewModels
         {
             ImportOperations.Clear();
             // Get all subdirectories in the ImportManifests folder
+            if (!Directory.Exists("ImportManifests"))
+            {
+                Directory.CreateDirectory("ImportManifests");
+            }
             var importManifestDirs = Directory.GetDirectories("ImportManifests");
 
             foreach (var dir in importManifestDirs)
