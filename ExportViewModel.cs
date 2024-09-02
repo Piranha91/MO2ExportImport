@@ -202,6 +202,7 @@ namespace MO2ExportImport.ViewModels
             if (string.IsNullOrEmpty(_selectedProfile)) return;
 
             IsPleaseWaitVisible = true;
+            System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
 
             ModList.Clear();
             var modlistPath = Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");

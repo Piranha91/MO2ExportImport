@@ -15,15 +15,13 @@ namespace MO2ExportImport.Views
     {
         private bool isScrolling = false;
         private DispatcherTimer textChangedTimer;
-
         private DateTime _lastHighlightUpdate = DateTime.MinValue;
         private DispatcherTimer _highlightThrottleTimer;
         private bool _pendingHighlightUpdate = false;
         private bool _shouldClearExisting = false;
-
         private bool _isPleaseWaitVisible = false;
-
         private DispatcherTimer _resizeThrottleTimer;
+        private DispatcherTimer _pleaseWaitTimer;
 
         public ImportView()
         {
@@ -43,7 +41,10 @@ namespace MO2ExportImport.Views
                     _lastHighlightUpdate = DateTime.Now;
                     _pendingHighlightUpdate = false;
                     _shouldClearExisting = false; // Reset the flag after the update
-                    PleaseWaitText.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    PleaseWaitText.Visibility = Visibility.Visible;
                 }
             };
 
@@ -58,6 +59,12 @@ namespace MO2ExportImport.Views
                 Interval = TimeSpan.FromMilliseconds(25) // Adjust as needed
             };
             _resizeThrottleTimer.Tick += ResizeThrottleTimer_Tick;
+
+            _pleaseWaitTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(100) // Adjust as needed
+            };
+            _pleaseWaitTimer.Tick += PleaseWaitTimer_Tick;
         }
 
         private void ImportView_Loaded(object sender, RoutedEventArgs e)
@@ -101,6 +108,12 @@ namespace MO2ExportImport.Views
             UpdateHighlightPositions(true); // Update the highlight positions based on the new size
         }
 
+        private void PleaseWaitTimer_Tick(object sender, EventArgs e)
+        {
+            _pleaseWaitTimer.Stop(); // Stop the timer after one tick
+            PleaseWaitText.Visibility = Visibility.Collapsed;
+        }
+
         private void ModsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DataContext is ImportViewModel viewModel)
@@ -122,6 +135,7 @@ namespace MO2ExportImport.Views
                         // If 50ms have passed, update immediately
                         _lastHighlightUpdate = DateTime.Now;
                         UpdateHighlightPositions(shouldClearExisting);
+                        PleaseWaitText.Visibility = Visibility.Collapsed;
                     }
                     else
                     {
@@ -167,6 +181,9 @@ namespace MO2ExportImport.Views
             {
                 return;
             }
+
+            // Reset the PleaseWait timer
+            _pleaseWaitTimer.Stop();
 
             if (clearExisting)
             {
@@ -254,6 +271,9 @@ namespace MO2ExportImport.Views
 
                 HighlightCanvas.Children.Add(line);
             }
+
+            // Reset the PleaseWait timer
+            _pleaseWaitTimer.Start();
         }
 
         private ScrollViewer GetScrollViewer(DependencyObject o)

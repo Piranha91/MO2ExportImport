@@ -151,7 +151,7 @@
                VerticalAlignment="Center"
                Foreground="Red"
                FontSize="20"
-               Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+               Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=TwoWay}"
                IsHitTestVisible="False" />
 
         <!-- Canvas to draw the blue lines -->
