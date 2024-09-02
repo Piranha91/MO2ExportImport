@@ -24,7 +24,7 @@ jobs:
       run: dotnet test MO2ExportImport.sln -c Release --no-build
       
     - name: Publish
-      run: dotnet publish "MO2ExportImport.csproj" --configuration Release -p:PublishSingleFile=false
+      run: dotnet publish MO2ExportImport.csproj --configuration Release -p:PublishSingleFile=false
       
     - name: Archive Release
       run: |
