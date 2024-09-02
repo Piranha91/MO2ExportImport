@@ -225,14 +225,17 @@ namespace MO2ExportImport.ViewModels
                     var ignorePositions = new List<string>();
 
                     // add NoDelete as a "virtual" prefix to the selected mods in SourceModList so that splicing mode can correctly find 
-                    var selectedModNames = validSourceMods.Select(x => x.ListName).ToArray();
-                    for (int i = 0; i < sourceModList.Count; i++)
+                    if (_addNoDeleteFlags)
                     {
-                        if (!selectedModNames.Contains(sourceModList[i]))
+                        var selectedModNames = validSourceMods.Select(x => x.ListName).ToArray();
+                        for (int i = 0; i < sourceModList.Count; i++)
                         {
-                            continue;
+                            if (!selectedModNames.Contains(sourceModList[i]))
+                            {
+                                continue;
+                            }
+                            sourceModList[i] = MakeNoDelete(sourceModList[i]);
                         }
-                        sourceModList[i] = MakeNoDelete(sourceModList[i]);
                     }
 
                     foreach (var currentMod in validSourceMods)
