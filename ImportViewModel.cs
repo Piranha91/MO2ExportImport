@@ -8,6 +8,7 @@ using System.IO;
 using System.Reactive;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace MO2ExportImport.ViewModels
@@ -311,10 +312,17 @@ namespace MO2ExportImport.ViewModels
                     (!IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
 
+            var modPathsInDestination = Directory.GetDirectories(Path.Combine(Mo2Directory, "mods"))
+                           ?? Array.Empty<string>();
+
             foreach (var mod in selectedModsToExport)
             {
-                var modPathInMo2 = Path.Combine(Mo2Directory, "mods", mod.DisplayName);
-                if (Directory.Exists(modPathInMo2))
+                var noDeleteTrimmedPath = FormatHandler.RemoveNoDeletePrefix(mod.DisplayName);
+
+                var literalModPathInMO2 = Path.Combine(Mo2Directory, "mods", mod.DisplayName);
+                var editedModPathInMo2 = Path.Combine(Mo2Directory, "mods", noDeleteTrimmedPath);
+
+                if (Directory.Exists(literalModPathInMO2) || Directory.Exists(editedModPathInMo2) || ContainsNoDeleteFolder(modPathsInDestination, noDeleteTrimmedPath))
                 {
                     // Log and remove mod if a directory with the same name already exists in MO2
                     modsToRemove.Add(mod.DisplayName + " - Matched existing directory name.");
@@ -360,6 +368,36 @@ namespace MO2ExportImport.ViewModels
             UpdateImportEnabled();
         }
 
+        public static bool ContainsNoDeleteFolder(string[] subdirectoryPaths, string inputString)
+        {
+            if (subdirectoryPaths == null || subdirectoryPaths.Length == 0 || string.IsNullOrWhiteSpace(inputString))
+                return false;
+
+            // Regex pattern for matching "[NoDelete]" prefix variations
+            string pattern = @"^\[NoDelete.*?\]\s*" + Regex.Escape(inputString) + @"$";
+
+            try
+            {
+                // Check if any folder names match the pattern
+                foreach (var folderPath in subdirectoryPaths)
+                {
+                    if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+                        continue; // Skip invalid paths
+
+                    string folderName = Path.GetFileName(folderPath);
+                    if (Regex.IsMatch(folderName, pattern, RegexOptions.IgnoreCase))
+                    {
+                        return true; // Match found
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing directories: {ex.Message}");
+            }
+
+            return false; // No match found
+        }
 
         private void ShowRemovalSummaryPopup(List<string> modsToRemove, List<string> modsWithPluginsToRemove)
         {
