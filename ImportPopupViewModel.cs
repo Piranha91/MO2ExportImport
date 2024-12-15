@@ -173,6 +173,7 @@ namespace MO2ExportImport.ViewModels
 
                     // Filter SourceModList to include only mods with corresponding directories
                     var validSourceMods = _selectedModList
+                        .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
                         .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.DirectoryName)))
                         .ToList();
 
@@ -482,14 +483,7 @@ namespace MO2ExportImport.ViewModels
 
             string modNameStr = FormatHandler.TrimModActivationStatus(modName);
 
-            if (modNameStr.StartsWith("[NoDelete"))
-            {
-                return modName;
-            }
-            else
-            {
-                return activationStatusStr + "[NoDelete] " + modNameStr;
-            }
+            return activationStatusStr + "[NoDelete] " + FormatHandler.RemoveNoDeletePrefix(modNameStr);
         }
 
 
