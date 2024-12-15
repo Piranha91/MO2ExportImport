@@ -18,14 +18,14 @@ namespace MO2ExportImport
         private const string _separatorDispString = "-----";
         private const string _noDeleteString = "[NoDelete]";
 
-        public string ListName { get; set; }
-        public string DirectoryName { get; set; }
-        public string DisplayName { get; set; }
-        public bool EnabledInMO2 { get; set; }
-        public bool IsSeparator { get; set; }
-        public bool IsNoDelete { get; set; }
+        public string ListName { get; set; } = string.Empty;
+        public string DirectoryName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public bool EnabledInMO2 { get; set; } = false;
+        public bool IsSeparator { get; set; } = false;
+        public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
-        [JsonIgnore] public string DestinationName { get; set; } // same as DirectoryName unless adding a [NoDelete] tag
+        [JsonIgnore] public string DestinationName { get; set; } = String.Empty; // same as DirectoryName unless adding a [NoDelete] tag
 
         public bool SelectedInUI
         {
@@ -72,6 +72,16 @@ namespace MO2ExportImport
                     DisplayName = DisplayName.Substring(endIndex + 1).Trim(); // Remove the NoDeleteIndex from DisplayName
                 }
             }
+        }
+
+        public Mod() // for json deserialization
+        {
+
+        }
+
+        public override string ToString()
+        {
+            return DisplayName;
         }
     }
 }
