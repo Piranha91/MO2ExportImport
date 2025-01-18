@@ -240,7 +240,7 @@ namespace MO2ExportImport.ViewModels
             IsLoadingList = true;
             foreach (var mod in _filteredModList)
             {
-                if (mod.ListName == _filteredModList.Last().ListName)
+                if (mod == _filteredModList.Last())
                 {
                     IsLoadingList = false;
                 }
@@ -257,7 +257,7 @@ namespace MO2ExportImport.ViewModels
         {
             var selectedModsToExport = ModList
                 .Where(mod => mod.SelectedInUI && 
-                    (!IgnoreDisabled || mod.EnabledInMO2) &&
+                    (!IgnoreDisabled || mod.IsEnabled()) &&
                     (!IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
             // Create and display the ExportPopupView

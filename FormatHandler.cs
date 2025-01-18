@@ -52,6 +52,11 @@ namespace MO2ExportImport
             return pluginNames.Select(x => TrimPluginActivationStatus(x));
         }
 
+        public static bool GetPluginActivationStatus(string pluginEntry)
+        {
+            return pluginEntry.StartsWith('*');
+        }
+
         public static string TrimActivationStatus(string str, StringType stringType)
         {
             switch(stringType)
@@ -76,28 +81,6 @@ namespace MO2ExportImport
         {
             Mod,
             Plugin
-        }
-
-        public static string RemoveNoDeletePrefix(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return input;
-
-            // Define a case-insensitive regex pattern
-            string pattern = @"^\[NoDelete.*?\]";
-
-            // Match the pattern at the start of the string
-            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
-
-            // Check if a match is found at the start of the string
-            if (match.Success && match.Index == 0)
-            {
-                // Remove the matched substring and trim the result
-                return input.Substring(match.Length).Trim();
-            }
-
-            // Return the original string if no match
-            return input;
         }
     }
 }

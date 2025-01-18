@@ -18,14 +18,12 @@ namespace MO2ExportImport
         private const string _separatorDispString = "-----";
         private const string _noDeleteString = "[NoDelete]";
 
-        public string ListName { get; set; } = string.Empty;
+        public ModListing SourceListing { get; set; }
         public string DirectoryName { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
-        public bool EnabledInMO2 { get; set; } = false;
         public bool IsSeparator { get; set; } = false;
         public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
-        [JsonIgnore] public string DestinationName { get; set; } = String.Empty; // same as DirectoryName unless adding a [NoDelete] tag
 
         public bool SelectedInUI
         {
@@ -33,26 +31,24 @@ namespace MO2ExportImport
             set => this.RaiseAndSetIfChanged(ref _selectedInUI, value);
         }
 
-        public Mod(string name)
+        public Mod(string listingEntry)
         {
-            ListName = name;
-            DisplayName = name;
+            SourceListing = new ModListing(listingEntry);
+            Initialize();
+        }
 
-            #region Activation Status
-            EnabledInMO2 = ListName.StartsWith("+") || ListName.StartsWith("*");
-            if (EnabledInMO2)
-            {
-                DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, "+").Trim();
-            }
-            else
-            {
-                DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, "-").Trim();
-            }
+        public Mod(ModListing listingObject)
+        {
+            SourceListing = listingObject;
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            DisplayName = SourceListing.Name;
             DirectoryName = DisplayName;
-            DestinationName = DirectoryName;
-            #endregion
 
-            IsSeparator = name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
+            IsSeparator = SourceListing.Name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
             if (IsSeparator)
             {
                 DisplayName = StringExtensions.RemoveAtEnd(DisplayName, _separatorSuffix).Trim();
@@ -82,6 +78,25 @@ namespace MO2ExportImport
         public override string ToString()
         {
             return DisplayName;
+        }
+
+        public void MakeNoDelete()
+        {
+            if (!IsNoDelete)
+            {
+                SourceListing.MakeNoDelete();
+                IsNoDelete = true;
+            }
+        }
+
+        public string GetDestinationName()
+        {
+            return FormatHandler.TrimModActivationStatus(SourceListing.GetCurrentEntryString());
+        }
+
+        public bool IsEnabled()
+        {
+            return SourceListing.Enabled.HasValue && SourceListing.Enabled.Value;
         }
     }
 }

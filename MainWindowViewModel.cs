@@ -120,7 +120,8 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.SelectedImportMode = settings?.ImportMode ?? ImportMode.Spliced;
                 _importViewModel.IgnoreDisabled = settings?.ImportIgnoreDisabled ?? true; // Default to true if not set
                 _importViewModel.IgnoreSeparators = settings?.ImportIgnoreSeparators ?? false; // Default to false if not set
-                _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false; 
+                _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false;
+                _importViewModel.DisableUncheckedMods = settings?.DisableUncheckedMods ?? false;
             }
         }
 
@@ -140,7 +141,8 @@ namespace MO2ExportImport.ViewModels
                 ImportMode = _importViewModel.SelectedImportMode,
                 ImportIgnoreDisabled = _importViewModel.IgnoreDisabled,
                 ImportIgnoreSeparators = _importViewModel.IgnoreSeparators,
-                ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags
+                ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,
+                DisableUncheckedMods = _importViewModel.DisableUncheckedMods
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

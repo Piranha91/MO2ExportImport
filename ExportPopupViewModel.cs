@@ -178,7 +178,7 @@ namespace MO2ExportImport.ViewModels
         private async Task ExportList()
         {
             var selectedModsToExport = _selectedMods
-                .Where(mod => mod.SelectedInUI && (!_exportViewModel.IgnoreDisabled || mod.EnabledInMO2) && (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
+                .Where(mod => mod.SelectedInUI && (!_exportViewModel.IgnoreDisabled || mod.IsEnabled()) && (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
 
             (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();

@@ -115,6 +115,17 @@ namespace MO2ExportImport.ViewModels
                 _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
             }
         }
+        
+        private bool _disableUncheckedMods;
+        public bool DisableUncheckedMods
+        {
+            get => _disableUncheckedMods;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _disableUncheckedMods, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
 
         private string _filterText;
         public string FilterText
@@ -273,7 +284,7 @@ namespace MO2ExportImport.ViewModels
 
                 foreach (var mod in modlistData?.SelectedMods ?? new())
                 {
-                    var modItem = new Mod(mod.ListName) { SelectedInUI = true }; // Always select the mod
+                    var modItem = new Mod(mod.SourceListing) { SelectedInUI = true }; // Always select the mod
                     ModList.Add(modItem);
                 }
             }
@@ -288,12 +299,8 @@ namespace MO2ExportImport.ViewModels
                 foreach (var dir in modDirs)
                 {
                     var modName = Path.GetFileName(dir);
-                    var modListEntry = modList.Where(x => FormatHandler.TrimModActivationStatus(x) == modName).FirstOrDefault();
-                    var mod = new Mod(modListEntry ?? modName) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
-                    if (modListEntry != null)
-                    {
-                        mod.EnabledInMO2 = FormatHandler.GetModActivationStatus(modListEntry) ?? false;
-                    }
+                    var modListEntry = modList.FirstOrDefault(x => x.Name == modName);
+                    var mod = new Mod(modListEntry?.Name ?? modName) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
                     ModList.Add(mod);
                 }
             }
@@ -308,7 +315,7 @@ namespace MO2ExportImport.ViewModels
 
             var selectedModsToExport = ModList
                 .Where(mod => mod.SelectedInUI &&
-                    (!IgnoreDisabled || mod.EnabledInMO2) &&
+                    (!IgnoreDisabled || mod.IsEnabled()) &&
                     (!IgnoreSeparators || !mod.IsSeparator))
                 .ToList();
 
@@ -317,12 +324,10 @@ namespace MO2ExportImport.ViewModels
 
             foreach (var mod in selectedModsToExport)
             {
-                var noDeleteTrimmedPath = FormatHandler.RemoveNoDeletePrefix(mod.DisplayName);
-
                 var literalModPathInMO2 = Path.Combine(Mo2Directory, "mods", mod.DisplayName);
-                var editedModPathInMo2 = Path.Combine(Mo2Directory, "mods", noDeleteTrimmedPath);
+                var editedModPathInMo2 = Path.Combine(Mo2Directory, "mods", mod.GetDestinationName());
 
-                if (Directory.Exists(literalModPathInMO2) || Directory.Exists(editedModPathInMo2) || ContainsNoDeleteFolder(modPathsInDestination, noDeleteTrimmedPath))
+                if (Directory.Exists(literalModPathInMO2) || Directory.Exists(editedModPathInMo2) || ContainsNoDeleteFolder(modPathsInDestination, mod.SourceListing.Name))
                 {
                     // Log and remove mod if a directory with the same name already exists in MO2
                     modsToRemove.Add(mod.DisplayName + " - Matched existing directory name.");
@@ -440,7 +445,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, _logWriter, _mainViewModel.ProgramVersion);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

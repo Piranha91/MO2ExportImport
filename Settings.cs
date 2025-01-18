@@ -12,6 +12,6 @@ namespace MO2ExportImport.Models
         public bool ImportIgnoreDisabled { get; set; } = true; // Default value
         public bool ImportIgnoreSeparators { get; set; } = false; // Default value
         public bool ImportAddNoDeleteFlags { get; set; } = false; // Default value
-
+        public bool DisableUncheckedMods { get; set; } = false; 
     }
 }

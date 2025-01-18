@@ -213,14 +213,13 @@ namespace MO2ExportImport.ViewModels
                     var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
                     var profileLoadOrder = CommonFuncs.LoadPluginList(profileLoadOrderPath);
 
-                    foreach (var mod in profile.AddedModNames)
-                    {
-                        var associatedPlugins = profile.AddedPluginNames.Where(x => x.ParentMod == mod).Select(x => x.PluginName).ToList();
-
-                        profileModList = profileModList.Where(x => FormatHandler.TrimModActivationStatus(x) != mod).ToList();
-                        profilePluginsList = profilePluginsList.Where(x => !associatedPlugins.Contains(FormatHandler.TrimPluginActivationStatus(x))).ToList();
-                        profileLoadOrder = profileLoadOrder.Where(x => !associatedPlugins.Contains(x)).ToList();
-                    }
+                    profilePluginsList.RemoveAll(x =>
+                        profile.AddedPluginNames.Select(y => y.PluginName).Contains(x.Name));
+                    
+                    profileLoadOrder.RemoveAll(x =>
+                        profile.AddedPluginNames.Select(y => y.PluginName).Contains(x.Name));
+                    
+                    profileModList.RemoveAll(x => profile.AddedModNames.Contains(x.Name));
 
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList, out var modExStr))
                     {
