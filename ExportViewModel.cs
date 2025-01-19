@@ -117,6 +117,17 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private bool _autoCalculateSpace;
+        public bool AutoCalculateSpace
+        {
+            get => _autoCalculateSpace;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _autoCalculateSpace, value);
+                _mainViewModel.SaveSettings(); 
+            }
+        }
+
         public ObservableCollection<Mod> ModList { get; set; } = new ObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
@@ -262,7 +273,7 @@ namespace MO2ExportImport.ViewModels
                 .ToList();
             // Create and display the ExportPopupView
             var exportPopupView = new ExportPopupView();
-            var exportPopupViewModel = new ExportPopupViewModel(exportPopupView, this, _mo2Directory, selectedModsToExport, ExportDestinationFolder, _selectedProfile, _mainViewModel.ProgramVersion);
+            var exportPopupViewModel = new ExportPopupViewModel(exportPopupView, this, _mo2Directory, selectedModsToExport, ExportDestinationFolder, _selectedProfile, _mainViewModel.ProgramVersion, _autoCalculateSpace);
             exportPopupView.DataContext = exportPopupViewModel;
             exportPopupView.ShowDialog();
         }

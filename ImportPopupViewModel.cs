@@ -69,7 +69,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -88,6 +88,11 @@ namespace MO2ExportImport.ViewModels
             CancelCommand = ReactiveCommand.Create(ClosePopup);
 
             IsImportEnabled = false;
+
+            if (autoCalculateSpace)
+            {
+                CalculateSpace();
+            }
         }
 
         private void CalculateSpace()

@@ -116,6 +116,7 @@ namespace MO2ExportImport.ViewModels
                 _exportViewModel.ExportDestinationFolder = settings?.ExportDestinationFolder ?? string.Empty;
                 _exportViewModel.IgnoreDisabled = settings?.ExportIgnoreDisabled ?? true; // Default to true if not set
                 _exportViewModel.IgnoreSeparators = settings?.ExportIgnoreSeparators ?? false; // Default to false if not set
+                _exportViewModel.AutoCalculateSpace = settings?.ExportAutoCalculateSpace ?? true;
                 _importViewModel.Mo2Directory = settings?.ImportTargetMO2Dir ?? string.Empty;
                 _importViewModel.SelectedImportMode = settings?.ImportMode ?? ImportMode.Spliced;
                 _importViewModel.IgnoreDisabled = settings?.ImportIgnoreDisabled ?? true; // Default to true if not set
@@ -123,6 +124,7 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false;
                 _importViewModel.SkipExisting = settings?.ImportSkipExistingMods ?? true;
                 _importViewModel.DisableUncheckedMods = settings?.ImportDisableUncheckedMods ?? false;
+                _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
             }
         }
 
@@ -138,13 +140,15 @@ namespace MO2ExportImport.ViewModels
                 ExportDestinationFolder = _exportViewModel.ExportDestinationFolder,
                 ExportIgnoreDisabled = _exportViewModel.IgnoreDisabled,
                 ExportIgnoreSeparators = _exportViewModel.IgnoreSeparators,
+                ExportAutoCalculateSpace = _exportViewModel.AutoCalculateSpace,
                 ImportTargetMO2Dir = _importViewModel.Mo2Directory,
                 ImportMode = _importViewModel.SelectedImportMode,
                 ImportIgnoreDisabled = _importViewModel.IgnoreDisabled,
                 ImportIgnoreSeparators = _importViewModel.IgnoreSeparators,
                 ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,
                 ImportSkipExistingMods = _importViewModel.SkipExisting,
-                ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods
+                ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods,
+                ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

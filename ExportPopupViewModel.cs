@@ -55,7 +55,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ExportListCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ExportPopupViewModel(ExportPopupView window, ExportViewModel exportViewModel, string mo2Directory, IEnumerable<Mod> selectedMods, string exportDestinationFolder, string selectedProfile, string programVersion)
+        public ExportPopupViewModel(ExportPopupView window, ExportViewModel exportViewModel, string mo2Directory, IEnumerable<Mod> selectedMods, string exportDestinationFolder, string selectedProfile, string programVersion, bool autoCalculateSpace)
         {
             _window = window;
             _exportViewModel = exportViewModel;
@@ -75,6 +75,11 @@ namespace MO2ExportImport.ViewModels
             IsExportEnabled = false;
 
             ExportDestinationFolderName = DateTime.Now.ToString("yyyy MM dd (HH mm)");
+
+            if (autoCalculateSpace)
+            {
+                CalculateSpace();
+            }
         }
 
         private void CalculateSpace()

@@ -71,6 +71,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10">
             <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
             <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
+            <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>
         </StackPanel>
 
         <!-- ListBox with constrained height in the remaining space -->
