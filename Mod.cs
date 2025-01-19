@@ -107,5 +107,10 @@ namespace MO2ExportImport
         {
             return SourceListing.Enabled.HasValue && SourceListing.Enabled.Value;
         }
+
+        public void SetPrefix(string prefix)
+        {
+            SourceListing.SetPrefix(prefix);
+        }
     }
 }

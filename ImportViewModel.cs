@@ -183,6 +183,17 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private string _importPrefix;
+        public string ImportPrefix
+        {
+            get => _importPrefix;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _importPrefix, value);
+                _mainViewModel.SaveSettings();
+            }
+        }
+
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
 
@@ -462,7 +473,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

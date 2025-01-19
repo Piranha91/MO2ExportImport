@@ -28,6 +28,7 @@ namespace MO2ExportImport.ViewModels
         private bool _disableUncheckedMods;
         private StreamWriter _logWriter;
         private string _programVersion;
+        private string _importPrefix;
 
         private const string _manifestRelativePath = "ImportManifests";
 
@@ -69,7 +70,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -82,6 +83,7 @@ namespace MO2ExportImport.ViewModels
             _disableUncheckedMods = disableUncheckedMods;
             _logWriter = logWriter;
             _programVersion = programVersion;
+            _importPrefix = importPrefix;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
             ImportCommand = ReactiveCommand.Create(ImportMods, this.WhenAnyValue(x => x.IsImportEnabled));
@@ -192,6 +194,11 @@ namespace MO2ExportImport.ViewModels
                         {
                             mod.MakeNoDelete();
                         }
+                    }
+
+                    foreach (var mod in validSourceMods)
+                    {
+                        mod.SetPrefix(_importPrefix);
                     }
 
                     // Collect valid plugins based on validSourceMods

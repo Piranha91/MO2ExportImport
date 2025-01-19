@@ -10,6 +10,7 @@ public class ModListing : IEquatable<ModListing>, IListing
     
     public bool IsNoDelete { get; private set; }
     public string NoDeletePrefix { get; private set; }
+    public string Prefix { get; private set; } = string.Empty;
 
     public ModListing(string entryString)
     {
@@ -31,18 +32,18 @@ public class ModListing : IEquatable<ModListing>, IListing
     
     public string GetCurrentEntryString()
     {
-        string prefix = string.Empty;
+        string fullPrefix = string.Empty;
         if (!Enabled.HasValue)
         {
-            prefix = "*";
+            fullPrefix = "*";
         }
         else if (Enabled.Value == true)
         {
-            prefix = "+";
+            fullPrefix = "+";
         }
         else
         {
-            prefix = "-";
+            fullPrefix = "-";
         }
 
         if (IsNoDelete)
@@ -51,10 +52,12 @@ public class ModListing : IEquatable<ModListing>, IListing
             {
                 NoDeletePrefix = "[NoDelete]";
             }
-            prefix += NoDeletePrefix + " ";
+            fullPrefix += NoDeletePrefix + " ";
         }
+
+        fullPrefix += Prefix;
         
-        return prefix + Name;
+        return fullPrefix + Name;
     }
 
     public string GetCurrentFolderName()
@@ -76,6 +79,11 @@ public class ModListing : IEquatable<ModListing>, IListing
     {
         Name = CommonFuncs.RemoveNoDeletePrefix(Name);
         IsNoDelete = true;
+    }
+
+    public void SetPrefix(string prefix)
+    {
+        Prefix = prefix;
     }
 
     public bool Equals(ModListing? other)

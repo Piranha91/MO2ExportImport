@@ -90,6 +90,8 @@
             <CheckBox Content="Skip Mods That Already Exist" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
             <CheckBox Content="Match Disabled Status From Import" IsChecked="{Binding DisableUncheckedMods}" Margin="10 0 0 0"/>
             <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>
+            <TextBlock Text="Add Prefix to Imported Mod Names:" Margin="10 0 0 0"/>
+            <TextBox Text="{Binding ImportPrefix}" MinWidth="100" Margin="5 0 0 0"/>
         </WrapPanel>
 
         <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="5">

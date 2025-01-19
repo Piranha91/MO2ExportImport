@@ -26,7 +26,7 @@ namespace MO2ExportImport
         public string ProgramVersion { get; set; }
         public List<ProfileImportOperation> ProfileImports { get; set; } = new();
         public List<string> AddedModNames => ProfileImports.SelectMany(x => x.AddedModNames).Distinct().ToList();
-        public List<ImportOwnedPlugin> AddedPluginNames => ProfileImports.SelectMany(x => x.AddedPluginNames).Distinct().ToList();
+        public List<ImportOwnedPlugin> AddedPlugins => ProfileImports.SelectMany(x => x.AddedPluginNames).Distinct().ToList();
 
         [JsonIgnore]
         public string ThisFilePath { get; set; } = string.Empty;
@@ -49,14 +49,14 @@ namespace MO2ExportImport
 
     public class ImportOwnedPlugin
     {
-        public ImportOwnedPlugin(string pluginName, string parentMod)
+        public ImportOwnedPlugin(string pluginName, string parentModName)
         {
             PluginName = pluginName;
-            ParentMod = parentMod;
+            ParentModName = parentModName;
         }
 
         public string PluginName { get; set; }
-        public string ParentMod { get; set; }
+        public string ParentModName { get; set; }
 
         public override bool Equals(object obj)
         {
@@ -65,13 +65,13 @@ namespace MO2ExportImport
 
             var other = (ImportOwnedPlugin)obj;
             return PluginName.Equals(other.PluginName, StringComparison.OrdinalIgnoreCase) &&
-                   ParentMod.Equals(other.ParentMod, StringComparison.OrdinalIgnoreCase);
+                   ParentModName.Equals(other.ParentModName, StringComparison.OrdinalIgnoreCase);
         }
 
         public override int GetHashCode()
         {
             int hashPluginName = PluginName?.GetHashCode(StringComparison.OrdinalIgnoreCase) ?? 0;
-            int hashParentMod = ParentMod?.GetHashCode(StringComparison.OrdinalIgnoreCase) ?? 0;
+            int hashParentMod = ParentModName?.GetHashCode(StringComparison.OrdinalIgnoreCase) ?? 0;
 
             return hashPluginName ^ hashParentMod;
         }

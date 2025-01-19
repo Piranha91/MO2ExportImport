@@ -125,6 +125,7 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.SkipExisting = settings?.ImportSkipExistingMods ?? true;
                 _importViewModel.DisableUncheckedMods = settings?.ImportDisableUncheckedMods ?? false;
                 _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
+                _importViewModel.ImportPrefix = settings?.ImportPrefix ?? string.Empty;
             }
         }
 
@@ -148,7 +149,8 @@ namespace MO2ExportImport.ViewModels
                 ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,
                 ImportSkipExistingMods = _importViewModel.SkipExisting,
                 ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods,
-                ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace
+                ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace,
+                ImportPrefix = _importViewModel?.ImportPrefix
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

@@ -16,5 +16,6 @@ namespace MO2ExportImport.Models
         public bool ImportSkipExistingMods { get; set; } = true; // Default value
         public bool ImportDisableUncheckedMods { get; set; } = false;
         public bool ImportAutoCalculateSpace { get; set; } = true;
+        public string ImportPrefix { get; set; } = string.Empty;
     }
 }
