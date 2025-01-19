@@ -171,6 +171,12 @@ namespace MO2ExportImport.ViewModels
 
         private void UndoSelectedMods()
         {
+            if (SelectedOperation.ProgramVersion == "1.0")
+            {
+                MessageBox.Show("Cannot undo imports from Version 1.0 using newer versions. Sorry for the inconvenience.");
+                return;
+            }
+
             // Implement the logic to undo the selected mods
             _operationNotes.Clear();
 
@@ -208,7 +214,7 @@ namespace MO2ExportImport.ViewModels
                     var profileModList = CommonFuncs.LoadModList(profileModListPath);
 
                     var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
-                    var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath);
+                    var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath).Cast<IListing>().ToList();
 
                     var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
                     var profileLoadOrder = CommonFuncs.LoadPluginList(profileLoadOrderPath);
@@ -221,15 +227,43 @@ namespace MO2ExportImport.ViewModels
                     
                     profileModList.RemoveAll(x => profile.AddedModNames.Contains(x.Name));
 
+                    // re-add disabled mods if necessary
+                    if (profile.DisabledMods.Any())
+                    {
+                        var originaLoadOrderListings = profile.OriginalPluginList.Select(x => new PluginListing(x)).Cast<IListing>().ToList();
+                        _operationNotes.Add("Re-activating auto-disabled plugins into their original locations");
+                        foreach (var modName in profile.DisabledMods)
+                        {
+                            var modListing = profileModList.Where(x => x.Name == modName).FirstOrDefault();
+                            if (modListing is not null)
+                            {
+                                modListing.Enable();
+                                var modDir = Path.Combine(SelectedOperation.DestinationMO2Dir, "mods", modListing.GetCurrentFolderName());
+                                var pluginPaths = CommonFuncs.GetPluginsInDir(modDir);
+                                var pluginNames = pluginPaths.Select(x => Path.GetFileName(x)).ToArray();
+
+                                foreach (var pluginName in pluginNames)
+                                {
+                                    var pluginEntry = originaLoadOrderListings.Where(x => x.Name.Equals(pluginName)).FirstOrDefault();
+                                    if (pluginEntry is not null)
+                                    {
+                                        var precedingPluginName = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, originaLoadOrderListings, pluginEntry, new(), FormatHandler.StringType.Plugin);
+                                        _operationNotes.Add("Re-inserted " + pluginName + " after " + precedingPluginName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList, out var modExStr))
                     {
                         _operationNotes.Add(modExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList, false, out var pluginExStr))
+                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList.Cast<PluginListing>().ToList(), false, out var pluginExStr))
                     {
                         _operationNotes.Add(pluginExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profileLoadOrder, true, out var loadOrderExStr))
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profilePluginsList.Cast<PluginListing>().ToList(), true, out var loadOrderExStr))
                     {
                         _operationNotes.Add(loadOrderExStr);
                     }

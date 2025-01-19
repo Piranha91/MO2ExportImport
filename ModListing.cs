@@ -57,6 +57,11 @@ public class ModListing : IEquatable<ModListing>, IListing
         return prefix + Name;
     }
 
+    public string GetCurrentFolderName()
+    {
+        return FormatHandler.TrimModActivationStatus(GetCurrentEntryString());
+    }
+
     public void Enable()
     {
         Enabled = true;

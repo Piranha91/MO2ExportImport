@@ -250,7 +250,7 @@ namespace MO2ExportImport.ViewModels
                         }
                         else // Spliced
                         {
-                            var previousItem = AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, ignorePositions, StringType.Mod);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, ignorePositions, StringType.Mod);
                             Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
                     }
@@ -267,7 +267,7 @@ namespace MO2ExportImport.ViewModels
                         }
                         else // Spliced
                         {
-                            var previousItem = AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin);
                             Log($"Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
                     }
@@ -343,30 +343,6 @@ namespace MO2ExportImport.ViewModels
                 Log($"An error occurred during the import process: {ex.Message}");
                 MessageBox.Show($"An error occurred during the import process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<string> ignoredEntries, StringType stringType)
-        {
-            for (int i = currentEntry.GetIndexOf(sourceList) - 1; i >= 0; i--)
-            {
-                var precedingSearchEntry = sourceList[i];
-                if (ignoredEntries.Contains(precedingSearchEntry.Name))
-                {
-                    continue;
-                }
-
-                int indexInProfile = precedingSearchEntry.GetIndexOf(profileList);
-                if (indexInProfile != -1)
-                {
-                    profileList.Insert(indexInProfile + 1, currentEntry);
-                    return precedingSearchEntry.Name;
-                }
-            }
-
-            // If no precedingEntry is found or inserted, add to end
-            profileList.Add(currentEntry);
-            //ignoredEntries.Add(currentEntry); Commented out for now. Double checking my logic, I don't think this makes sense to include.
-            return "end";
         }
 
         private List<string> DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)

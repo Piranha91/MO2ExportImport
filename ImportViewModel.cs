@@ -349,21 +349,13 @@ namespace MO2ExportImport.ViewModels
                 // Determine the correct path to search for plugin files
                 var searchPath = string.IsNullOrEmpty(_modsRootPath) ? Path.Combine(ImportSourceFolder, mod.DirectoryName) : Path.Combine(_modsRootPath, mod.DirectoryName);
 
-                var pluginFiles = Directory.GetFiles(searchPath, "*.*", SearchOption.TopDirectoryOnly)
-                                           .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
-                                                       f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
-                                                       f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
-                                           .ToList();
+                var pluginFiles = CommonFuncs.GetPluginsInDir(searchPath);
 
                 if (pluginFiles.Any())
                 {
                     foreach (var existingModDir in Directory.GetDirectories(Path.Combine(Mo2Directory, "mods")))
                     {
-                        var existingModPlugins = Directory.GetFiles(existingModDir, "*.*", SearchOption.TopDirectoryOnly)
-                                                          .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
-                                                                      f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
-                                                                      f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
-                                                          .ToList();
+                        var existingModPlugins = CommonFuncs.GetPluginsInDir(existingModDir);
 
                         if (pluginFiles.All(pf => existingModPlugins.Any(ep => Path.GetFileName(pf).Equals(Path.GetFileName(ep), StringComparison.OrdinalIgnoreCase))))
                         {

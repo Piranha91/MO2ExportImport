@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Controls.Primitives;
+using static MO2ExportImport.FormatHandler;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MO2ExportImport
@@ -140,6 +141,44 @@ namespace MO2ExportImport
 
             // Return the original string if no match
             return modName;
+        }
+
+        public static List<string> GetPluginsInDir(string dirPath)
+        {
+            if (!Directory.Exists(dirPath))
+            {
+                return new();
+            }
+
+            return Directory.GetFiles(dirPath, "*.*", SearchOption.TopDirectoryOnly)
+                                           .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
+                                                       f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
+                                                       f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
+                                           .ToList();
+        }
+
+        public static string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<string> ignoredEntries, StringType stringType)
+        {
+            for (int i = currentEntry.GetIndexOf(sourceList) - 1; i >= 0; i--)
+            {
+                var precedingSearchEntry = sourceList[i];
+                if (ignoredEntries.Contains(precedingSearchEntry.Name))
+                {
+                    continue;
+                }
+
+                int indexInProfile = precedingSearchEntry.GetIndexOf(profileList);
+                if (indexInProfile != -1)
+                {
+                    profileList.Insert(indexInProfile + 1, currentEntry);
+                    return precedingSearchEntry.Name;
+                }
+            }
+
+            // If no precedingEntry is found or inserted, add to end
+            profileList.Add(currentEntry);
+            //ignoredEntries.Add(currentEntry); Commented out for now. Double checking my logic, I don't think this makes sense to include.
+            return "end";
         }
     }
 }
