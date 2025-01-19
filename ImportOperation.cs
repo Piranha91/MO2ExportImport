@@ -42,6 +42,9 @@ namespace MO2ExportImport
         public string ProfileName { get; set; }
         public List<string> AddedModNames { get; set; } = new();
         public List<ImportOwnedPlugin> AddedPluginNames { get; set; } = new();
+        public List<string> DisabledMods { get; set; } = new();
+        public List<string> OriginalModList { get; set; } = new();
+        public List<string> OriginalPluginList { get; set; }
     }
 
     public class ImportOwnedPlugin

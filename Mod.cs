@@ -24,6 +24,7 @@ namespace MO2ExportImport
         public bool IsSeparator { get; set; } = false;
         public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
+        public bool EnabledInExportedModList { get; set; } = false;
 
         public bool SelectedInUI
         {
@@ -40,6 +41,12 @@ namespace MO2ExportImport
         public Mod(ModListing listingObject)
         {
             SourceListing = listingObject;
+            Initialize();
+        }
+
+        public Mod(Mod copyTemplate)
+        {
+            SourceListing = new ModListing(copyTemplate.SourceListing.GetCurrentEntryString());
             Initialize();
         }
 
@@ -68,6 +75,8 @@ namespace MO2ExportImport
                     DisplayName = DisplayName.Substring(endIndex + 1).Trim(); // Remove the NoDeleteIndex from DisplayName
                 }
             }
+
+            EnabledInExportedModList = SourceListing.Enabled ?? false;
         }
 
         public Mod() // for json deserialization

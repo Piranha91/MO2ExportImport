@@ -21,7 +21,13 @@ public class ModListing : IEquatable<ModListing>, IListing
         Name = CommonFuncs.RemoveNoDeletePrefix(Name);
     }
     
-    
+    public ModListing() // for Json deserialization
+    {
+        Name = string.Empty;
+        IsNoDelete = false;
+        NoDeletePrefix = string.Empty;
+        _originalEntryString = string.Empty;
+    }
     
     public string GetCurrentEntryString()
     {
@@ -71,7 +77,29 @@ public class ModListing : IEquatable<ModListing>, IListing
     {
         return other is not null && Name.Equals(other.Name);
     }
-    
+
+    public bool Equals(IListing? other)
+    {
+        return other is not null && other is ModListing && Name.Equals(other.Name);
+    }
+
+    public int GetIndexOf(IList<IListing> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].Equals(this))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public override string ToString()
+    {
+        return Name;
+    }
+
     // Override GetHashCode
     public override int GetHashCode()
     {

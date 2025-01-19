@@ -83,11 +83,13 @@
             <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
+        <WrapPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
             <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
             <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
             <CheckBox Content="Add [NoDelete] Flags" IsChecked="{Binding AddNoDeleteFlags}" Margin="10 0 0 0"/>
-        </StackPanel>
+            <CheckBox Content="Skip Mods That Already Exist" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
+            <CheckBox Content="Match Disabled Status From Import" IsChecked="{Binding DisableUncheckedMods}" Margin="10 0 0 0"/>
+        </WrapPanel>
 
         <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="5">
             <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
@@ -154,7 +156,7 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding EnabledInMO2}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
                         <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>

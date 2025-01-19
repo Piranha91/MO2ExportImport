@@ -162,9 +162,11 @@ namespace MO2ExportImport.ViewModels
                     // Load and reverse the ProfileModList and ProfilePluginsList for correct processing
                     var profileModListPath = Path.Combine(profileDir, "modlist.txt");
                     var profileModList = CommonFuncs.LoadModList(profileModListPath).Cast<IListing>().ToList();
+                    profileManifest.OriginalModList = profileModList.Cast<ModListing>().Select(x => x.GetCurrentEntryString()).ToList();
 
                     var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
                     var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath).Cast<IListing>().ToList();;
+                    profileManifest.OriginalPluginList = profilePluginsList.Cast<PluginListing>().Select(x => x.GetCurrentEntryString()).ToList();
 
                     // Load the SourceModList and SourcePluginsList
                     var sourceModListPath = Path.Combine(_importProfileSourceDirectory, "modlist.txt");
@@ -270,24 +272,29 @@ namespace MO2ExportImport.ViewModels
                         }
                     }
 
+                    // Disable mods in the destination modlist that are unchecked in the source modlist
+                    if (_disableUncheckedMods)
+                    {
+                        profileManifest.DisabledMods = DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
+                        if (profileManifest.DisabledMods.Any())
+                        {
+                            string disabledRecord = "Disabled the following mods in profile " + profile + " because they were disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods);
+                            Log(disabledRecord);
+                        }
+                    }
+
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList.Cast<ModListing>().ToList(), out var modExStr))
                     {
                         Log(modExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList.Cast<PluginListing>().ToList(), out var pluginExStr))
+                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList.Cast<PluginListing>().ToList(), false, out var pluginExStr))
                     {
                         Log(pluginExStr);
-                    }
-                    
-                    // Disable mods in the destination modlist that are unchecked in the source modlist
-                    if (_disableUncheckedMods)
-                    {
-                        DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
                     }
 
                     // Make the LoadOrder.txt file based on the new Plugins.txt file
                     var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
-                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profilePluginsList.Cast<PluginListing>().ToList(), out var loadorderExStr))
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profilePluginsList.Cast<PluginListing>().ToList(), true, out var loadorderExStr))
                     {
                         Log(loadorderExStr);
                     }
@@ -340,7 +347,7 @@ namespace MO2ExportImport.ViewModels
 
         private string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<string> ignoredEntries, StringType stringType)
         {
-            for (int i = sourceList.IndexOf(currentEntry) - 1; i >= 0; i--)
+            for (int i = currentEntry.GetIndexOf(sourceList) - 1; i >= 0; i--)
             {
                 var precedingSearchEntry = sourceList[i];
                 if (ignoredEntries.Contains(precedingSearchEntry.Name))
@@ -348,7 +355,7 @@ namespace MO2ExportImport.ViewModels
                     continue;
                 }
 
-                int indexInProfile = profileList.IndexOf(precedingSearchEntry);
+                int indexInProfile = precedingSearchEntry.GetIndexOf(profileList);
                 if (indexInProfile != -1)
                 {
                     profileList.Insert(indexInProfile + 1, currentEntry);
@@ -362,16 +369,19 @@ namespace MO2ExportImport.ViewModels
             return "end";
         }
 
-        private void DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)
+        private List<string> DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)
         {
+            List<string> disabledMods = new();
             foreach (var sourceMod in sourceModList.Where(x => x.Enabled.HasValue && x.Enabled == false))
             {
-                var matchedMod = profileModList.FirstOrDefault(x => x.Name == sourceMod.Name);
+                var matchedMod = profileModList.FirstOrDefault(x => x.Name == sourceMod.Name && x.Enabled.HasValue && x.Enabled.Value == true);
                 if (matchedMod != null)
                 {
                     matchedMod.Disable();
+                    disabledMods.Add(matchedMod.Name);
                 }
             }
+            return disabledMods;
         }
 
         private void ClosePopup()

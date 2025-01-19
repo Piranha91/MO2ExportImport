@@ -28,7 +28,29 @@ public class PluginListing: IEquatable<PluginListing>, IListing
     {
         return other is not null && Name.Equals(other.Name);
     }
-    
+
+    public bool Equals(IListing? other)
+    {
+        return other is not null && other is PluginListing && Name.Equals(other.Name);
+    }
+
+    public int GetIndexOf(IList<IListing> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].Equals(this))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public override string ToString()
+    {
+        return Name;
+    }
+
     // Override GetHashCode
     public override int GetHashCode()
     {

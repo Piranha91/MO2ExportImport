@@ -225,11 +225,11 @@ namespace MO2ExportImport.ViewModels
                     {
                         _operationNotes.Add(modExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList, out var pluginExStr))
+                    if (!CommonFuncs.SavePluginList(profilePluginsListPath, profilePluginsList, false, out var pluginExStr))
                     {
                         _operationNotes.Add(pluginExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profileLoadOrder, out var loadOrderExStr))
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profileLoadOrder, true, out var loadOrderExStr))
                     {
                         _operationNotes.Add(loadOrderExStr);
                     }

@@ -136,7 +136,7 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding EnabledInMO2}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
                         <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>

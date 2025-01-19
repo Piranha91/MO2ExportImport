@@ -127,6 +127,17 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
+        private bool _skipExisting;
+        public bool SkipExisting
+        {
+            get => _skipExisting;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _skipExisting, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
+
         private string _filterText;
         public string FilterText
         {
@@ -284,7 +295,7 @@ namespace MO2ExportImport.ViewModels
 
                 foreach (var mod in modlistData?.SelectedMods ?? new())
                 {
-                    var modItem = new Mod(mod.SourceListing) { SelectedInUI = true }; // Always select the mod
+                    var modItem = new Mod(mod) { SelectedInUI = true }; // Always select the mod
                     ModList.Add(modItem);
                 }
             }
@@ -439,7 +450,10 @@ namespace MO2ExportImport.ViewModels
         private void LaunchImportPopup()
         {
             // Filter the mods before launching the import popup
-            FilterModsForImport();
+            if (SkipExisting)
+            {
+                FilterModsForImport();
+            }
 
             // If no mods are selected after filtering, don't open the popup
             if (ModList.Any(x => x.SelectedInUI))
