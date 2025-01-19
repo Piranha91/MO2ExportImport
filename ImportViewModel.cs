@@ -333,8 +333,11 @@ namespace MO2ExportImport.ViewModels
                 {
                     var modName = Path.GetFileName(dir);
                     var modListEntry = modList.FirstOrDefault(x => x.Name == modName);
-                    var mod = new Mod(modListEntry?.Name ?? modName) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
-                    ModList.Add(mod);
+                    if (modListEntry is not null)
+                    {
+                        var mod = new Mod(modListEntry) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
+                        ModList.Add(mod);
+                    }
                 }
             }
 
