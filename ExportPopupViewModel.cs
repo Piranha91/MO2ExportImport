@@ -89,7 +89,7 @@ namespace MO2ExportImport.ViewModels
             // Calculate the total size of the selected mod folders
             foreach (var mod in _selectedMods)
             {
-                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.DirectoryName);
+                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.OriginalDirectoryName);
                 if (System.IO.Directory.Exists(modPath))
                 {
                     totalSize += System.IO.Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
@@ -147,8 +147,8 @@ namespace MO2ExportImport.ViewModels
             // Copy other files
             foreach (var mod in _selectedMods)
             {
-                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.DirectoryName);
-                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.DirectoryName);
+                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.OriginalDirectoryName);
+                var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.GetDestinationName());
 
                 if (!Alphaleonis.Win32.Filesystem.Directory.Exists(modDestinationPath))
                 {

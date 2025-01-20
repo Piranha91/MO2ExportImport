@@ -64,7 +64,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _ignoreDisabled;
+        private bool _ignoreDisabled = true;
         public bool IgnoreDisabled
         {
             get => _ignoreDisabled;
@@ -117,7 +117,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _autoCalculateSpace;
+        private bool _autoCalculateSpace = true;
         public bool AutoCalculateSpace
         {
             get => _autoCalculateSpace;

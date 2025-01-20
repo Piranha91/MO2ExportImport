@@ -25,6 +25,7 @@ namespace MO2ExportImport.ViewModels
         private string _selectedProfile;
         private ImportMode _importMode;
         private bool _addNoDeleteFlags;
+        private bool _removeNoDeleteFlags;
         private bool _disableUncheckedMods;
         private StreamWriter _logWriter;
         private string _programVersion;
@@ -70,7 +71,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -80,6 +81,7 @@ namespace MO2ExportImport.ViewModels
             _selectedProfile = selectedProfile;
             _importMode = importMode;
             _addNoDeleteFlags = addNoDeleteFlags;
+            _removeNoDeleteFlags = removeNoDeleteFlags;
             _disableUncheckedMods = disableUncheckedMods;
             _logWriter = logWriter;
             _programVersion = programVersion;
@@ -102,7 +104,7 @@ namespace MO2ExportImport.ViewModels
             try
             {
                 var totalSize = _selectedModList.Where(x => x.SelectedInUI)
-                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.DirectoryName)));
+                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName)));
 
                 var requiredSpaceInGB = ConvertBytesToGB(totalSize);
                 RequiredSpaceText = $"Total size: {requiredSpaceInGB:F2} GB";
@@ -185,7 +187,7 @@ namespace MO2ExportImport.ViewModels
                     // Filter SourceModList to include only mods with corresponding directories
                     var validSourceMods = _selectedModList
                         .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
-                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.DirectoryName)))
+                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName)))
                         .ToList();
 
                     if (_addNoDeleteFlags)
@@ -193,6 +195,13 @@ namespace MO2ExportImport.ViewModels
                         foreach (var mod in validSourceMods)
                         {
                             mod.MakeNoDelete();
+                        }
+                    }
+                    else if (_removeNoDeleteFlags)
+                    {
+                        foreach(var mod in validSourceMods)
+                        {
+                            mod.RemoveNoDelete();
                         }
                     }
 
@@ -206,7 +215,7 @@ namespace MO2ExportImport.ViewModels
                     var validPlugins = new List<PluginListing>();
                     foreach (var mod in validSourceMods)
                     {
-                        var modDirectory = Path.Combine(_modSourceDirectory, mod.DirectoryName);
+                        var modDirectory = Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName);
                         if (Directory.Exists(modDirectory))
                         {
                             var pluginFilesInMod = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
@@ -235,23 +244,9 @@ namespace MO2ExportImport.ViewModels
                         }
                     }
 
-                    // Handle ImportMode for modlist.txt
                     var ignorePositions = new List<string>();
 
-                    // add NoDelete as a "virtual" prefix to the selected mods in SourceModList so that splicing mode can correctly find 
-                    if (_addNoDeleteFlags)
-                    {
-                        var selectedModNames = validSourceMods.Select(x => x.SourceListing.Name).ToArray();
-                        for (int i = 0; i < sourceModList.Count; i++)
-                        {
-                            if (!selectedModNames.Contains(sourceModList[i].Name))
-                            {
-                                continue;
-                            }
-                            (sourceModList[i] as ModListing)?.MakeNoDelete();
-                        }
-                    }
-
+                    // Handle ImportMode for modlist.txt
                     foreach (var currentMod in validSourceMods)
                     {
                         if (_importMode == ImportMode.End)
@@ -315,10 +310,9 @@ namespace MO2ExportImport.ViewModels
 
                     var copyTasks = new List<Task>();
 
-
                     foreach (var mod in validSourceMods)
                     {
-                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.DirectoryName);
+                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName);
                         var destinationModPath = Path.Combine(modsOutputDir, mod.GetDestinationName());
 
                         if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))

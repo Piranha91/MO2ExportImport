@@ -87,6 +87,7 @@
             <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
             <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
             <CheckBox Content="Add [NoDelete] Flags" IsChecked="{Binding AddNoDeleteFlags}" Margin="10 0 0 0"/>
+            <CheckBox Content="Remove [NoDelete] Flags" IsChecked="{Binding StripNoDelete}" Margin="10 0 0 0"/>
             <CheckBox Content="Skip Mods That Already Exist" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
             <CheckBox Content="Match Disabled Status From Import" IsChecked="{Binding DisableUncheckedMods}" Margin="10 0 0 0"/>
             <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>

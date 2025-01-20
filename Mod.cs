@@ -19,7 +19,7 @@ namespace MO2ExportImport
         private const string _noDeleteString = "[NoDelete]";
 
         public ModListing SourceListing { get; set; }
-        public string DirectoryName { get; set; } = string.Empty;
+        public string OriginalDirectoryName { get; private set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
         public bool IsSeparator { get; set; } = false;
         public bool IsNoDelete { get; set; } = false;
@@ -52,8 +52,8 @@ namespace MO2ExportImport
 
         private void Initialize()
         {
-            DisplayName = SourceListing.Name;
-            DirectoryName = DisplayName;
+            DisplayName = SourceListing.GetCurrentFolderName();
+            OriginalDirectoryName = SourceListing.GetCurrentFolderName();
 
             IsSeparator = SourceListing.Name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
             if (IsSeparator)
@@ -62,17 +62,14 @@ namespace MO2ExportImport
                 DisplayName = _separatorDispString + DisplayName + _separatorDispString;
             }
 
-            IsNoDelete = DisplayName.StartsWith(_noDeleteString);
+            IsNoDelete = SourceListing.IsNoDelete;
             if (IsNoDelete)
             {
-                DisplayName = StringExtensions.RemoveAtBeginning(DisplayName, _noDeleteString).Trim();
-
                 // Extract the NoDeleteIndex if it exists
-                if (DisplayName.StartsWith("[") && DisplayName.Contains("]"))
+                if (SourceListing.NoDeletePrefix.StartsWith("[") && SourceListing.NoDeletePrefix.Contains("]"))
                 {
-                    int endIndex = DisplayName.IndexOf("]");
-                    NoDeleteIndex = DisplayName.Substring(1, endIndex - 1); // Get the string between the brackets
-                    DisplayName = DisplayName.Substring(endIndex + 1).Trim(); // Remove the NoDeleteIndex from DisplayName
+                    int endIndex = SourceListing.NoDeletePrefix.IndexOf("]");
+                    NoDeleteIndex = SourceListing.NoDeletePrefix.Substring(1, endIndex - 1); // Get the string between the brackets
                 }
             }
 
@@ -95,6 +92,15 @@ namespace MO2ExportImport
             {
                 SourceListing.MakeNoDelete();
                 IsNoDelete = true;
+            }
+        }
+
+        public void RemoveNoDelete()
+        {
+            if (IsNoDelete)
+            {
+                SourceListing.RemoveNoDelete();
+                IsNoDelete = false;
             }
         }
 

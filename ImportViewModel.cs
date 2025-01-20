@@ -65,7 +65,7 @@ namespace MO2ExportImport.ViewModels
             set => this.RaiseAndSetIfChanged(ref _modsLoaded, value);
         }
 
-        private ImportMode _selectedImportMode;
+        private ImportMode _selectedImportMode = ImportMode.Spliced;
 
         public ObservableCollection<ImportMode> ImportModes { get; } = new ObservableCollection<ImportMode>
         {
@@ -83,7 +83,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _ignoreDisabled;
+        private bool _ignoreDisabled = true;
         public bool IgnoreDisabled
         {
             get => _ignoreDisabled;
@@ -112,10 +112,29 @@ namespace MO2ExportImport.ViewModels
             set
             {
                 this.RaiseAndSetIfChanged(ref _addNoDeleteFlags, value);
+                if (value)
+                {
+                    StripNoDelete = false;
+                }
                 _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
             }
         }
-        
+
+        private bool _stripNoDelete;
+        public bool StripNoDelete
+        {
+            get => _stripNoDelete;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _stripNoDelete, value);
+                if (value)
+                {
+                    AddNoDeleteFlags = false;
+                }
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
+
         private bool _disableUncheckedMods;
         public bool DisableUncheckedMods
         {
@@ -127,7 +146,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _skipExisting;
+        private bool _skipExisting = true;
         public bool SkipExisting
         {
             get => _skipExisting;
@@ -172,7 +191,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _autoCalculateSpace;
+        private bool _autoCalculateSpace = true;
         public bool AutoCalculateSpace
         {
             get => _autoCalculateSpace;
@@ -331,8 +350,8 @@ namespace MO2ExportImport.ViewModels
                 var modDirs = Directory.GetDirectories(ImportSourceFolder);
                 foreach (var dir in modDirs)
                 {
-                    var modName = Path.GetFileName(dir);
-                    var modListEntry = modList.FirstOrDefault(x => x.Name == modName);
+                    var modDir = Path.GetFileName(dir);
+                    var modListEntry = modList.FirstOrDefault(x => x.GetCurrentFolderName() == modDir);
                     if (modListEntry is not null)
                     {
                         var mod = new Mod(modListEntry) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
@@ -372,7 +391,7 @@ namespace MO2ExportImport.ViewModels
                 }
 
                 // Determine the correct path to search for plugin files
-                var searchPath = string.IsNullOrEmpty(_modsRootPath) ? Path.Combine(ImportSourceFolder, mod.DirectoryName) : Path.Combine(_modsRootPath, mod.DirectoryName);
+                var searchPath = string.IsNullOrEmpty(_modsRootPath) ? Path.Combine(ImportSourceFolder, mod.OriginalDirectoryName) : Path.Combine(_modsRootPath, mod.OriginalDirectoryName);
 
                 var pluginFiles = CommonFuncs.GetPluginsInDir(searchPath);
 
@@ -476,7 +495,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

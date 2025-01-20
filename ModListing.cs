@@ -81,6 +81,12 @@ public class ModListing : IEquatable<ModListing>, IListing
         IsNoDelete = true;
     }
 
+    public void RemoveNoDelete()
+    {
+        Name = CommonFuncs.RemoveNoDeletePrefix(Name);
+        IsNoDelete = false;
+    }
+
     public void SetPrefix(string prefix)
     {
         Prefix = prefix;

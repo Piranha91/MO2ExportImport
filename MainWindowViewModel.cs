@@ -12,7 +12,7 @@ namespace MO2ExportImport.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        public string ProgramVersion { get; } = "1.1";
+        public string ProgramVersion { get; } = "1.2";
 
         private const string SettingsFilePath = "settings.json";
 
@@ -122,6 +122,7 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.IgnoreDisabled = settings?.ImportIgnoreDisabled ?? true; // Default to true if not set
                 _importViewModel.IgnoreSeparators = settings?.ImportIgnoreSeparators ?? false; // Default to false if not set
                 _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false;
+                _importViewModel.StripNoDelete = settings?.ImportStripNoDelete ?? false;
                 _importViewModel.SkipExisting = settings?.ImportSkipExistingMods ?? true;
                 _importViewModel.DisableUncheckedMods = settings?.ImportDisableUncheckedMods ?? false;
                 _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
@@ -149,6 +150,7 @@ namespace MO2ExportImport.ViewModels
                 ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,
                 ImportSkipExistingMods = _importViewModel.SkipExisting,
                 ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods,
+                ImportStripNoDelete = _importViewModel.StripNoDelete,
                 ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace,
                 ImportPrefix = _importViewModel?.ImportPrefix
             };

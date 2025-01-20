@@ -7,6 +7,7 @@ namespace MO2ExportImport.Models
         public string ExportDestinationFolder { get; set; }
         public bool ExportIgnoreDisabled { get; set; } = true; // Default value
         public bool ExportIgnoreSeparators { get; set; } = false; // Default value
+        public bool ImportStripNoDelete { get; set; } = false;
         public bool ExportAutoCalculateSpace { get; set; } = true;
         public string ImportTargetMO2Dir { get; set; }
         public ImportMode ImportMode { get; set; } = ImportMode.Spliced;
