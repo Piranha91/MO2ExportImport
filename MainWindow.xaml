@@ -40,7 +40,12 @@
                 <TextBlock Text="●" Foreground="{Binding UndoBorderColor}" VerticalAlignment="Center" Margin="10 0 10 0"  FontSize="16"/>
             </StackPanel>
         </StackPanel>
-        
+
+        <TextBlock Grid.Row="0" Grid.Column="0"
+           VerticalAlignment="Bottom"
+           HorizontalAlignment="Center"
+           Text="{Binding ProgramVersion, StringFormat='MO2 Splicer {0}'}"/>
+
         <!-- Content area to display the UserControls -->
         <ContentControl Name="MainContentControl" Grid.Column="1" Grid.Row="0" Content="{Binding CurrentView}">
             <ContentControl.Resources>
