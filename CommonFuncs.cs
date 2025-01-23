@@ -157,25 +157,31 @@ namespace MO2ExportImport
                                            .ToList();
         }
 
-        public static string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<string> ignoredEntries, StringType stringType)
+        public static string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<string> ignoredEntries, StringType stringType, List<string> eventLog)
         {
             for (int i = currentEntry.GetIndexOf(sourceList) - 1; i >= 0; i--)
             {
                 var precedingSearchEntry = sourceList[i];
+
+                eventLog.Add("Attempting to place " + currentEntry.Name + " after " + precedingSearchEntry.Name);
+
                 if (ignoredEntries.Contains(precedingSearchEntry.Name))
                 {
+                    eventLog.Add(precedingSearchEntry.Name + " is in the Ignore List. Continuing to next preceding entry");
                     continue;
                 }
 
                 int indexInProfile = precedingSearchEntry.GetIndexOf(profileList);
                 if (indexInProfile != -1)
                 {
+                    eventLog.Add("Success: Inserting " + currentEntry.Name + " at position " + (indexInProfile+1).ToString());
                     profileList.Insert(indexInProfile + 1, currentEntry);
                     return precedingSearchEntry.Name;
                 }
             }
 
             // If no precedingEntry is found or inserted, add to end
+            eventLog.Add("Exhausted all preceding entries in the source list for " + currentEntry.Name + ". Adding to the end of the destination list.");
             profileList.Add(currentEntry);
             //ignoredEntries.Add(currentEntry); Commented out for now. Double checking my logic, I don't think this makes sense to include.
             return "end";

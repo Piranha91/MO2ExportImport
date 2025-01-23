@@ -113,6 +113,19 @@ namespace MO2ExportImport.ViewModels
                     errors.Add("Could not delete Operation Log at " + operation.ThisFilePath + Environment.NewLine + e.Message);                  
                 }
 
+                var logFilePath = Path.Combine(Path.GetDirectoryName(operation.ThisFilePath)?? "", "ImportLog.txt");
+                if (File.Exists(logFilePath))
+                {
+                    try
+                    {
+                        File.Delete(logFilePath);
+                    }
+                    catch (Exception e)
+                    {
+                        errors.Add("Could not delete Operation EVent Log at " + logFilePath + Environment.NewLine + e.Message);
+                    }
+                }
+
                 var parentFolder = Directory.GetParent(operation.ThisFilePath)?.FullName;
                 if (parentFolder != null && Directory.Exists(parentFolder) && !Directory.GetFiles(parentFolder).Any())
                 {
@@ -247,7 +260,7 @@ namespace MO2ExportImport.ViewModels
                                     var pluginEntry = originaLoadOrderListings.Where(x => x.Name.Equals(pluginName)).FirstOrDefault();
                                     if (pluginEntry is not null)
                                     {
-                                        var precedingPluginName = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, originaLoadOrderListings, pluginEntry, new(), FormatHandler.StringType.Plugin);
+                                        var precedingPluginName = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, originaLoadOrderListings, pluginEntry, new(), FormatHandler.StringType.Plugin, new());
                                         _operationNotes.Add("Re-inserted " + pluginName + " after " + precedingPluginName);
                                     }
                                 }

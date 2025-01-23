@@ -28,6 +28,7 @@ namespace MO2ExportImport.ViewModels
         private bool _removeNoDeleteFlags;
         private bool _disableUncheckedMods;
         private StreamWriter _logWriter;
+        private List<string> _importEvents = new();
         private string _programVersion;
         private string _importPrefix;
 
@@ -147,6 +148,8 @@ namespace MO2ExportImport.ViewModels
 
         private async void ImportMods()
         {
+            _importEvents = new();
+
             BackupSelectedProfiles(); // Start logging
 
             var manifest = new ImportOperation(_modSourceDirectory, _mo2Directory, DateTime.Now, _programVersion);
@@ -192,6 +195,7 @@ namespace MO2ExportImport.ViewModels
 
                     if (_addNoDeleteFlags)
                     {
+                        Log("Adding NoDelete flags to mods where required");
                         foreach (var mod in validSourceMods)
                         {
                             mod.MakeNoDelete();
@@ -199,19 +203,25 @@ namespace MO2ExportImport.ViewModels
                     }
                     else if (_removeNoDeleteFlags)
                     {
+                        Log("Removing NoDelete flags from mods where required");
                         foreach(var mod in validSourceMods)
                         {
                             mod.RemoveNoDelete();
                         }
                     }
 
-                    foreach (var mod in validSourceMods)
+                    if (_importPrefix != null && _importPrefix.Length > 0)
                     {
-                        mod.SetPrefix(_importPrefix);
+                        Log("Adding prefix \"" + _importPrefix + "\" to each mod name");
+
+                        foreach (var mod in validSourceMods)
+                        {
+                            mod.SetPrefix(_importPrefix);
+                        }
                     }
 
                     // Collect valid plugins based on validSourceMods
-
+                    Log("Collecting plugin names for import");
                     var validPlugins = new List<PluginListing>();
                     foreach (var mod in validSourceMods)
                     {
@@ -230,7 +240,7 @@ namespace MO2ExportImport.ViewModels
                                 // Ignore plugins that already exist in destination load order
                                 if (profilePluginsList.Any(x => x.Name == pluginFileName))
                                 {
-                                    Log($"Skipped {pluginFileName} because it is already present in the destination load order");
+                                    Log($"Skipped {pluginFileName} from {mod.DisplayName} because it is already present in the destination load order");
                                     continue;
                                 }
 
@@ -247,22 +257,26 @@ namespace MO2ExportImport.ViewModels
                     var ignorePositions = new List<string>();
 
                     // Handle ImportMode for modlist.txt
+                    Log("Importing mods into modlist.txt");
                     foreach (var currentMod in validSourceMods)
                     {
                         if (_importMode == ImportMode.End)
                         {
                             var previousItem = profileModList.LastOrDefault()?.Name ?? "start";
                             profileModList.Add(currentMod.SourceListing);
-                            Log($"Added { FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
+                            Log($"- Added { FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
                         }
                         else // Spliced
                         {
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, ignorePositions, StringType.Mod);
-                            Log($"Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
+                            var spliceLog = new List<string>();
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, ignorePositions, StringType.Mod, spliceLog);
+                            Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
+                            Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
                     }
 
                     // Handle ImportMode for plugins.txt
+                    Log("Importing plugins into plugins.txt");
                     ignorePositions.Clear();
                     foreach (var currentPlugin in validPlugins)
                     {
@@ -270,12 +284,14 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profilePluginsList.LastOrDefault()?.Name ?? "start";
                             profilePluginsList.Add(currentPlugin);
-                            Log($"Added {currentPlugin.Name} to end of plugins.txt after {previousItem}");
+                            Log($"- Added {currentPlugin.Name} to end of plugins.txt after {previousItem}");
                         }
                         else // Spliced
                         {
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin);
-                            Log($"Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
+                            var spliceLog = new List<string>();
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin, spliceLog);
+                            Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
+                            Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
                     }
 
@@ -285,7 +301,7 @@ namespace MO2ExportImport.ViewModels
                         profileManifest.DisabledMods = DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
                         if (profileManifest.DisabledMods.Any())
                         {
-                            string disabledRecord = "Disabled the following mods in profile " + profile + " because they were disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods);
+                            string disabledRecord = "- Disabled the following mods in profile " + profile + " because they were disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods.Select(x => "-- " + x).ToArray());
                             Log(disabledRecord);
                         }
                     }
@@ -323,11 +339,11 @@ namespace MO2ExportImport.ViewModels
                                 bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
                                 if (success)
                                 {
-                                    Log($"Copied mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
+                                    Log($"-- Copied mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
                                 }
                                 else
                                 {
-                                    Log($"Failed to copy mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
+                                    Log($"-- Failed to copy mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
                                 }
                             }));
                         }
@@ -388,6 +404,7 @@ namespace MO2ExportImport.ViewModels
                 // Create a new backup directory with a timestamp
                 string currentBackupDir = Path.Combine(backupsFolderPath, DateTime.Now.ToString("yyyy MM dd HH mm"));
                 Directory.CreateDirectory(currentBackupDir);
+                LogOperationEvent("Created backup directory at " +  currentBackupDir);
 
                 // Determine which profiles to back up
                 var profilesToBackup = new List<string>();
@@ -429,6 +446,8 @@ namespace MO2ExportImport.ViewModels
                         {
                             File.Copy(modlistFilePath, Path.Combine(profileBackupDir, "modlist.txt"), overwrite: true);
                         }
+
+                        LogOperationEvent("Backing up " + profileDir);
                     }
                 }
             }
@@ -484,11 +503,17 @@ namespace MO2ExportImport.ViewModels
         private void Log(string message)
         {
             _logWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+            _importEvents.Add(message);
         }
 
         private void CloseLog()
         {
             _logWriter?.Close();
+        }
+
+        private void LogOperationEvent(string message)
+        {
+            _importEvents.Add(message);
         }
 
         private void SaveManifest(ImportOperation manifest)
@@ -507,6 +532,9 @@ namespace MO2ExportImport.ViewModels
 
             var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Path.Combine(destinationPath, "ImportManifest.json"), manifestJson);
+
+            var eventLogPath = Path.Combine(destinationPath, "ImportLog.txt");
+            File.WriteAllText(eventLogPath, string.Join(Environment.NewLine, _importEvents));
         }
     }
 }
