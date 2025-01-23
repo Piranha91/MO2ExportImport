@@ -502,8 +502,22 @@ namespace MO2ExportImport.ViewModels
         
         private void Log(string message)
         {
-            _logWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
-            _importEvents.Add(message);
+            try
+            {
+                _logWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+            }
+            catch (Exception e)
+            {
+                
+            }
+            try
+            {
+                _importEvents.Add(message);
+            }
+            catch (Exception e)
+            {
+                
+            }
         }
 
         private void CloseLog()
