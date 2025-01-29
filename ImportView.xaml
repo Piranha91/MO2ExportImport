@@ -89,7 +89,9 @@
             <CheckBox Content="Add [NoDelete] Flags" IsChecked="{Binding AddNoDeleteFlags}" Margin="10 0 0 0"/>
             <CheckBox Content="Remove [NoDelete] Flags" IsChecked="{Binding StripNoDelete}" Margin="10 0 0 0"/>
             <CheckBox Content="Skip Mods That Already Exist" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
+            <CheckBox Content="Ignore Splice Order of Existing Mods" IsChecked="{Binding IgnoreMatchedModsForOrdering}" Margin="10 0 0 0"/>
             <CheckBox Content="Match Disabled Status From Import" IsChecked="{Binding DisableUncheckedMods}" Margin="10 0 0 0"/>
+            <CheckBox Content="Interpolate Missing Plugin Groups" IsChecked="{Binding InterpolateMissingPluginGroups}" Margin="10 0 0 0"/>
             <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>
             <TextBlock Text="Add Prefix to Imported Mod Names:" Margin="10 0 0 0"/>
             <TextBox Text="{Binding ImportPrefix}" MinWidth="100" Margin="5 0 0 0"/>

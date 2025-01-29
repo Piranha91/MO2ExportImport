@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Accessibility;
 
 namespace MO2ExportImport
 {
@@ -43,6 +44,7 @@ namespace MO2ExportImport
         public List<string> AddedModNames { get; set; } = new();
         public List<ImportOwnedPlugin> AddedPluginNames { get; set; } = new();
         public List<string> DisabledMods { get; set; } = new();
+        public List<PluginListing> DeletedPlugins { get; set; } = new();
         public List<string> OriginalModList { get; set; } = new();
         public List<string> OriginalPluginList { get; set; }
     }

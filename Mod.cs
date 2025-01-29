@@ -19,7 +19,7 @@ namespace MO2ExportImport
         private const string _noDeleteString = "[NoDelete]";
 
         public ModListing SourceListing { get; set; }
-        public string OriginalDirectoryName { get; private set; } = string.Empty;
+        public string SourceDirectoryName { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
         public bool IsSeparator { get; set; } = false;
         public bool IsNoDelete { get; set; } = false;
@@ -47,13 +47,18 @@ namespace MO2ExportImport
         public Mod(Mod copyTemplate)
         {
             SourceListing = new ModListing(copyTemplate.SourceListing.GetCurrentEntryString());
-            Initialize();
+            SourceDirectoryName = copyTemplate.SourceDirectoryName;
+            DisplayName = copyTemplate.DisplayName;
+            IsSeparator = copyTemplate.IsSeparator;
+            IsNoDelete = copyTemplate.IsNoDelete;
+            NoDeleteIndex = copyTemplate.NoDeleteIndex;
+            EnabledInExportedModList = copyTemplate.EnabledInExportedModList;
         }
 
         private void Initialize()
         {
             DisplayName = SourceListing.GetCurrentFolderName();
-            OriginalDirectoryName = SourceListing.GetCurrentFolderName();
+            SourceDirectoryName = SourceListing.GetCurrentFolderName();
 
             IsSeparator = SourceListing.Name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
             if (IsSeparator)

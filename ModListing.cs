@@ -6,11 +6,11 @@ public class ModListing : IEquatable<ModListing>, IListing
 {
     private string _originalEntryString;
     public string Name { get; set;  } 
-    public bool? Enabled { get; private set; }
+    public bool? Enabled { get; set; }
     
-    public bool IsNoDelete { get; private set; }
-    public string NoDeletePrefix { get; private set; }
-    public string Prefix { get; private set; } = string.Empty;
+    public bool IsNoDelete { get; set; }
+    public string NoDeletePrefix { get; set; }
+    public string Prefix { get; set; } = string.Empty;
 
     public ModListing(string entryString)
     {
@@ -24,10 +24,7 @@ public class ModListing : IEquatable<ModListing>, IListing
     
     public ModListing() // for Json deserialization
     {
-        Name = string.Empty;
-        IsNoDelete = false;
-        NoDeletePrefix = string.Empty;
-        _originalEntryString = string.Empty;
+
     }
     
     public string GetCurrentEntryString()

@@ -4,13 +4,27 @@ public class PluginListing: IEquatable<PluginListing>, IListing
 {
     private string _originalEntryString;
     public string Name { get; set;  } 
-    public bool? Enabled { get; private set; }
+    public bool? Enabled { get; set; }
+    public string? PluginGroup { get; set; } = null;
+    public bool IsBaseGamePlugin { get; set; } = false;
 
     public PluginListing(string entryString)
     {
         _originalEntryString = entryString;
         Name = FormatHandler.TrimPluginActivationStatus(entryString);
         Enabled = FormatHandler.GetPluginActivationStatus(entryString);
+    }
+
+    public PluginListing(string loadOrderEntryString, bool fromLoadOrderFile)
+    {
+        Name = loadOrderEntryString;
+        _originalEntryString = loadOrderEntryString;
+        IsBaseGamePlugin = fromLoadOrderFile;
+    }
+
+    public PluginListing() // for Json deserialization
+    {
+        
     }
 
     public string GetCurrentEntryString()

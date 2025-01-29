@@ -215,16 +215,18 @@ namespace MO2ExportImport.ViewModels
                 Profiles.Add(profile);
             }
 
+            /* Too much perforance hit with long lists
             if (Profiles.Any())
             {
                 SelectedProfile = Profiles.First();
-            }
+            }*/
         }
 
         private void LoadModList()
         {
             if (string.IsNullOrEmpty(_selectedProfile)) return;
 
+            IsLoadingList = true;
             IsPleaseWaitVisible = true;
             System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
 
@@ -247,8 +249,7 @@ namespace MO2ExportImport.ViewModels
             }
 
             _filteredModList = new ObservableCollection<Mod>(ModList);
-
-            IsLoadingList = true;
+            
             foreach (var mod in _filteredModList)
             {
                 if (mod == _filteredModList.Last())

@@ -77,12 +77,21 @@ namespace MO2ExportImport.ViewModels
                 if (File.Exists(manifestFilePath))
                 {
                     var jsonString = File.ReadAllText(manifestFilePath);
-                    var operation = JsonSerializer.Deserialize<ImportOperation>(jsonString);
-
-                    if (operation != null)
+                    try
                     {
-                        operation.ThisFilePath = manifestFilePath;
-                        ImportOperations.Add(operation);
+                        var operation = JsonSerializer.Deserialize<ImportOperation>(jsonString);
+
+                        if (operation != null)
+                        {
+                            operation.ThisFilePath = manifestFilePath;
+                            ImportOperations.Add(operation);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(
+                            "Failed to load import manifest. This may be due to the manifest being written by a previous version of MO2 Splicer: " +
+                            manifestFilePath);
                     }
                 }
             }
@@ -227,15 +236,12 @@ namespace MO2ExportImport.ViewModels
                     var profileModList = CommonFuncs.LoadModList(profileModListPath);
 
                     var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
-                    var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath).Cast<IListing>().ToList();
-
-                    var profileLoadOrderPath = Path.Combine(profileDir, "loadorder.txt");
-                    var profileLoadOrder = CommonFuncs.LoadPluginList(profileLoadOrderPath);
+                    var profilePluginsList = CommonFuncs.LoadPluginListFromLoadOrder(profileDir).Cast<IListing>().ToList();
+                    
+                    var profileLoadOrderListPath = Path.Combine(profileDir, "loadorder.txt");
+                    var profilePluginGroupsPath = Path.Combine(profileDir, "plugingroups.txt");
 
                     profilePluginsList.RemoveAll(x =>
-                        profile.AddedPluginNames.Select(y => y.PluginName).Contains(x.Name));
-                    
-                    profileLoadOrder.RemoveAll(x =>
                         profile.AddedPluginNames.Select(y => y.PluginName).Contains(x.Name));
                     
                     profileModList.RemoveAll(x => profile.AddedModNames.Contains(x.Name));
@@ -252,7 +258,7 @@ namespace MO2ExportImport.ViewModels
                             {
                                 modListing.Enable();
                                 var modDir = Path.Combine(SelectedOperation.DestinationMO2Dir, "mods", modListing.GetCurrentFolderName());
-                                var pluginPaths = CommonFuncs.GetPluginsInDir(modDir);
+                                var pluginPaths = CommonFuncs.GetPluginPathsInDir(modDir);
                                 var pluginNames = pluginPaths.Select(x => Path.GetFileName(x)).ToArray();
 
                                 foreach (var pluginName in pluginNames)
@@ -276,9 +282,13 @@ namespace MO2ExportImport.ViewModels
                     {
                         _operationNotes.Add(pluginExStr);
                     }
-                    if (!CommonFuncs.SavePluginList(profileLoadOrderPath, profilePluginsList.Cast<PluginListing>().ToList(), true, out var loadOrderExStr))
+                    if (!CommonFuncs.SavePluginList(profileLoadOrderListPath, profilePluginsList.Cast<PluginListing>().ToList(), true, out var loadOrderExStr))
                     {
                         _operationNotes.Add(loadOrderExStr);
+                    }
+                    if (!CommonFuncs.SavePluginGroups(profilePluginGroupsPath, profilePluginsList.Cast<PluginListing>().ToList(), out var pluginGroupsExStr))
+                    {
+                        _operationNotes.Add(pluginGroupsExStr);
                     }
                 }
                 else

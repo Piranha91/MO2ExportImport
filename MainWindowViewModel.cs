@@ -75,6 +75,9 @@ namespace MO2ExportImport.ViewModels
 
             // Set initial view
             CurrentView = _exportViewModel;
+            
+            // run personal functions if needed
+            PersonalFunctions.LaunchPersonalFunction();
         }
 
         private void NavigateToExport()
@@ -127,6 +130,8 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.DisableUncheckedMods = settings?.ImportDisableUncheckedMods ?? false;
                 _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
                 _importViewModel.ImportPrefix = settings?.ImportPrefix ?? string.Empty;
+                _importViewModel.InterpolateMissingPluginGroups = settings?.ImportInterpolateMissingPluginGroups ?? false;
+                _importViewModel.IgnoreMatchedModsForOrdering = settings?.ImportIgnoreMatchedModsForOrdering ?? true;
             }
         }
 
@@ -152,7 +157,9 @@ namespace MO2ExportImport.ViewModels
                 ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods,
                 ImportStripNoDelete = _importViewModel.StripNoDelete,
                 ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace,
-                ImportPrefix = _importViewModel?.ImportPrefix
+                ImportPrefix = _importViewModel.ImportPrefix,
+                ImportInterpolateMissingPluginGroups = _importViewModel.InterpolateMissingPluginGroups,
+                ImportIgnoreMatchedModsForOrdering = _importViewModel.IgnoreMatchedModsForOrdering
             };
 
             var settingsJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

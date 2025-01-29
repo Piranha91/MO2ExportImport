@@ -31,6 +31,9 @@ namespace MO2ExportImport.ViewModels
         private List<string> _importEvents = new();
         private string _programVersion;
         private string _importPrefix;
+        private List<Mod> _removedMatchingMods = new();
+        private bool _ignoreMatchedModsForOrdering;
+        private bool _interpolateMissingPluginGroups;
 
         private const string _manifestRelativePath = "ImportManifests";
 
@@ -72,7 +75,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMatchingMods, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -87,6 +90,9 @@ namespace MO2ExportImport.ViewModels
             _logWriter = logWriter;
             _programVersion = programVersion;
             _importPrefix = importPrefix;
+            _removedMatchingMods = removedMatchingMods;
+            _ignoreMatchedModsForOrdering = IgnoreMatchedModsForOrdering;
+            _interpolateMissingPluginGroups = interpolateMissingPluginGroups;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
             ImportCommand = ReactiveCommand.Create(ImportMods, this.WhenAnyValue(x => x.IsImportEnabled));
@@ -105,7 +111,7 @@ namespace MO2ExportImport.ViewModels
             try
             {
                 var totalSize = _selectedModList.Where(x => x.SelectedInUI)
-                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName)));
+                                        .Sum(mod => GetDirectorySize(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)));
 
                 var requiredSpaceInGB = ConvertBytesToGB(totalSize);
                 RequiredSpaceText = $"Total size: {requiredSpaceInGB:F2} GB";
@@ -156,6 +162,15 @@ namespace MO2ExportImport.ViewModels
 
             try
             {
+                var removedPluginNames = _removedMatchingMods.SelectMany(x =>
+                        CommonFuncs.GetPluginPathsInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
+                    .Select(x => Path.GetFileName(x) ?? "")
+                    .ToList();
+                
+                var removedModListings = _removedMatchingMods.Select(x => x.SourceListing).Cast<IListing>().ToList();
+                
+                var modsOutputDir = Path.Combine(_mo2Directory, "mods");
+                
                 foreach (var profile in ProfilesToImport())
                 {
                     string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
@@ -169,28 +184,49 @@ namespace MO2ExportImport.ViewModels
 
                     var profileManifest = new ProfileImportOperation(profile);
 
-                    var modsOutputDir = Path.Combine(_mo2Directory, "mods");
-
                     // Load and reverse the ProfileModList and ProfilePluginsList for correct processing
                     var profileModListPath = Path.Combine(profileDir, "modlist.txt");
                     var profileModList = CommonFuncs.LoadModList(profileModListPath).Cast<IListing>().ToList();
                     profileManifest.OriginalModList = profileModList.Cast<ModListing>().Select(x => x.GetCurrentEntryString()).ToList();
 
                     var profilePluginsListPath = Path.Combine(profileDir, "plugins.txt");
-                    var profilePluginsList = CommonFuncs.LoadPluginList(profilePluginsListPath).Cast<IListing>().ToList();;
+                    var profilePluginsList = CommonFuncs.LoadPluginListFromLoadOrder(profileDir).Cast<IListing>().ToList();;
                     profileManifest.OriginalPluginList = profilePluginsList.Cast<PluginListing>().Select(x => x.GetCurrentEntryString()).ToList();
 
                     // Load the SourceModList and SourcePluginsList
                     var sourceModListPath = Path.Combine(_importProfileSourceDirectory, "modlist.txt");
                     var sourceModList = CommonFuncs.LoadModList(sourceModListPath).Cast<IListing>().ToList();;
 
-                    var sourcePluginsListPath = Path.Combine(_importProfileSourceDirectory, "plugins.txt");
-                    var sourcePluginsList = CommonFuncs.LoadPluginList(sourcePluginsListPath).Cast<IListing>().ToList();;
+                    //var sourcePluginsListPath = Path.Combine(_importProfileSourceDirectory, "plugins.txt");
+                    var sourcePluginsList = CommonFuncs.LoadPluginListFromLoadOrder(_importProfileSourceDirectory).Cast<IListing>().ToList();;
+                    
+                    var spliceModeIgnoredPluginListings = sourcePluginsList.Where(x => removedPluginNames.Contains(x.Name)).ToList();
+                                        
+                    // Disable mods in the destination modlist that are unchecked in the source modlist
+                    if (_disableUncheckedMods)
+                    {
+                        var disabledMods = DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
+                        profileManifest.DisabledMods = disabledMods.Select(x => x.Name).ToList();
+                        if (profileManifest.DisabledMods.Any())
+                        {
+                            string disabledRecord = "- Disabled the following mods in profile " + profile + " because they are disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods.Select(x => "-- " + x).ToArray());
+                            Log(disabledRecord);
+                        }
+
+                        profileManifest.DeletedPlugins = DeletePluginsFromUncheckedMods(disabledMods,
+                            profilePluginsList.Cast<PluginListing>().ToList(), modsOutputDir);
+                        if (profileManifest.DeletedPlugins.Any())
+                        {
+                            string deletedPlugins = "- Deleted the following plugins in profile " + profile + " because they were from mods that are in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DeletedPlugins.Select(x => "-- " + x.Name).ToArray());
+                            Log(deletedPlugins);
+                        }
+                    }
 
                     // Filter SourceModList to include only mods with corresponding directories
+                    
                     var validSourceMods = _selectedModList
                         .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
-                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName)))
+                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)))
                         .ToList();
 
                     if (_addNoDeleteFlags)
@@ -223,39 +259,63 @@ namespace MO2ExportImport.ViewModels
                     // Collect valid plugins based on validSourceMods
                     Log("Collecting plugin names for import");
                     var validPlugins = new List<PluginListing>();
+                    
                     foreach (var mod in validSourceMods)
                     {
-                        var modDirectory = Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName);
+                        var modDirectory = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
                         if (Directory.Exists(modDirectory))
                         {
-                            var pluginFilesInMod = Directory.GetFiles(modDirectory, "*.*", SearchOption.TopDirectoryOnly)
-                                .Where(f => f.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) ||
-                                            f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
-                                            f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
+                            var pluginFilesInMod = CommonFuncs.GetPluginPathsInDir(modDirectory)
                                 .Select(Path.GetFileName)
                                 .ToList();
 
                             foreach (var pluginFileName in pluginFilesInMod)
                             {
                                 // Ignore plugins that already exist in destination load order
-                                if (profilePluginsList.Any(x => x.Name == pluginFileName))
+                                var existingPluginListing = profilePluginsList.FirstOrDefault(x => x.Name == pluginFileName);
+                                if (existingPluginListing is not null)
                                 {
-                                    Log($"Skipped {pluginFileName} from {mod.DisplayName} because it is already present in the destination load order");
+                                    if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced)
+                                    {
+                                        Log($"Plugin ordering: the position of {pluginFileName} will be disregarded when importing other plugin because it is already present in the destination load order");
+                                        spliceModeIgnoredPluginListings.Add(existingPluginListing); // this plugin is not where the source mod list expects it to be in the load order, so don't use it to anchor spliced-in plugins.
+                                    }
+                                    Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added.");
                                     continue;
                                 }
 
                                 var matchedSourcePlugin = sourcePluginsList.FirstOrDefault(x => x.Name == pluginFileName);
                                 if (matchedSourcePlugin is PluginListing match)
                                 {
-                                    validPlugins.Add(match);
-                                    profileManifest.AddedPluginNames.Add(new(pluginFileName, mod.GetDestinationName()));
+                                    var alreadyAddedPlugin = validPlugins.FirstOrDefault(x => x.Equals(match));
+                                    if (alreadyAddedPlugin is null) // don't add the same plugin multiple times (e.g. from override mods)
+                                    {
+                                        validPlugins.Add(match);
+                                    }
+                                    else
+                                    {
+                                        Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is being skipped for import because another imported mod is already supplying this plugin.");
+                                    }
+
+                                    profileManifest.AddedPluginNames.Add(new(pluginFileName, mod.GetDestinationName())); // register the plugin regardless of whether it's an override or not.
                                 }
                             }
                         }
                     }
+                    
+                    // Create a dictionary to map each PluginListing in sourcePluginsList to its index
+                    var sourcePluginIndexMap = sourcePluginsList
+                        .Select((listing, index) => new { listing, index })
+                        .ToDictionary(x => x.listing, x => x.index);
 
-                    var ignorePositions = new List<string>();
-
+                    // Sort validPlugins in-place based on their order in sourcePluginsList
+                    validPlugins.Sort((plugin1, plugin2) =>
+                    {
+                        var index1 = sourcePluginIndexMap.TryGetValue(plugin1, out var idx1) ? idx1 : int.MaxValue;
+                        var index2 = sourcePluginIndexMap.TryGetValue(plugin2, out var idx2) ? idx2 : int.MaxValue;
+                        return index1.CompareTo(index2);
+                    });
+                    
                     // Handle ImportMode for modlist.txt
                     Log("Importing mods into modlist.txt");
                     foreach (var currentMod in validSourceMods)
@@ -269,7 +329,7 @@ namespace MO2ExportImport.ViewModels
                         else // Spliced
                         {
                             var spliceLog = new List<string>();
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, ignorePositions, StringType.Mod, spliceLog);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, removedModListings, StringType.Mod, spliceLog);
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
@@ -277,7 +337,6 @@ namespace MO2ExportImport.ViewModels
 
                     // Handle ImportMode for plugins.txt
                     Log("Importing plugins into plugins.txt");
-                    ignorePositions.Clear();
                     foreach (var currentPlugin in validPlugins)
                     {
                         if (_importMode == ImportMode.End)
@@ -289,21 +348,16 @@ namespace MO2ExportImport.ViewModels
                         else // Spliced
                         {
                             var spliceLog = new List<string>();
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, ignorePositions, StringType.Plugin, spliceLog);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, spliceModeIgnoredPluginListings, StringType.Plugin, spliceLog);
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
                     }
-
-                    // Disable mods in the destination modlist that are unchecked in the source modlist
-                    if (_disableUncheckedMods)
+                    
+                    // set missing plugin groups if needed
+                    if (_interpolateMissingPluginGroups)
                     {
-                        profileManifest.DisabledMods = DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
-                        if (profileManifest.DisabledMods.Any())
-                        {
-                            string disabledRecord = "- Disabled the following mods in profile " + profile + " because they were disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods.Select(x => "-- " + x).ToArray());
-                            Log(disabledRecord);
-                        }
+                        InterpolateMissingPluginGroups(profilePluginsList.Cast<PluginListing>().ToList(), validPlugins);
                     }
 
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList.Cast<ModListing>().ToList(), out var modExStr))
@@ -328,7 +382,7 @@ namespace MO2ExportImport.ViewModels
 
                     foreach (var mod in validSourceMods)
                     {
-                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.OriginalDirectoryName);
+                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
                         var destinationModPath = Path.Combine(modsOutputDir, mod.GetDestinationName());
 
                         if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
@@ -367,19 +421,76 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private List<string> DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)
+        private List<ModListing> DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)
         {
-            List<string> disabledMods = new();
+            List<ModListing> disabledMods = new();
             foreach (var sourceMod in sourceModList.Where(x => x.Enabled.HasValue && x.Enabled == false))
             {
                 var matchedMod = profileModList.FirstOrDefault(x => x.Name == sourceMod.Name && x.Enabled.HasValue && x.Enabled.Value == true);
                 if (matchedMod != null)
                 {
                     matchedMod.Disable();
-                    disabledMods.Add(matchedMod.Name);
+                    disabledMods.Add(matchedMod);
                 }
             }
             return disabledMods;
+        }
+
+        private List<PluginListing> DeletePluginsFromUncheckedMods(List<ModListing> disabledMods, List<PluginListing> pluginList, string modFolderPath)
+        {
+            List<PluginListing> deletedPlugins = new();
+
+            foreach (var mod in disabledMods)
+            {
+                var modDir = Path.Combine(modFolderPath, mod.GetCurrentFolderName());
+                if (Directory.Exists(modDir))
+                {
+                    var pluginPaths = CommonFuncs.GetPluginPathsInDir(modDir);
+                    var pluginNames = pluginPaths.Select(x => Path.GetFileName(x) ?? string.Empty).ToList();
+
+                    foreach (var pluginName in pluginNames)
+                    {
+                        var matchedPlugin = pluginList.FirstOrDefault(x => x.Name == pluginName);
+                        if (matchedPlugin is not null)
+                        {
+                            deletedPlugins.Add(matchedPlugin);
+                            pluginList.Remove(matchedPlugin);
+                        }
+                    }
+                }
+            }
+            
+            return deletedPlugins;
+        }
+
+        public void InterpolateMissingPluginGroups(List<PluginListing> profilePluginList, List<PluginListing> addedPlugins)
+        {
+            for (int i = 0; i < profilePluginList.Count; i++)
+            {
+                if (i == 0 || i == profilePluginList.Count - 1)
+                {
+                    continue;
+                }
+                
+                var profilePlugin = profilePluginList[i];
+                var previousPlugin = profilePluginList[i - 1];
+                var nextPlugin = profilePluginList[i + 1];
+
+                if (!addedPlugins.Any(x => x.Equals(profilePlugin))) // only modify plugins that were added
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(profilePlugin.PluginGroup) && 
+                    !string.IsNullOrEmpty(previousPlugin.PluginGroup) && 
+                    !string.IsNullOrEmpty(nextPlugin.PluginGroup) && 
+                    previousPlugin.PluginGroup == nextPlugin.PluginGroup
+                    )
+                {
+                    profilePlugin.PluginGroup = previousPlugin.PluginGroup;
+                    Log($"-- Group Interpolation: Set {profilePlugin.Name} to: {previousPlugin.PluginGroup}");
+                }
+            }
         }
 
         private void ClosePopup()
@@ -431,6 +542,13 @@ namespace MO2ExportImport.ViewModels
                         if (File.Exists(pluginsFilePath))
                         {
                             File.Copy(pluginsFilePath, Path.Combine(profileBackupDir, "plugins.txt"), overwrite: true);
+                        }
+                        
+                        // Backup plugingroups.txt
+                        string pluginsGroupsFilePath = Path.Combine(profileDir, "plugingroups.txt");
+                        if (File.Exists(pluginsGroupsFilePath))
+                        {
+                            File.Copy(pluginsGroupsFilePath, Path.Combine(profileBackupDir, "plugingroups.txt"), overwrite: true);
                         }
 
                         // Backup loadorder.txt
