@@ -174,7 +174,7 @@ namespace MO2ExportImport.ViewModels
             catch (IOException ex)
             {
                 // Log or display error message
-                MessageBox.Show($"Error during copy operation: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"Error during copy operation: {ExceptionHelper.GetFullExceptionMessage(ex)}", "Error");
             }
 
             string renameMessage = string.Empty;
@@ -257,7 +257,7 @@ namespace MO2ExportImport.ViewModels
             catch (IOException ex)
             {
                 // Log or display error message
-                MessageBox.Show($"Error during copy operation: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"Error during copy operation: {ExceptionHelper.GetFullExceptionMessage(ex)}", "Error");
             }
         }
 

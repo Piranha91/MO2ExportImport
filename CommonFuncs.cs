@@ -204,6 +204,7 @@ namespace MO2ExportImport
         
         public static Dictionary<string, string> LoadPluginGroups(string filePath)
         {
+            List<string> notifications = new();
             var pluginGroups = new Dictionary<string, string>();
             
             if (!File.Exists(filePath))
@@ -221,8 +222,20 @@ namespace MO2ExportImport
                     var pluginGroup = split.Last();
                     split.RemoveAt(split.Count - 1); 
                     var pluginName = string.Join("|", split);
-                    pluginGroups.Add(pluginName, pluginGroup);
+                    if (pluginGroups.ContainsKey(pluginName))
+                    {
+                        notifications.Add($"Warning: {pluginName} appears more than once in {filePath}");
+                    }
+                    else
+                    {
+                        pluginGroups.Add(pluginName, pluginGroup); 
+                    }
                 }
+            }
+
+            if (notifications.Any())
+            {
+                ScrollableMessageBox.Show(notifications, "Warning");
             }
             
             return pluginGroups;
@@ -273,6 +286,25 @@ namespace MO2ExportImport
                                                        f.EndsWith(".esm", StringComparison.OrdinalIgnoreCase) ||
                                                        f.EndsWith(".esl", StringComparison.OrdinalIgnoreCase))
                                            .ToList();
+        }
+
+        public static List<string> GetPluginNamesInDir(string dirPath, bool withExtension = true)
+        {
+            List<string> pluginNames = new();
+            var paths = GetPluginPathsInDir(dirPath);
+            foreach (var path in paths)
+            {
+                if (withExtension)
+                {
+                    pluginNames.Add(Path.GetFileName(path));
+                }
+                else
+                {
+                    pluginNames.Add(Path.GetFileNameWithoutExtension(path));  
+                }
+            }
+            
+            return pluginNames;
         }
 
         public static string AddEntryInSplicedMode(List<IListing> profileList, List<IListing> sourceList, IListing currentEntry, List<IListing> ignoredEntries, StringType stringType, List<string> eventLog)

@@ -12,7 +12,7 @@ namespace MO2ExportImport.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        public string ProgramVersion { get; } = "1.3";
+        public string ProgramVersion { get; } = "1.4";
 
         private const string SettingsFilePath = "settings.json";
 
@@ -127,11 +127,14 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false;
                 _importViewModel.StripNoDelete = settings?.ImportStripNoDelete ?? false;
                 _importViewModel.SkipExisting = settings?.ImportSkipExistingMods ?? true;
-                _importViewModel.DisableUncheckedMods = settings?.ImportDisableUncheckedMods ?? false;
+                _importViewModel.MatchModActivationState = settings?.ImportMatchModActivationState ?? true;
+                _importViewModel.MatchPluginActivationState = settings?.ImportMatchPluginActivationState ?? true;
                 _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
                 _importViewModel.ImportPrefix = settings?.ImportPrefix ?? string.Empty;
                 _importViewModel.InterpolateMissingPluginGroups = settings?.ImportInterpolateMissingPluginGroups ?? false;
                 _importViewModel.IgnoreMatchedModsForOrdering = settings?.ImportIgnoreMatchedModsForOrdering ?? true;
+
+                _importViewModel.StartingImportSource = _exportViewModel.ExportDestinationFolder;
             }
         }
 
@@ -154,7 +157,8 @@ namespace MO2ExportImport.ViewModels
                 ImportIgnoreSeparators = _importViewModel.IgnoreSeparators,
                 ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,
                 ImportSkipExistingMods = _importViewModel.SkipExisting,
-                ImportDisableUncheckedMods = _importViewModel.DisableUncheckedMods,
+                ImportMatchModActivationState = _importViewModel.MatchModActivationState,
+                ImportMatchPluginActivationState = _importViewModel.MatchPluginActivationState,
                 ImportStripNoDelete = _importViewModel.StripNoDelete,
                 ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace,
                 ImportPrefix = _importViewModel.ImportPrefix,
@@ -179,7 +183,7 @@ namespace MO2ExportImport.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while checking or creating the Backups folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"An error occurred while checking or creating the Backups folder: {ExceptionHelper.GetFullExceptionMessage(ex)}", "Error");
             }
         }
 
@@ -193,8 +197,16 @@ namespace MO2ExportImport.ViewModels
         {
             if (_logWriter != null)
             {
-                _logWriter.Close();
-                _logWriter = null;
+                try
+                {
+                    _logWriter.Close();
+                    _logWriter = null;
+                }
+                catch (Exception e)
+                {
+
+                }
+
             }
         }
     }

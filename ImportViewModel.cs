@@ -25,6 +25,7 @@ namespace MO2ExportImport.ViewModels
         private StreamWriter _logWriter;
         private string _importButtonLabel;
         private List<Mod> _removedMods = new();
+        public string StartingImportSource { get; set; } = string.Empty;
 
         public string Mo2Directory
         {
@@ -136,13 +137,24 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _disableUncheckedMods;
-        public bool DisableUncheckedMods
+        private bool _matchModActivationState;
+        public bool MatchModActivationState
         {
-            get => _disableUncheckedMods;
+            get => _matchModActivationState;
             set
             {
-                this.RaiseAndSetIfChanged(ref _disableUncheckedMods, value);
+                this.RaiseAndSetIfChanged(ref _matchModActivationState, value);
+                _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
+            }
+        }
+        
+        private bool _matchPluginActivationState;
+        public bool MatchPluginActivationState
+        {
+            get => _matchPluginActivationState;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _matchPluginActivationState, value);
                 _mainViewModel.SaveSettings(); // Save settings whenever IgnoreSeparators changes
             }
         }
@@ -337,6 +349,7 @@ namespace MO2ExportImport.ViewModels
         private void SelectImportSourceFolder()
         {
             var dialog = new OpenFolderDialog();
+            dialog.FolderName = StartingImportSource;
             var result = dialog.ShowDialog();
             if (result != null && result.Value)
             {
@@ -489,7 +502,7 @@ namespace MO2ExportImport.ViewModels
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing directories: {ex.Message}");
+                ScrollableMessageBox.Show($"Error processing directories: {ExceptionHelper.GetFullExceptionMessage(ex)}", "Error");
             }
 
             return false; // No match found
@@ -539,7 +552,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, DisableUncheckedMods, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

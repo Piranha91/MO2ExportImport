@@ -26,7 +26,8 @@ namespace MO2ExportImport.ViewModels
         private ImportMode _importMode;
         private bool _addNoDeleteFlags;
         private bool _removeNoDeleteFlags;
-        private bool _disableUncheckedMods;
+        private bool _matchModActivationState;
+        private bool _matchPluginActivationState;
         private StreamWriter _logWriter;
         private List<string> _importEvents = new();
         private string _programVersion;
@@ -75,7 +76,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool disableUncheckedMods, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMatchingMods, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMatchingMods, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -86,7 +87,8 @@ namespace MO2ExportImport.ViewModels
             _importMode = importMode;
             _addNoDeleteFlags = addNoDeleteFlags;
             _removeNoDeleteFlags = removeNoDeleteFlags;
-            _disableUncheckedMods = disableUncheckedMods;
+            _matchModActivationState = matchModActivationState;
+            _matchPluginActivationState = matchPluginActivationState;
             _logWriter = logWriter;
             _programVersion = programVersion;
             _importPrefix = importPrefix;
@@ -135,7 +137,7 @@ namespace MO2ExportImport.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred during space calculation: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"An error occurred during space calculation: {ExceptionHelper.GetFullExceptionMessage(ex)}", "Error");
             }
         }
 
@@ -163,8 +165,7 @@ namespace MO2ExportImport.ViewModels
             try
             {
                 var removedPluginNames = _removedMatchingMods.SelectMany(x =>
-                        CommonFuncs.GetPluginPathsInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
-                    .Select(x => Path.GetFileName(x) ?? "")
+                        CommonFuncs.GetPluginNamesInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
                     .ToList();
                 
                 var removedModListings = _removedMatchingMods.Select(x => x.SourceListing).Cast<IListing>().ToList();
@@ -202,10 +203,35 @@ namespace MO2ExportImport.ViewModels
                     
                     var spliceModeIgnoredPluginListings = sourcePluginsList.Where(x => removedPluginNames.Contains(x.Name)).ToList();
                                         
-                    // Disable mods in the destination modlist that are unchecked in the source modlist
-                    if (_disableUncheckedMods)
+                    // Match the enabled/disabled status of plugins from the source mod list
+                    List<PluginListing> pluginsFromExistingButNewlyActivatedMods = new();
+                    if (_matchModActivationState)
                     {
-                        var disabledMods = DisableUncheckedMods(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
+                        var (enabledMods, disabledMods) = MatchModActivationStatus(profileModList.Cast<ModListing>().ToList(), sourceModList.Cast<ModListing>().ToList());
+                        
+                        profileManifest.EnabledMods = enabledMods.Select(x => x.Name).ToList();
+                        if (profileManifest.EnabledMods.Any())
+                        {
+                            string enabledRecord = "- Enabled the following mods in profile " + profile + " because they are enabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.EnabledMods.Select(x => "-- " + x).ToArray());
+                            Log(enabledRecord);
+
+                            foreach (var mod in enabledMods)
+                            {
+                                var modFolder = Path.Combine(_mo2Directory, "mods", mod.GetCurrentFolderName());
+                                {
+                                    var plugins = CommonFuncs.GetPluginNamesInDir(modFolder);
+                                    foreach (var pluginName in plugins)
+                                    {
+                                        var existingPlugin = sourcePluginsList.FirstOrDefault(x => x.Name == pluginName);
+                                        if (existingPlugin is PluginListing plugin)
+                                        {
+                                            pluginsFromExistingButNewlyActivatedMods.Add(plugin);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
                         profileManifest.DisabledMods = disabledMods.Select(x => x.Name).ToList();
                         if (profileManifest.DisabledMods.Any())
                         {
@@ -217,7 +243,7 @@ namespace MO2ExportImport.ViewModels
                             profilePluginsList.Cast<PluginListing>().ToList(), modsOutputDir);
                         if (profileManifest.DeletedPlugins.Any())
                         {
-                            string deletedPlugins = "- Deleted the following plugins in profile " + profile + " because they were from mods that are in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DeletedPlugins.Select(x => "-- " + x.Name).ToArray());
+                            string deletedPlugins = "- Deleted the following plugins in profile " + profile + " because they were from mods that are disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DeletedPlugins.Select(x => "-- " + x.Name).ToArray());
                             Log(deletedPlugins);
                         }
                     }
@@ -303,6 +329,16 @@ namespace MO2ExportImport.ViewModels
                         }
                     }
                     
+                    // add plugins activated from latent mods
+                    foreach (var plugin in pluginsFromExistingButNewlyActivatedMods)
+                    {
+                        var matchedPlugin = validPlugins.FirstOrDefault(x => x.Equals(plugin));
+                        if (matchedPlugin is null)
+                        {
+                            validPlugins.Add(plugin);
+                        }
+                    }
+                    
                     // Create a dictionary to map each PluginListing in sourcePluginsList to its index
                     var sourcePluginIndexMap = sourcePluginsList
                         .Select((listing, index) => new { listing, index })
@@ -351,6 +387,24 @@ namespace MO2ExportImport.ViewModels
                             var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, spliceModeIgnoredPluginListings, StringType.Plugin, spliceLog);
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
+                        }
+                    }
+
+                    if (_matchPluginActivationState)
+                    {
+                        var (enabledPlugins, disabledPlugins) = MatchPluginActivationStatus(profilePluginsList.Cast<PluginListing>().ToList(), sourcePluginsList.Cast<PluginListing>().ToList());
+                        profileManifest.EnabledPlugins = enabledPlugins.Select(x => x.Name).ToList();
+                        profileManifest.DisabledPlugins = disabledPlugins.Select(x => x.Name).ToList();
+
+                        if (profileManifest.EnabledPlugins.Any())
+                        {
+                            Log("- Enabled the following plugins in the destination load order because they were enabled in the source load order:");
+                            Log(string.Join(Environment.NewLine, profileManifest.EnabledPlugins.Select(x => "-- " + x).ToArray()));
+                        }
+                        if (profileManifest.DisabledPlugins.Any())
+                        {
+                            Log("- Disabled the following plugins in the destination load order because they were disabled in the source load order:");
+                            Log(string.Join(Environment.NewLine, profileManifest.DisabledPlugins.Select(x => "-- " + x).ToArray()));
                         }
                     }
                     
@@ -417,13 +471,34 @@ namespace MO2ExportImport.ViewModels
             catch (Exception ex)
             {
                 Log($"An error occurred during the import process: {ex.Message}");
-                MessageBox.Show($"An error occurred during the import process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"An error occurred during the import process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
         }
 
-        private List<ModListing> DisableUncheckedMods(List<ModListing> profileModList, List<ModListing> sourceModList)
+        private (List<ModListing>, List<ModListing>) MatchModActivationStatus(List<ModListing> profileModList, List<ModListing> sourceModList)
         {
             List<ModListing> disabledMods = new();
+            List<ModListing> enabledMods = new();
+
+            foreach (var mod in profileModList)
+            {
+                var sourceMod = sourceModList.FirstOrDefault(x => x.Equals(mod));
+                if (sourceMod is not null && mod.Enabled != sourceMod.Enabled)
+                {
+                    if (sourceMod.Enabled.HasValue && sourceMod.Enabled.Value == true)
+                    {
+                        enabledMods.Add(mod);
+                    }
+                    else
+                    {
+                        disabledMods.Add(mod);
+                    }
+                    
+                    mod.Enabled = sourceMod.Enabled;
+                }
+            }
+            
+            /* Deprecated
             foreach (var sourceMod in sourceModList.Where(x => x.Enabled.HasValue && x.Enabled == false))
             {
                 var matchedMod = profileModList.FirstOrDefault(x => x.Name == sourceMod.Name && x.Enabled.HasValue && x.Enabled.Value == true);
@@ -433,7 +508,33 @@ namespace MO2ExportImport.ViewModels
                     disabledMods.Add(matchedMod);
                 }
             }
-            return disabledMods;
+            */
+            return (enabledMods, disabledMods);
+        }
+
+        private (List<PluginListing>, List<PluginListing>) MatchPluginActivationStatus(List<PluginListing> profilePluginsList,
+            List<PluginListing> sourcePluginList)
+        {
+            List<PluginListing> enabledPlugins = new();
+            List<PluginListing> disabledPlugins = new();
+            
+            foreach (var plugin in profilePluginsList)
+            {
+                var sourcePlugin = sourcePluginList.FirstOrDefault(x => x.Equals(plugin));
+                if (sourcePlugin is not null && plugin.Enabled != sourcePlugin.Enabled)
+                {
+                    if (sourcePlugin.Enabled.HasValue && sourcePlugin.Enabled.Value == true)
+                    {
+                        enabledPlugins.Add(plugin);
+                    }
+                    else
+                    {
+                        disabledPlugins.Add(plugin);
+                    }
+                }
+            }
+            
+            return (enabledPlugins, disabledPlugins);
         }
 
         private List<PluginListing> DeletePluginsFromUncheckedMods(List<ModListing> disabledMods, List<PluginListing> pluginList, string modFolderPath)
@@ -571,7 +672,7 @@ namespace MO2ExportImport.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ScrollableMessageBox.Show($"An error occurred during the backup process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
         }
 

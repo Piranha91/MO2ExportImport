@@ -16,7 +16,8 @@ namespace MO2ExportImport.Models
         public bool ImportAddNoDeleteFlags { get; set; } = false; // Default value
         public bool ImportSkipExistingMods { get; set; } = true; // Default value
         public bool ImportIgnoreMatchedModsForOrdering { get; set; } = true;
-        public bool ImportDisableUncheckedMods { get; set; } = false;
+        public bool ImportMatchModActivationState { get; set; } = true;
+        public bool ImportMatchPluginActivationState { get; set; } = true;
         public bool ImportInterpolateMissingPluginGroups { get; set; } = false;
         public bool ImportAutoCalculateSpace { get; set; } = true;
         public string ImportPrefix { get; set; } = string.Empty;
