@@ -72,6 +72,13 @@ namespace MO2ExportImport.ViewModels
             set => this.RaiseAndSetIfChanged(ref _spaceStatusColor, value);
         }
 
+        private bool _showModListPreview;
+        public bool ShowModListPreview
+        {
+            get => _showModListPreview;
+            set => this.RaiseAndSetIfChanged(ref _showModListPreview, value);
+        }
+
         public ReactiveCommand<Unit, Unit> CalculateSpaceCommand { get; }
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
@@ -172,6 +179,40 @@ namespace MO2ExportImport.ViewModels
                 
                 var modsOutputDir = Path.Combine(_mo2Directory, "mods");
                 
+                // Filter SourceModList to include only mods with corresponding directories
+                    
+                var validSourceMods = _selectedModList
+                    .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
+                    .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)))
+                    .ToList();
+
+                if (_addNoDeleteFlags)
+                {
+                    Log("Adding NoDelete flags to mods where required");
+                    foreach (var mod in validSourceMods)
+                    {
+                        mod.MakeNoDelete();
+                    }
+                }
+                else if (_removeNoDeleteFlags)
+                {
+                    Log("Removing NoDelete flags from mods where required");
+                    foreach(var mod in validSourceMods)
+                    {
+                        mod.RemoveNoDelete();
+                    }
+                }
+
+                if (_importPrefix != null && _importPrefix.Length > 0)
+                {
+                    Log("Adding prefix \"" + _importPrefix + "\" to each mod name");
+
+                    foreach (var mod in validSourceMods)
+                    {
+                        mod.SetPrefix(_importPrefix);
+                    }
+                }
+                
                 foreach (var profile in ProfilesToImport())
                 {
                     string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
@@ -247,41 +288,7 @@ namespace MO2ExportImport.ViewModels
                             Log(deletedPlugins);
                         }
                     }
-
-                    // Filter SourceModList to include only mods with corresponding directories
                     
-                    var validSourceMods = _selectedModList
-                        .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
-                        .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)))
-                        .ToList();
-
-                    if (_addNoDeleteFlags)
-                    {
-                        Log("Adding NoDelete flags to mods where required");
-                        foreach (var mod in validSourceMods)
-                        {
-                            mod.MakeNoDelete();
-                        }
-                    }
-                    else if (_removeNoDeleteFlags)
-                    {
-                        Log("Removing NoDelete flags from mods where required");
-                        foreach(var mod in validSourceMods)
-                        {
-                            mod.RemoveNoDelete();
-                        }
-                    }
-
-                    if (_importPrefix != null && _importPrefix.Length > 0)
-                    {
-                        Log("Adding prefix \"" + _importPrefix + "\" to each mod name");
-
-                        foreach (var mod in validSourceMods)
-                        {
-                            mod.SetPrefix(_importPrefix);
-                        }
-                    }
-
                     // Collect valid plugins based on validSourceMods
                     Log("Collecting plugin names for import");
                     var validPlugins = new List<PluginListing>();
@@ -413,6 +420,8 @@ namespace MO2ExportImport.ViewModels
                     {
                         InterpolateMissingPluginGroups(profilePluginsList.Cast<PluginListing>().ToList(), validPlugins);
                     }
+                    
+                    
 
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList.Cast<ModListing>().ToList(), out var modExStr))
                     {
@@ -429,40 +438,40 @@ namespace MO2ExportImport.ViewModels
                     {
                         Log(loadorderExStr);
                     }
-
-                    // Now copy the valid mods into the mods folder
-
-                    var copyTasks = new List<Task>();
-
-                    foreach (var mod in validSourceMods)
-                    {
-                        var sourceModPath = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
-                        var destinationModPath = Path.Combine(modsOutputDir, mod.GetDestinationName());
-
-                        if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
-                        {
-                            // Add the async copy task to the list
-                            copyTasks.Add(Task.Run(async () =>
-                            {
-                                bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
-                                if (success)
-                                {
-                                    Log($"-- Copied mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
-                                }
-                                else
-                                {
-                                    Log($"-- Failed to copy mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
-                                }
-                            }));
-                        }
-                    }
-
-                    // Wait for all copy tasks to complete
-                    await Task.WhenAll(copyTasks);
-
+                    
                     profileManifest.AddedModNames.AddRange(validSourceMods.Select(x => x.GetDestinationName()));  
                     manifest.ProfileImports.Add(profileManifest);
                 }
+                
+                // Now copy the valid mods into the mods folder
+
+                var copyTasks = new List<Task>();
+
+                foreach (var mod in validSourceMods)
+                {
+                    var sourceModPath = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
+                    var destinationModPath = Path.Combine(modsOutputDir, mod.GetDestinationName());
+
+                    if (Directory.Exists(sourceModPath) && !Directory.Exists(destinationModPath))
+                    {
+                        // Add the async copy task to the list
+                        copyTasks.Add(Task.Run(async () =>
+                        {
+                            bool success = await FileOperation.CopyFolderWithUIAsync(sourceModPath, destinationModPath);
+                            if (success)
+                            {
+                                Log($"-- Copied mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
+                            }
+                            else
+                            {
+                                Log($"-- Failed to copy mod {FormatHandler.TrimModActivationStatus(mod.DisplayName)} to {destinationModPath}");
+                            }
+                        }));
+                    }
+                }
+
+                // Wait for all copy tasks to complete
+                await Task.WhenAll(copyTasks);
 
                 SaveManifest(manifest);
                 MessageBox.Show("Import completed successfully.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
