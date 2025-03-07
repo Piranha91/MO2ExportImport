@@ -215,6 +215,8 @@ namespace MO2ExportImport.ViewModels
                 
                 foreach (var profile in ProfilesToImport())
                 {
+                    var simulator = new ImportSimulatorViewModel();
+                    
                     string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
                     Log($"Importing to profile {profile}:");
 
@@ -258,6 +260,7 @@ namespace MO2ExportImport.ViewModels
 
                             foreach (var mod in enabledMods)
                             {
+                                simulator.LogModEvent(mod, "Enabled because this mod is enabled in the imported mod list");
                                 var modFolder = Path.Combine(_mo2Directory, "mods", mod.GetCurrentFolderName());
                                 {
                                     var plugins = CommonFuncs.GetPluginNamesInDir(modFolder);
@@ -278,6 +281,11 @@ namespace MO2ExportImport.ViewModels
                         {
                             string disabledRecord = "- Disabled the following mods in profile " + profile + " because they are disabled in the mod list being imported" + Environment.NewLine + string.Join(Environment.NewLine, profileManifest.DisabledMods.Select(x => "-- " + x).ToArray());
                             Log(disabledRecord);
+
+                            foreach (var mod in disabledMods)
+                            {
+                                simulator.LogModEvent(mod, "Disabled because this mod is disabled in the imported mod list");
+                            }
                         }
 
                         profileManifest.DeletedPlugins = DeletePluginsFromUncheckedMods(disabledMods,
@@ -308,12 +316,14 @@ namespace MO2ExportImport.ViewModels
                                 var existingPluginListing = profilePluginsList.FirstOrDefault(x => x.Name == pluginFileName);
                                 if (existingPluginListing is not null)
                                 {
+                                    Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added.");
+                                    simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Detected as a member of {mod.DisplayName} but already present in destination load order");
                                     if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced)
                                     {
                                         Log($"Plugin ordering: the position of {pluginFileName} will be disregarded when importing other plugin because it is already present in the destination load order");
+                                        simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Position of this plugin will be disregarded for determining load order of other plugins");
                                         spliceModeIgnoredPluginListings.Add(existingPluginListing); // this plugin is not where the source mod list expects it to be in the load order, so don't use it to anchor spliced-in plugins.
                                     }
-                                    Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added.");
                                     continue;
                                 }
 
@@ -324,10 +334,12 @@ namespace MO2ExportImport.ViewModels
                                     if (alreadyAddedPlugin is null) // don't add the same plugin multiple times (e.g. from override mods)
                                     {
                                         validPlugins.Add(match);
+                                        simulator.LogPluginEvent(match, "Importing from mod: " + mod.DisplayName);
                                     }
                                     else
                                     {
                                         Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is being skipped for import because another imported mod is already supplying this plugin.");
+                                        simulator.LogPluginEvent(match, "Is also present in mod: " + mod.DisplayName);
                                     }
 
                                     profileManifest.AddedPluginNames.Add(new(pluginFileName, mod.GetDestinationName())); // register the plugin regardless of whether it's an override or not.
@@ -343,6 +355,7 @@ namespace MO2ExportImport.ViewModels
                         if (matchedPlugin is null)
                         {
                             validPlugins.Add(plugin);
+                            simulator.LogPluginEvent(plugin, "Enabled because this plugin is enabled in the imported mod list");
                         }
                     }
                     
@@ -358,21 +371,87 @@ namespace MO2ExportImport.ViewModels
                         var index2 = sourcePluginIndexMap.TryGetValue(plugin2, out var idx2) ? idx2 : int.MaxValue;
                         return index1.CompareTo(index2);
                     });
+
+                    foreach (var plugin in validPlugins)
+                    {
+                        var sourceListing = sourcePluginsList.FirstOrDefault(x => x.Equals(plugin));
+                        if (sourceListing is null)
+                        {
+                            continue;
+                            
+                        }
+                        
+                        if (!sourcePluginsList.First().Equals(sourceListing))
+                        {
+                            var index = sourcePluginsList.IndexOf(sourceListing);
+                            var precedingPlugin = sourcePluginsList[index - 1];
+                            simulator.LogPluginEvent(sourceListing as PluginListing, "The preceding plugin in the source load order is: " + precedingPlugin.Name);
+                        }
+                        else
+                        {
+                            simulator.LogPluginEvent(sourceListing as PluginListing, "This is the first plugin in the import source load order");
+                        }
+                        
+                        if (!sourcePluginsList.Last().Equals(sourceListing))
+                        {
+                            var index = sourcePluginsList.IndexOf(sourceListing);
+                            var subsequentPlugin = sourcePluginsList[index + 1];
+                            simulator.LogPluginEvent(sourceListing as PluginListing, "The subsequent plugin in the source load order is: " + subsequentPlugin.Name);
+                        }
+                        else
+                        {
+                            simulator.LogPluginEvent(sourceListing as PluginListing, "This is the last plugin in the import source load order");
+                        }
+                    }
                     
                     // Handle ImportMode for modlist.txt
                     Log("Importing mods into modlist.txt");
                     foreach (var currentMod in validSourceMods)
                     {
+                        var sourceListing = sourceModList.FirstOrDefault(x => x.Equals(currentMod));
+                        if (sourceListing is null)
+                        {
+                            continue;
+                            
+                        }
+                        
+                        if (!profileModList.First().Equals(sourceListing))
+                        {
+                            var index = profileModList.IndexOf(sourceListing);
+                            var precedingMod = profileModList[index - 1];
+                            simulator.LogModEvent(sourceListing as ModListing, "The preceding mod in the source load order is: " + precedingMod.Name);
+                        }
+                        else
+                        {
+                            simulator.LogModEvent(sourceListing as ModListing, "This is the first mod in the import source load order");
+                        }
+                        
+                        if (!profileModList.Last().Equals(sourceListing))
+                        {
+                            var index = profileModList.IndexOf(sourceListing);
+                            var subsequentMod = profileModList[index + 1];
+                            simulator.LogModEvent(sourceListing as ModListing, "The subsequent mod in the source load order is: " + subsequentMod.Name);
+                        }
+                        else
+                        {
+                            simulator.LogModEvent(sourceListing as ModListing, "This is the last mod in the import source load order");
+                        }
+                        
                         if (_importMode == ImportMode.End)
                         {
                             var previousItem = profileModList.LastOrDefault()?.Name ?? "start";
                             profileModList.Add(currentMod.SourceListing);
+                            simulator.LogModEvent(currentMod.SourceListing, "Added to mod list after " + previousItem + ".");
                             Log($"- Added { FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
                         }
                         else // Spliced
                         {
                             var spliceLog = new List<string>();
                             var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, removedModListings, StringType.Mod, spliceLog);
+                            foreach (var entry in spliceLog)
+                            {
+                                simulator.LogModEvent(currentMod.SourceListing, entry);
+                            }
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
@@ -386,12 +465,17 @@ namespace MO2ExportImport.ViewModels
                         {
                             var previousItem = profilePluginsList.LastOrDefault()?.Name ?? "start";
                             profilePluginsList.Add(currentPlugin);
+                            simulator.LogPluginEvent(currentPlugin, "Added to plugin list after " + previousItem + ".");
                             Log($"- Added {currentPlugin.Name} to end of plugins.txt after {previousItem}");
                         }
                         else // Spliced
                         {
                             var spliceLog = new List<string>();
                             var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, spliceModeIgnoredPluginListings, StringType.Plugin, spliceLog);
+                            foreach (var entry in spliceLog)
+                            {
+                                simulator.LogPluginEvent(currentPlugin, entry);
+                            }
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
@@ -399,7 +483,7 @@ namespace MO2ExportImport.ViewModels
 
                     if (_matchPluginActivationState)
                     {
-                        var (enabledPlugins, disabledPlugins) = MatchPluginActivationStatus(profilePluginsList.Cast<PluginListing>().ToList(), sourcePluginsList.Cast<PluginListing>().ToList());
+                        var (enabledPlugins, disabledPlugins) = MatchPluginActivationStatus(profilePluginsList.Cast<PluginListing>().ToList(), sourcePluginsList.Cast<PluginListing>().ToList(), simulator);
                         profileManifest.EnabledPlugins = enabledPlugins.Select(x => x.Name).ToList();
                         profileManifest.DisabledPlugins = disabledPlugins.Select(x => x.Name).ToList();
 
@@ -418,10 +502,17 @@ namespace MO2ExportImport.ViewModels
                     // set missing plugin groups if needed
                     if (_interpolateMissingPluginGroups)
                     {
-                        InterpolateMissingPluginGroups(profilePluginsList.Cast<PluginListing>().ToList(), validPlugins);
+                        InterpolateMissingPluginGroups(profilePluginsList.Cast<PluginListing>().ToList(), validPlugins, simulator);
                     }
-                    
-                    
+
+                    if (ShowModListPreview)
+                    {
+                        simulator.ShowWindow();
+                        if (simulator.CancelImport)
+                        {
+                            return;
+                        }
+                    }
 
                     if (!CommonFuncs.SaveModList(profileModListPath, profileModList.Cast<ModListing>().ToList(), out var modExStr))
                     {
@@ -522,7 +613,7 @@ namespace MO2ExportImport.ViewModels
         }
 
         private (List<PluginListing>, List<PluginListing>) MatchPluginActivationStatus(List<PluginListing> profilePluginsList,
-            List<PluginListing> sourcePluginList)
+            List<PluginListing> sourcePluginList, ImportSimulatorViewModel simulator)
         {
             List<PluginListing> enabledPlugins = new();
             List<PluginListing> disabledPlugins = new();
@@ -534,10 +625,14 @@ namespace MO2ExportImport.ViewModels
                 {
                     if (sourcePlugin.Enabled.HasValue && sourcePlugin.Enabled.Value == true)
                     {
+                        plugin.Enabled = true;
+                        simulator.LogPluginEvent(plugin, "Enabled because this plugin is enabled in the imported load order");
                         enabledPlugins.Add(plugin);
                     }
                     else
                     {
+                        plugin.Enabled = false;
+                        simulator.LogPluginEvent(plugin, "Disabled because this plugin is disabled in the imported load order");
                         disabledPlugins.Add(plugin);
                     }
                 }
@@ -573,7 +668,7 @@ namespace MO2ExportImport.ViewModels
             return deletedPlugins;
         }
 
-        public void InterpolateMissingPluginGroups(List<PluginListing> profilePluginList, List<PluginListing> addedPlugins)
+        public void InterpolateMissingPluginGroups(List<PluginListing> profilePluginList, List<PluginListing> addedPlugins, ImportSimulatorViewModel simulator)
         {
             for (int i = 0; i < profilePluginList.Count; i++)
             {
@@ -599,6 +694,7 @@ namespace MO2ExportImport.ViewModels
                 {
                     profilePlugin.PluginGroup = previousPlugin.PluginGroup;
                     Log($"-- Group Interpolation: Set {profilePlugin.Name} to: {previousPlugin.PluginGroup}");
+                    simulator.LogPluginEvent(profilePlugin, "Interpolated plugin group to: " + profilePlugin.PluginGroup);
                 }
             }
         }

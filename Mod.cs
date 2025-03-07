@@ -91,22 +91,26 @@ namespace MO2ExportImport
             return DisplayName;
         }
 
-        public void MakeNoDelete()
+        public bool MakeNoDelete()
         {
             if (!IsNoDelete)
             {
                 SourceListing.MakeNoDelete();
                 IsNoDelete = true;
+                return true;
             }
+            return false;
         }
 
-        public void RemoveNoDelete()
+        public bool RemoveNoDelete()
         {
             if (IsNoDelete)
             {
                 SourceListing.RemoveNoDelete();
                 IsNoDelete = false;
+                return true;
             }
+            return false;
         }
 
         public string GetDestinationName()

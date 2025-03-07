@@ -20,6 +20,12 @@
             <TextBlock Text="{Binding SpaceStatusText}" Margin="5" Foreground="{Binding SpaceStatusColor}"/>
         </StackPanel>
 
+        <!-- Options -->
+        <StackPanel Grid.Row="2" Margin="10" Orientation="Horizontal">
+            <CheckBox IsChecked="{Binding ShowModListPreview}"/>
+            <TextBlock Margin="5 0 0 0">Show Order Preview Before Importing</TextBlock>
+        </StackPanel>
+
         <!-- Import and Cancel Buttons -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Button Content="Import" Command="{Binding ImportCommand}" IsEnabled="{Binding IsImportEnabled}" Margin="5"/>
