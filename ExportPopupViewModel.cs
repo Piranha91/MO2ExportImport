@@ -151,8 +151,8 @@ namespace MO2ExportImport.ViewModels
             // Copy other files
             var selectedModsToExport = _selectedMods
                 .Where(mod => mod.SelectedInUI && 
-                              (!_exportViewModel.IgnoreDisabled || mod.IsEnabled() || mod.IsSeparator) && 
-                              (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
+                              (!_exportViewModel.IgnoreDisabled || mod.IsEnabled() || mod.SourceListing.IsSeparator) && 
+                              (!_exportViewModel.IgnoreSeparators || !mod.SourceListing.IsSeparator))
                 .ToList();
             
             foreach (var mod in selectedModsToExport)
@@ -194,8 +194,8 @@ namespace MO2ExportImport.ViewModels
         {
             var selectedModsToExport = _selectedMods
                 .Where(mod => mod.SelectedInUI && 
-                              (!_exportViewModel.IgnoreDisabled || mod.IsEnabled() || mod.IsSeparator) && 
-                              (!_exportViewModel.IgnoreSeparators || !mod.IsSeparator))
+                              (!_exportViewModel.IgnoreDisabled || mod.IsEnabled() || mod.SourceListing.IsSeparator) && 
+                              (!_exportViewModel.IgnoreSeparators || !mod.SourceListing.IsSeparator))
                 .ToList();
 
             (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();

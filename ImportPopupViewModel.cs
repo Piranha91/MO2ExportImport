@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -113,6 +113,8 @@ namespace MO2ExportImport.ViewModels
             {
                 CalculateSpace();
             }
+            
+            ShowModListPreview = true; 
         }
 
         private void CalculateSpace()
@@ -381,9 +383,10 @@ namespace MO2ExportImport.ViewModels
                             
                         }
                         
-                        if (!sourcePluginsList.First().Equals(sourceListing))
+                        var index = sourcePluginsList.IndexOf(sourceListing);
+                        
+                        if (index > 0)
                         {
-                            var index = sourcePluginsList.IndexOf(sourceListing);
                             var precedingPlugin = sourcePluginsList[index - 1];
                             simulator.LogPluginEvent(sourceListing as PluginListing, "The preceding plugin in the source load order is: " + precedingPlugin.Name);
                         }
@@ -392,9 +395,8 @@ namespace MO2ExportImport.ViewModels
                             simulator.LogPluginEvent(sourceListing as PluginListing, "This is the first plugin in the import source load order");
                         }
                         
-                        if (!sourcePluginsList.Last().Equals(sourceListing))
+                        if (index < sourcePluginsList.Count - 1)
                         {
-                            var index = sourcePluginsList.IndexOf(sourceListing);
                             var subsequentPlugin = sourcePluginsList[index + 1];
                             simulator.LogPluginEvent(sourceListing as PluginListing, "The subsequent plugin in the source load order is: " + subsequentPlugin.Name);
                         }
@@ -412,12 +414,12 @@ namespace MO2ExportImport.ViewModels
                         if (sourceListing is null)
                         {
                             continue;
-                            
                         }
                         
-                        if (!profileModList.First().Equals(sourceListing))
+                        var index = sourceModList.IndexOf(sourceListing);
+                        
+                        if (index > 0)
                         {
-                            var index = profileModList.IndexOf(sourceListing);
                             var precedingMod = profileModList[index - 1];
                             simulator.LogModEvent(sourceListing as ModListing, "The preceding mod in the source load order is: " + precedingMod.Name);
                         }
@@ -426,9 +428,8 @@ namespace MO2ExportImport.ViewModels
                             simulator.LogModEvent(sourceListing as ModListing, "This is the first mod in the import source load order");
                         }
                         
-                        if (!profileModList.Last().Equals(sourceListing))
+                        if (index < profileModList.Count - 1)
                         {
-                            var index = profileModList.IndexOf(sourceListing);
                             var subsequentMod = profileModList[index + 1];
                             simulator.LogModEvent(sourceListing as ModListing, "The subsequent mod in the source load order is: " + subsequentMod.Name);
                         }
@@ -455,6 +456,8 @@ namespace MO2ExportImport.ViewModels
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
+                        
+                        simulator.LogModEvent(currentMod.SourceListing, "The current mod order is: " + string.Join(Environment.NewLine, profileModList.Select(x => x.Name)));
                     }
 
                     // Handle ImportMode for plugins.txt
@@ -479,6 +482,7 @@ namespace MO2ExportImport.ViewModels
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
+                        simulator.LogPluginEvent(currentPlugin, "The current load order is: " + Environment.NewLine + string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
                     }
 
                     if (_matchPluginActivationState)
@@ -507,6 +511,7 @@ namespace MO2ExportImport.ViewModels
 
                     if (ShowModListPreview)
                     {
+                        simulator.Initialize(profilePluginsList.Cast<PluginListing>(), profileModList.Cast<ModListing>(), true);
                         simulator.ShowWindow();
                         if (simulator.CancelImport)
                         {

@@ -4,11 +4,14 @@ namespace MO2ExportImport;
 
 public class ModListing : IEquatable<ModListing>, IListing
 {
+    public const string _separatorSuffix = "_separator";
+    
     private string _originalEntryString;
     public string Name { get; set;  } 
     public bool? Enabled { get; set; }
     
     public bool IsNoDelete { get; set; }
+    public bool IsSeparator { get; set; }
     public string NoDeletePrefix { get; set; }
     public string Prefix { get; set; } = string.Empty;
 
@@ -17,6 +20,7 @@ public class ModListing : IEquatable<ModListing>, IListing
         _originalEntryString = entryString;
         Enabled = FormatHandler.GetModActivationStatus(_originalEntryString);
         Name = FormatHandler.TrimModActivationStatus(entryString);
+        IsSeparator = Name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
         IsNoDelete = CommonFuncs.IsNoDelete(Name, out var noDeletePrefix);
         NoDeletePrefix = noDeletePrefix;
         Name = CommonFuncs.RemoveNoDeletePrefix(Name);

@@ -410,7 +410,7 @@ namespace MO2ExportImport.ViewModels
             var selectedModsToExport = ModList
                 .Where(mod => mod.SelectedInUI &&
                     (!IgnoreDisabled || mod.IsEnabled()) &&
-                    (!IgnoreSeparators || !mod.IsSeparator))
+                    (!IgnoreSeparators || !mod.SourceListing.IsSeparator))
                 .ToList();
 
             var modPathsInDestination = Directory.GetDirectories(Path.Combine(Mo2Directory, "mods"))

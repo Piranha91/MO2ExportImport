@@ -14,14 +14,12 @@ namespace MO2ExportImport
     public class Mod : ReactiveObject
     {
         private bool _selectedInUI;
-        private const string _separatorSuffix = "_separator";
         private const string _separatorDispString = "-----";
         private const string _noDeleteString = "[NoDelete]";
 
         public ModListing SourceListing { get; set; }
         public string SourceDirectoryName { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
-        public bool IsSeparator { get; set; } = false;
         public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
         public bool EnabledInExportedModList { get; set; } = false;
@@ -49,7 +47,6 @@ namespace MO2ExportImport
             SourceListing = new ModListing(copyTemplate.SourceListing.GetCurrentEntryString());
             SourceDirectoryName = copyTemplate.SourceDirectoryName;
             DisplayName = copyTemplate.DisplayName;
-            IsSeparator = copyTemplate.IsSeparator;
             IsNoDelete = copyTemplate.IsNoDelete;
             NoDeleteIndex = copyTemplate.NoDeleteIndex;
             EnabledInExportedModList = copyTemplate.EnabledInExportedModList;
@@ -59,11 +56,10 @@ namespace MO2ExportImport
         {
             DisplayName = SourceListing.GetCurrentFolderName();
             SourceDirectoryName = SourceListing.GetCurrentFolderName();
-
-            IsSeparator = SourceListing.Name.EndsWith(_separatorSuffix, StringComparison.OrdinalIgnoreCase);
-            if (IsSeparator)
+            
+            if (SourceListing.IsSeparator)
             {
-                DisplayName = StringExtensions.RemoveAtEnd(DisplayName, _separatorSuffix).Trim();
+                DisplayName = StringExtensions.RemoveAtEnd(DisplayName, ModListing._separatorSuffix).Trim();
                 DisplayName = _separatorDispString + DisplayName + _separatorDispString;
             }
 
