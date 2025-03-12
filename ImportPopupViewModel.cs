@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -408,7 +408,7 @@ namespace MO2ExportImport.ViewModels
                     Log("Importing mods into modlist.txt");
                     foreach (var currentMod in validSourceMods)
                     {
-                        var sourceListing = sourceModList.FirstOrDefault(x => x.Equals(currentMod));
+                        var sourceListing = sourceModList.FirstOrDefault(x => x.Equals(currentMod.SourceListing));
                         if (sourceListing is null)
                         {
                             continue;
