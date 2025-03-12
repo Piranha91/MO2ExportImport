@@ -128,9 +128,7 @@ namespace MO2ExportImport
             {
                 if (node.IsSectionHeader)
                 {
-                    // This node becomes the current header.
                     currentHeader = node;
-                    // Clear existing children for re-arrangement.
                     node.Children.Clear();
                     newTopLevel.Add(node);
                 }
@@ -138,23 +136,96 @@ namespace MO2ExportImport
                 {
                     if (currentHeader != null)
                     {
-                        // Move node into current header's Children.
                         currentHeader.Children.Add(node);
                     }
                     else
                     {
-                        // No header encountered yet; keep at top level.
                         newTopLevel.Add(node);
                     }
                 }
             }
             
-            // Replace ModList with the newly arranged top-level nodes.
             ModList.Clear();
             foreach (var node in newTopLevel)
             {
                 ModList.Add(node);
             }
+        }
+        
+        /// <summary>
+        /// Rearranges the PluginList based on each PluginSimulatorNode's SourceListing.PluginGroup.
+        /// For each node:
+        ///   - If PluginGroup is null, the node remains at the top level.
+        ///   - If not null, check if the immediate preceding top-level node is a header with that group name.
+        ///       - If yes, move the node into that header's Children.
+        ///       - If no, create a new header node with Label equal to the PluginGroup and add the node into its Children.
+        /// </summary>
+        public void ArrangePluginSeparators()
+        {
+            var newTopLevel = new List<ISimulatorNode>();
+            
+            // Iterate over a copy of PluginList.
+            foreach (var node in PluginList.ToList())
+            {
+                if (node is PluginSimulatorNode pluginNode)
+                {
+                    string? group = pluginNode.SourceListing.PluginGroup;
+                    if (string.IsNullOrEmpty(group))
+                    {
+                        // No group defined; leave at top level.
+                        newTopLevel.Add(pluginNode);
+                    }
+                    else
+                    {
+                        // Check if the immediate preceding top-level node is a header with a matching label.
+                        if (newTopLevel.Any())
+                        {
+                            var lastTop = newTopLevel.Last();
+                            if (lastTop.IsSectionHeader && lastTop.Label == group)
+                            {
+                                lastTop.Children.Add(pluginNode);
+                            }
+                            else
+                            {
+                                // Create a new header node.
+                                var headerListing = new PluginListing();
+                                headerListing.Name = group;
+                                headerListing.PluginGroup = group;
+                                var headerNode = new PluginSimulatorNode(headerListing, PluginList, isSectionHeader: true);
+                                newTopLevel.Add(headerNode);
+                                headerNode.Children.Add(pluginNode);
+                            }
+                        }
+                        else
+                        {
+                            // No top-level nodes yet; create a header.
+                            var headerListing = new PluginListing();
+                            headerListing.Name = group;
+                            headerListing.PluginGroup = group;
+                            var headerNode = new PluginSimulatorNode(headerListing, PluginList, isSectionHeader: true);
+                            newTopLevel.Add(headerNode);
+                            headerNode.Children.Add(pluginNode);
+                        }
+                    }
+                }
+            }
+            
+            PluginList.Clear();
+            foreach (var node in newTopLevel)
+            {
+                PluginList.Add(node);
+            }
+        }
+        
+        /// <summary>
+        /// Rearranges the ModList and PluginList to match the order of the provided source lists,
+        /// then arranges the mod and plugin separators.
+        /// </summary>
+        public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, IEnumerable<ModListing> sourceModList, bool addMissingItems)
+        {
+            SortEntries(sourceLoadOrder, sourceModList, addMissingItems);
+            ArrangeModSeparators();
+            ArrangePluginSeparators();
         }
         
         /// <summary>
@@ -169,7 +240,6 @@ namespace MO2ExportImport
             var newModNodes = new List<ISimulatorNode>();
             foreach (var modListing in sourceModList)
             {
-                // Try to locate an existing ModSimulatorNode that matches this listing.
                 var node = ModList.OfType<ModSimulatorNode>().FirstOrDefault(n => n.SourceListing.Equals(modListing));
                 if (node == null && addMissing)
                 {
@@ -198,7 +268,6 @@ namespace MO2ExportImport
                 }
             }
             
-            // Update the observable collections.
             ModList.Clear();
             foreach (var node in newModNodes)
             {
@@ -210,18 +279,6 @@ namespace MO2ExportImport
             {
                 PluginList.Add(node);
             }
-        }
-        
-        /// <summary>
-        /// Initializes the Simulator by sorting entries and arranging mod separators.
-        /// </summary>
-        /// <param name="sourceLoadOrder">Desired order for plugin listings.</param>
-        /// <param name="sourceModList">Desired order for mod listings.</param>
-        /// <param name="addMissingItems">If true, missing items are created.</param>
-        public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, IEnumerable<ModListing> sourceModList, bool addMissingItems)
-        {
-            SortEntries(sourceLoadOrder, sourceModList, addMissingItems);
-            ArrangeModSeparators();
         }
     }
     
@@ -244,25 +301,25 @@ namespace MO2ExportImport
         public bool IsSectionHeader { get; set; }
         public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
         
-        // New property for the source listing.
         public ModListing SourceListing { get; set; }
         
-        // Constructor accepts a ModListing and sets IsSectionHeader based on SourceListing.IsSeparator.
+        // Constructor accepts a ModListing, sets Label and IsSectionHeader accordingly.
         public ModSimulatorNode(ModListing sourceListing, ObservableCollection<ISimulatorNode> parentCollection)
         {
             SourceListing = sourceListing;
             Label = sourceListing.Name;
             if (SourceListing.IsSeparator)
             {
+                // Remove the separator suffix and trim the result.
                 Label = StringExtensions.RemoveAtEnd(Label, ModListing._separatorSuffix).Trim();
             }
             ParentCollection = parentCollection;
-            IsSectionHeader = sourceListing.IsSeparator; // automatically set based on the source listing.
+            IsSectionHeader = sourceListing.IsSeparator;
             ParentCollection.Add(this);
         }
     }
     
-    // PluginSimulatorNode remains unchanged.
+    // PluginSimulatorNode remains unchanged except for supporting grouping in ArrangePluginSeparators.
     public class PluginSimulatorNode : ISimulatorNode
     {
         public ObservableCollection<ISimulatorNode> Children { get; } = new ObservableCollection<ISimulatorNode>();
@@ -271,7 +328,6 @@ namespace MO2ExportImport
         public bool IsSectionHeader { get; set; }
         public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
         
-        // New property for the source listing.
         public PluginListing SourceListing { get; set; }
         
         // Constructor accepts a PluginListing.
@@ -285,15 +341,14 @@ namespace MO2ExportImport
         }
     }
     
-    // Custom drop handler that allows drops only on nodes where IsSectionHeader is true.
+    // Custom drop handler updated to allow reordering of section headers while preventing nesting.
     public class CustomDropHandler : GongSolutions.Wpf.DragDrop.DefaultDropHandler
     {
         public override void DragOver(IDropInfo dropInfo)
         {
             if (dropInfo.Data is ISimulatorNode draggedNode)
             {
-                // If a section header is being dragged,
-                // allow drop only if the target collection is the same as the source collection.
+                // For section headers, allow reordering only if dropped within the same top-level collection.
                 if (draggedNode.IsSectionHeader)
                 {
                     if (!object.ReferenceEquals(dropInfo.TargetCollection, dropInfo.DragInfo.SourceCollection))
@@ -302,7 +357,7 @@ namespace MO2ExportImport
                         return;
                     }
                 }
-        
+                
                 // For all nodes: if a target item exists, it must be a section header.
                 if (dropInfo.TargetItem != null)
                 {
@@ -315,8 +370,7 @@ namespace MO2ExportImport
                         }
                     }
                 }
-        
-                // If no valid insert position is provided, disallow the drop.
+                
                 if (dropInfo.InsertIndex < 0)
                 {
                     dropInfo.Effects = System.Windows.DragDropEffects.None;
