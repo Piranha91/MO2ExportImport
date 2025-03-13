@@ -32,7 +32,7 @@ namespace MO2ExportImport.ViewModels
         private List<string> _importEvents = new();
         private string _programVersion;
         private string _importPrefix;
-        private List<Mod> _removedMatchingMods = new();
+        private List<Mod> _removedModsMatchingExisting = new();
         private bool _ignoreMatchedModsForOrdering;
         private bool _interpolateMissingPluginGroups;
 
@@ -83,7 +83,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMatchingMods, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -99,7 +99,7 @@ namespace MO2ExportImport.ViewModels
             _logWriter = logWriter;
             _programVersion = programVersion;
             _importPrefix = importPrefix;
-            _removedMatchingMods = removedMatchingMods;
+            _removedModsMatchingExisting = removedMods_Matching_Existing;
             _ignoreMatchedModsForOrdering = IgnoreMatchedModsForOrdering;
             _interpolateMissingPluginGroups = interpolateMissingPluginGroups;
 
@@ -173,11 +173,11 @@ namespace MO2ExportImport.ViewModels
 
             try
             {
-                var removedPluginNames = _removedMatchingMods.SelectMany(x =>
+                var removedPluginNames = _removedModsMatchingExisting.SelectMany(x =>
                         CommonFuncs.GetPluginNamesInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
                     .ToList();
                 
-                var removedModListings = _removedMatchingMods.Select(x => x.SourceListing).Cast<IListing>().ToList();
+                var removedModListings = _removedModsMatchingExisting.Select(x => x.SourceListing).Cast<IListing>().ToList();
                 
                 var modsOutputDir = Path.Combine(_mo2Directory, "mods");
                 
@@ -320,9 +320,9 @@ namespace MO2ExportImport.ViewModels
                                 {
                                     Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added.");
                                     simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Detected as a member of {mod.DisplayName} but already present in destination load order");
-                                    if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced)
+                                    if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced && !HasSameRelativePosition(existingPluginListing, sourcePluginsList, profilePluginsList))
                                     {
-                                        Log($"Plugin ordering: the position of {pluginFileName} will be disregarded when importing other plugin because it is already present in the destination load order");
+                                        Log($"Plugin ordering: the position of {pluginFileName} will be disregarded when importing other plugins because it is already present in the destination load order");
                                         simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Position of this plugin will be disregarded for determining load order of other plugins");
                                         spliceModeIgnoredPluginListings.Add(existingPluginListing); // this plugin is not where the source mod list expects it to be in the load order, so don't use it to anchor spliced-in plugins.
                                     }
@@ -583,6 +583,42 @@ namespace MO2ExportImport.ViewModels
                 Log($"An error occurred during the import process: {ex.Message}");
                 ScrollableMessageBox.Show($"An error occurred during the import process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
+        }
+
+        private bool HasSameRelativePosition(IListing listing, List<IListing> list1, List<IListing> list2)
+        {
+            var index1 = list1.IndexOf(listing);
+            var index2 = list2.IndexOf(listing);
+
+            if (index1 < 0 || index2 < 0)
+            {
+                return false;
+            }
+
+            string precedingListingName1;
+            string precedingListingName2;
+
+            string firstStr = "!!first!!";
+                        
+            if (index1 > 0)
+            {
+                precedingListingName1 = list1[index1 - 1].Name;
+            }
+            else
+            {
+                precedingListingName1 = firstStr;
+            }
+                        
+            if (index2 > 0)
+            {
+                precedingListingName2 = list2[index2 - 1].Name;
+            }
+            else
+            {
+                precedingListingName2 = firstStr;
+            }
+            
+            return precedingListingName1 == precedingListingName2;
         }
 
         private (List<ModListing>, List<ModListing>) MatchModActivationStatus(List<ModListing> profileModList, List<ModListing> sourceModList)

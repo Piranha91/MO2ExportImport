@@ -24,7 +24,7 @@ namespace MO2ExportImport.ViewModels
         private bool _modsLoaded;
         private StreamWriter _logWriter;
         private string _importButtonLabel;
-        private List<Mod> _removedMods = new();
+        private List<Mod> _removedMods_Matching_Existing = new();
         public string StartingImportSource { get; set; } = string.Empty;
 
         public string Mo2Directory
@@ -409,7 +409,7 @@ namespace MO2ExportImport.ViewModels
         public void FilterModsForImport()
         {
             var modsToRemoveLog = new List<string>();
-            _removedMods = new List<Mod>();
+            _removedMods_Matching_Existing = new List<Mod>();
             var modsWithPluginsToRemove = new List<string>();
 
             var selectedModsToExport = ModList
@@ -429,7 +429,7 @@ namespace MO2ExportImport.ViewModels
                 if (Directory.Exists(literalModPathInMO2) || Directory.Exists(simplifiedModPathInMO2) || ContainsNoDeleteFolder(modPathsInDestination, mod.SourceListing.Name))
                 {
                     // Log and remove mod if a directory with the same name already exists in MO2
-                    if (SkipExisting)
+                    if (SkipExisting || !mod.OverWriteExistingDuringImport)
                     {
                         modsToRemoveLog.Add(mod.DisplayName + " - Matched existing directory name.");
                         mod.SelectedInUI = false;
@@ -437,7 +437,7 @@ namespace MO2ExportImport.ViewModels
 
                     if (IgnoreMatchedModsForOrdering)
                     {
-                        _removedMods.Add(mod);
+                        _removedMods_Matching_Existing.Add(mod);
                     }
                     
                     continue;
@@ -456,7 +456,7 @@ namespace MO2ExportImport.ViewModels
 
                         if (pluginFiles.All(pf => existingModPlugins.Any(ep => Path.GetFileName(pf).Equals(Path.GetFileName(ep), StringComparison.OrdinalIgnoreCase))))
                         {
-                            if (SkipExisting)
+                            if (SkipExisting || !mod.OverWriteExistingDuringImport)
                             {
                                 // Log and remove mod if all plugin files match an existing mod in MO2
                                 modsWithPluginsToRemove.Add(mod.DisplayName +
@@ -466,7 +466,7 @@ namespace MO2ExportImport.ViewModels
 
                             if (IgnoreMatchedModsForOrdering)
                             {
-                                _removedMods.Add(mod);
+                                _removedMods_Matching_Existing.Add(mod);
                             }
                             break;
                         }
@@ -557,7 +557,7 @@ namespace MO2ExportImport.ViewModels
             if (ModList.Any(x => x.SelectedInUI))
             {
                 var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups);
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
