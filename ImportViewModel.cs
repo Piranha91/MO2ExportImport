@@ -350,6 +350,7 @@ namespace MO2ExportImport.ViewModels
         {
             var dialog = new OpenFolderDialog();
             dialog.FolderName = StartingImportSource;
+            dialog.InitialDirectory = StartingImportSource;
             var result = dialog.ShowDialog();
             if (result != null && result.Value)
             {
