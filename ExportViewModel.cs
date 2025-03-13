@@ -132,6 +132,8 @@ namespace MO2ExportImport.ViewModels
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
         public ReactiveCommand<Unit, Unit> ExportSelectedCommand { get; }
+        public ReactiveCommand<Unit, Unit> SetSelectedAsOverrideCommand { get; }
+        public ReactiveCommand<Unit, Unit> UnsetSelectedAsOverrideCommand { get; }
         public ReactiveCommand<Unit, Unit> BrowseFolderCommand { get; }
 
         public ExportViewModel(MainViewModel mainViewModel)
@@ -176,12 +178,15 @@ namespace MO2ExportImport.ViewModels
                     (folder, mods) => !string.IsNullOrEmpty(folder) && mods.Any(mod => mod.SelectedInUI)
                 );
 
+            SetSelectedAsOverrideCommand = ReactiveCommand.Create(SetSelectedAsOverrideMods);
+            UnsetSelectedAsOverrideCommand = ReactiveCommand.Create(UnsetSelectedAsOverrideMods);
+            
             ExportSelectedCommand = ReactiveCommand.Create(ExportSelected, canExport);
 
             BrowseFolderCommand = ReactiveCommand.CreateFromTask(BrowseFolder);
         }
 
-            private async Task SelectSource()
+        private async Task SelectSource()
         {
             var dialog = new OpenFolderDialog();
             var result = dialog.ShowDialog();
@@ -189,6 +194,22 @@ namespace MO2ExportImport.ViewModels
             {
                 _mo2Directory = dialog.FolderName;
                 ValidateMo2Directory();
+            }
+        }
+
+        private void SetSelectedAsOverrideMods()
+        {
+            foreach (var mod in ModList.Where(x => x.SelectedInUI))
+            {
+                mod.OverWriteExistingDuringImport = true;
+            }
+        }
+        
+        private void UnsetSelectedAsOverrideMods()
+        {
+            foreach (var mod in ModList.Where(x => x.SelectedInUI))
+            {
+                mod.OverWriteExistingDuringImport = false;
             }
         }
 

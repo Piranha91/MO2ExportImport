@@ -14,6 +14,7 @@ namespace MO2ExportImport
     public class Mod : ReactiveObject
     {
         private bool _selectedInUI;
+        private bool _overWriteExistingDuringImport;
         private const string _separatorDispString = "-----";
         private const string _noDeleteString = "[NoDelete]";
 
@@ -23,11 +24,18 @@ namespace MO2ExportImport
         public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
         public bool EnabledInExportedModList { get; set; } = false;
+        
 
         public bool SelectedInUI
         {
             get => _selectedInUI;
             set => this.RaiseAndSetIfChanged(ref _selectedInUI, value);
+        }
+        
+        public bool OverWriteExistingDuringImport
+        {
+            get => _overWriteExistingDuringImport;
+            set => this.RaiseAndSetIfChanged(ref _overWriteExistingDuringImport, value);
         }
 
         public Mod(string listingEntry)

@@ -255,6 +255,8 @@ namespace MO2ExportImport.ViewModels
 
         public ReactiveCommand<Unit, Unit> SelectMo2DirectoryCommand { get; }
         public ReactiveCommand<Unit, Unit> SelectImportSourceFolderCommand { get; }
+        public ReactiveCommand<Unit, Unit> SetSelectedAsOverrideCommand { get; }
+        public ReactiveCommand<Unit, Unit> UnsetSelectedAsOverrideCommand { get; }
         public ReactiveCommand<Unit, Unit> LaunchImportPopupCommand { get; }
 
         public ImportViewModel(MainViewModel mainViewModel, StreamWriter logWriter)
@@ -263,6 +265,8 @@ namespace MO2ExportImport.ViewModels
             _logWriter = logWriter;
             SelectMo2DirectoryCommand = ReactiveCommand.Create(SelectMo2Directory);
             SelectImportSourceFolderCommand = ReactiveCommand.Create(SelectImportSourceFolder);
+            SetSelectedAsOverrideCommand = ReactiveCommand.Create(SetSelectedAsOverrideMods);
+            UnsetSelectedAsOverrideCommand = ReactiveCommand.Create(UnsetSelectedAsOverrideMods);
             LaunchImportPopupCommand = ReactiveCommand.Create(LaunchImportPopup, this.WhenAnyValue(x => x.IsImportEnabled));
 
             Profiles.Add("All");
@@ -560,6 +564,22 @@ namespace MO2ExportImport.ViewModels
             else
             {
                 MessageBox.Show("No mods are available for import after filtering.", "No Mods to Import", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        
+        private void SetSelectedAsOverrideMods()
+        {
+            foreach (var mod in ModList.Where(x => x.SelectedInUI))
+            {
+                mod.OverWriteExistingDuringImport = true;
+            }
+        }
+        
+        private void UnsetSelectedAsOverrideMods()
+        {
+            foreach (var mod in ModList.Where(x => x.SelectedInUI))
+            {
+                mod.OverWriteExistingDuringImport = false;
             }
         }
 

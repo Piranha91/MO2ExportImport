@@ -59,6 +59,8 @@
             <!-- Import Options boxes -->
             <RowDefinition Height="Auto"/>
             <!-- Import Mode Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Checkbox Explanation Text -->
             <RowDefinition Height="*"/>
             <!-- Mods ListBox -->
             <RowDefinition Height="Auto"/>
@@ -84,11 +86,11 @@
         </StackPanel>
 
         <WrapPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
-            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
+            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" Margin="10 0 0 0"/>
             <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
             <CheckBox Content="Add [NoDelete] Flags" IsChecked="{Binding AddNoDeleteFlags}" Margin="10 0 0 0"/>
             <CheckBox Content="Remove [NoDelete] Flags" IsChecked="{Binding StripNoDelete}" Margin="10 0 0 0"/>
-            <CheckBox Content="Skip Mods That Already Exist" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
+            <CheckBox Content="Disallow All Mod Overwrites" IsChecked="{Binding SkipExisting}" Margin="10 0 0 0"/>
             <CheckBox Content="Ignore Splice Order of Existing Mods" IsChecked="{Binding IgnoreMatchedModsForOrdering}" Margin="10 0 0 0"/>
             <CheckBox Content="Match [Enabled/Disabled] Mods From Import" IsChecked="{Binding MatchModActivationState}" Margin="10 0 0 0"/>
             <CheckBox Content="Match [Enabled/Disabled] Plugins From Import" IsChecked="{Binding MatchPluginActivationState}" Margin="10 0 0 0"/>
@@ -118,9 +120,17 @@
        Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
             </Grid>
         </StackPanel>
+        
+        <!-- Checkbox Explanation -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10">
+            <CheckBox IsChecked="False" IsEnabled="False" Content="Mod is Activated" Margin="0 0 10 0" VerticalAlignment="Center"/>
+            <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)" VerticalAlignment="Center"/>
+            <Button Content="Set as Overwriting Mods" Command="{Binding SetSelectedAsOverrideCommand}" Margin="20 0 10 0" />
+            <Button Content="Unset as Overwriting Mods" Command="{Binding UnsetSelectedAsOverrideCommand}" Margin="20 0 0 0" />
+        </StackPanel>
 
         <!-- Mod List -->
-        <ListBox Grid.Row="5" ItemsSource="{Binding FilteredModList}" Margin="10"
+        <ListBox Grid.Row="6" ItemsSource="{Binding FilteredModList}" Margin="10"
          ScrollViewer.VerticalScrollBarVisibility="Auto"
          SelectionMode="Extended" 
          Name="ModsListBox"
@@ -164,6 +174,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
                         <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
@@ -172,7 +183,7 @@
 
         <!-- "Please Wait" TextBlock -->
         <TextBlock x:Name="PleaseWaitText"
-           Grid.Row="5"
+           Grid.Row="6"
        Text="Please Wait"
        HorizontalAlignment="Center"
        VerticalAlignment="Center"
@@ -182,7 +193,7 @@
        IsHitTestVisible="False" />
 
         <!-- Canvas to draw the blue lines -->
-        <Canvas Grid.Row="5" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
+        <Canvas Grid.Row="6" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
 Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
                 <ItemsControl.ItemsPanel>
@@ -199,6 +210,6 @@ Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
         </Canvas>
 
         <!-- Import Button -->
-        <Button Grid.Row="6" Content="{Binding ImportButtonLabel}" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
+        <Button Grid.Row="7" Content="{Binding ImportButtonLabel}" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
     </Grid>
 </UserControl>

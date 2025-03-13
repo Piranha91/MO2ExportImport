@@ -54,7 +54,9 @@
             <RowDefinition Height="Auto"/> <!-- For MO2 Selection -->
             <RowDefinition Height="Auto"/> <!-- For Profile Selection -->
             <RowDefinition Height="Auto"/> <!-- For Checkbox Options -->
+            <RowDefinition Height="Auto"/> <!-- For Action Buttons -->
             <RowDefinition Height="Auto"/> <!-- For filter -->
+            <RowDefinition Height="Auto"/> <!-- For checkbox explanations -->
             <RowDefinition Height="*"/>  <!-- For the ListBox to take remaining space -->          
             <RowDefinition Height="Auto"/> <!-- For the Export button -->
             <RowDefinition Height="Auto"/> <!-- For the Export destination-->
@@ -92,9 +94,19 @@
                Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
         </Grid>
 
-        <Button Grid.Row="3" Grid.RowSpan="2" Content="{Binding ExportButtonLabel}" Command="{Binding ExportSelectedCommand}" Margin="0 0 10 0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+        <StackPanel Grid.Row="4" VerticalAlignment="Top" Orientation="Horizontal" Margin="10">
+            <Button Content="Set as Overwriting Mods" Command="{Binding SetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
+            <Button Content="Unset as Overwriting Mods" Command="{Binding UnsetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
+            <Button Content="{Binding ExportButtonLabel}" Command="{Binding ExportSelectedCommand}" Margin="50 0 0 0" />
+        </StackPanel>
 
-        <ListBox Grid.Row="4" ItemsSource="{Binding FilteredModList}" Margin="10"
+        <!-- Checkbox Explanation -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10 0 0 0">
+            <CheckBox IsChecked="False" IsEnabled="False" Content="Mod is Activated" Margin="0 0 10 0"/>
+            <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)"/>
+        </StackPanel>
+        
+        <ListBox Grid.Row="6" ItemsSource="{Binding FilteredModList}" Margin="10"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  SelectionMode="Extended" 
                  Name="ModsListBox"
@@ -138,6 +150,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
                         <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
@@ -146,7 +159,7 @@
 
         <!-- "Please Wait" TextBlock -->
         <TextBlock x:Name="PleaseWaitText"
-                   Grid.Row="4"
+                   Grid.Row="6"
                Text="Please Wait"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
@@ -156,7 +169,7 @@
                IsHitTestVisible="False" />
 
         <!-- Canvas to draw the blue lines -->
-        <Canvas Grid.Row="4" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
+        <Canvas Grid.Row="6" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
         Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
                 <ItemsControl.ItemsPanel>
@@ -175,7 +188,7 @@
         <!-- Export Selected Button -->
 
         <!-- Bottom panel for Export Destination Folder selection -->
-        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="6" Orientation="Horizontal"  VerticalAlignment="Center" Margin="5 0 0 5">
+        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="7" Orientation="Horizontal"  VerticalAlignment="Center" Margin="5 0 0 5">
             <TextBlock Text="Export Destination:" VerticalAlignment="Center"/>
             <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0" VerticalContentAlignment="Center"/>
             <Button Content="Browse" Command="{Binding BrowseFolderCommand}"/>
