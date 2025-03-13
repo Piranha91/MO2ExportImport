@@ -511,11 +511,16 @@ namespace MO2ExportImport.ViewModels
 
                     if (ShowModListPreview)
                     {
-                        simulator.Initialize(profilePluginsList.Cast<PluginListing>(), profileModList.Cast<ModListing>(), true);
+                        simulator.Initialize(profilePluginsList.Cast<PluginListing>(), profileModList.Cast<ModListing>(), true, profile);
                         simulator.ShowWindow();
                         if (simulator.CancelImport)
                         {
                             return;
+                        }
+                        else
+                        {
+                            profileModList = simulator.GetModListings().ToList();
+                            profilePluginsList = simulator.GetPluginListings().ToList();
                         }
                     }
 

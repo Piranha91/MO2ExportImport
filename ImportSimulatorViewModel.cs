@@ -10,6 +10,14 @@ namespace MO2ExportImport
 {
     public class ImportSimulatorViewModel : ReactiveObject
     {
+        private string _currentProfileName = string.Empty;
+
+        public string CurrentProfileName
+        {
+            get => _currentProfileName;
+            set => this.RaiseAndSetIfChanged(ref _currentProfileName, value);
+        }
+        
         private bool _cancelImport = true;
         public bool CancelImport 
         { 
@@ -221,8 +229,9 @@ namespace MO2ExportImport
         /// Rearranges the ModList and PluginList to match the order of the provided source lists,
         /// then arranges the mod and plugin separators.
         /// </summary>
-        public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, IEnumerable<ModListing> sourceModList, bool addMissingItems)
+        public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, IEnumerable<ModListing> sourceModList, bool addMissingItems, string currentProfileName)
         {
+            CurrentProfileName = currentProfileName;
             SortEntries(sourceLoadOrder, sourceModList, addMissingItems);
             ArrangeModSeparators();
             ArrangePluginSeparators();
@@ -279,6 +288,49 @@ namespace MO2ExportImport
             {
                 PluginList.Add(node);
             }
+        }
+
+        public IEnumerable<IListing> GetModListings()
+        {
+            var modNodes = ModList.Cast<ModSimulatorNode>().ToList();
+            List<ModListing> modListings = new List<ModListing>();
+
+            foreach (var modNode in modNodes)
+            {
+                modListings.Add(modNode.SourceListing); // add the separator
+                foreach (var childNode in modNode.Children.Cast<ModSimulatorNode>().ToList())
+                {
+                    modListings.Add(childNode.SourceListing); // add the mod within the separator
+                }
+            }
+            
+            return modListings;
+        }
+
+        public IEnumerable<IListing> GetPluginListings()
+        {
+            var pluginNodes = PluginList.Cast<PluginSimulatorNode>().ToList();
+            List<PluginListing> pluginListings = new List<PluginListing>();
+            foreach (var pluginNode in pluginNodes)
+            {
+                if (pluginNode.Children.Any())
+                {
+                    // this is a "fake" plugin node acting as a separator
+                    foreach (var childNode in pluginNode.Children.Cast<PluginSimulatorNode>().ToList())
+                    {
+                        childNode.SourceListing.PluginGroup = pluginNode.Label; // set explicitly in case the plugin was moved to a different separator
+                        pluginListings.Add(childNode.SourceListing); // add the plugin within the separator
+                    }
+                }
+                else if (!pluginNode.IsSectionHeader)
+                {
+                    // this is a "real" plugin node that's outside of a separator. Add it directly.
+                    pluginNode.SourceListing.PluginGroup = string.Empty; // set explicitly in case the plugin was moved outside of a separator
+                    pluginListings.Add(pluginNode.SourceListing);
+                }
+            }
+
+            return pluginListings;
         }
     }
     
