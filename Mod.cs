@@ -58,6 +58,7 @@ namespace MO2ExportImport
             IsNoDelete = copyTemplate.IsNoDelete;
             NoDeleteIndex = copyTemplate.NoDeleteIndex;
             EnabledInExportedModList = copyTemplate.EnabledInExportedModList;
+            OverWriteExistingDuringImport = copyTemplate.OverWriteExistingDuringImport;
         }
 
         private void Initialize()
