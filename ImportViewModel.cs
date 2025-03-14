@@ -548,10 +548,7 @@ namespace MO2ExportImport.ViewModels
         private void LaunchImportPopup()
         {
             // Filter the mods before launching the import popup
-            if (SkipExisting)
-            {
-                FilterModsForImport();
-            }
+            FilterModsForImport();
 
             // If no mods are selected after filtering, don't open the popup
             if (ModList.Any(x => x.SelectedInUI))
