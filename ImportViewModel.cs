@@ -159,7 +159,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        private bool _skipExisting = true;
+        private bool _skipExisting = false;
         public bool SkipExisting
         {
             get => _skipExisting;
