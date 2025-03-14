@@ -181,7 +181,16 @@ namespace MO2ExportImport.ViewModels
             }
         }
         
-        
+        private Visibility _showFilteringNotification = Visibility.Hidden;
+        public Visibility ShowFilteringNotification
+        {
+            get => _showFilteringNotification;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _showFilteringNotification, value);
+                System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
+            }
+        }
 
         private string _filterText;
         public string FilterText
@@ -408,6 +417,7 @@ namespace MO2ExportImport.ViewModels
 
         public void FilterModsForImport()
         {
+            ShowFilteringNotification = Visibility.Visible;
             var modsToRemoveLog = new List<string>();
             _removedMods_Matching_Existing = new List<Mod>();
             var modsWithPluginsToRemove = new List<string>();
@@ -473,6 +483,8 @@ namespace MO2ExportImport.ViewModels
                     }
                 }
             }
+            
+            ShowFilteringNotification = Visibility.Hidden;
 
             if (modsToRemoveLog.Any() || modsWithPluginsToRemove.Any())
             {

@@ -211,5 +211,8 @@ Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
 
         <!-- Import Button -->
         <Button Grid.Row="7" Content="{Binding ImportButtonLabel}" Command="{Binding LaunchImportPopupCommand}" HorizontalAlignment="Center" Margin="5" IsEnabled="{Binding IsImportEnabled}"/>
+        
+        <!-- Filtering Notification -->
+        <TextBlock Grid.Row="7" Text="Checking for Duplicate Mods. Please Wait." Foreground="Red" HorizontalAlignment="Right" Visibility="{Binding ShowFilteringNotification}" IsHitTestVisible="False"/>
     </Grid>
 </UserControl>
