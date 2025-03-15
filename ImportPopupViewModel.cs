@@ -457,7 +457,7 @@ namespace MO2ExportImport.ViewModels
                             Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
                         }
                         
-                        simulator.LogModEvent(currentMod.SourceListing, "The current mod order is: " + string.Join(Environment.NewLine, profileModList.Select(x => x.Name)));
+                        simulator.LogModEvent(currentMod.SourceListing, Environment.NewLine + "The current mod order is: " + Environment.NewLine + string.Join(Environment.NewLine, profileModList.Select(x => x.Name)));
                     }
 
                     // Handle ImportMode for plugins.txt
@@ -482,7 +482,7 @@ namespace MO2ExportImport.ViewModels
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                         }
-                        simulator.LogPluginEvent(currentPlugin, "The current load order is: " + Environment.NewLine + string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
+                        simulator.LogPluginEvent(currentPlugin, Environment.NewLine + "The current load order is: " + Environment.NewLine + string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
                     }
 
                     if (_matchPluginActivationState)
