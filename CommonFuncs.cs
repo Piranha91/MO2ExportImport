@@ -317,7 +317,7 @@ namespace MO2ExportImport
 
                 if (ignoredEntries.Any(x => x.Equals(precedingSearchEntry)))
                 {
-                    eventLog.Add("The position of " + precedingSearchEntry.Name + "is to be ignored during splicing. Continuing to next preceding entry");
+                    eventLog.Add("The position of " + precedingSearchEntry.Name + " is to be ignored during splicing. Continuing to next preceding entry");
                     continue;
                 }
 

@@ -420,7 +420,7 @@ namespace MO2ExportImport.ViewModels
                         
                         if (index > 0)
                         {
-                            var precedingMod = profileModList[index - 1];
+                            var precedingMod = sourceModList[index - 1];
                             simulator.LogModEvent(sourceListing as ModListing, "The preceding mod in the source load order is: " + precedingMod.Name);
                         }
                         else
@@ -428,9 +428,9 @@ namespace MO2ExportImport.ViewModels
                             simulator.LogModEvent(sourceListing as ModListing, "This is the first mod in the import source load order");
                         }
                         
-                        if (index < profileModList.Count - 1)
+                        if (index < sourceModList.Count - 1)
                         {
-                            var subsequentMod = profileModList[index + 1];
+                            var subsequentMod = sourceModList[index + 1];
                             simulator.LogModEvent(sourceListing as ModListing, "The subsequent mod in the source load order is: " + subsequentMod.Name);
                         }
                         else
@@ -455,6 +455,7 @@ namespace MO2ExportImport.ViewModels
                             }
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} into modlist.txt after {previousItem}");
+                            simulator.LogModEvent(currentMod.SourceListing, "Added to mod list after " + previousItem + "."); 
                         }
                         
                         simulator.LogModEvent(currentMod.SourceListing, Environment.NewLine + "The current mod order is: " + Environment.NewLine + string.Join(Environment.NewLine, profileModList.Select(x => x.Name)));
@@ -481,6 +482,7 @@ namespace MO2ExportImport.ViewModels
                             }
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
+                            simulator.LogPluginEvent(currentPlugin, "Added to plugin list after " + previousItem + ".");
                         }
                         simulator.LogPluginEvent(currentPlugin, Environment.NewLine + "The current load order is: " + Environment.NewLine + string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
                     }
