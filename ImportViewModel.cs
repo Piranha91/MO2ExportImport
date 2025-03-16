@@ -473,11 +473,7 @@ namespace MO2ExportImport.ViewModels
                                                             " - All plugins matched with an existing mod.");
                                 mod.SelectedInUI = false;
                             }
-
-                            if (IgnoreMatchedModsForOrdering)
-                            {
-                                _removedMods_Matching_Existing.Add(mod);
-                            }
+                            
                             break;
                         }
                     }

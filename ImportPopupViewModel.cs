@@ -173,12 +173,6 @@ namespace MO2ExportImport.ViewModels
 
             try
             {
-                var removedPluginNames = _removedModsMatchingExisting.SelectMany(x =>
-                        CommonFuncs.GetPluginNamesInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
-                    .ToList();
-                
-                var removedModListings = _removedModsMatchingExisting.Select(x => x.SourceListing).Cast<IListing>().ToList();
-                
                 var modsOutputDir = Path.Combine(_mo2Directory, "mods");
                 
                 // Filter SourceModList to include only mods with corresponding directories
@@ -244,10 +238,44 @@ namespace MO2ExportImport.ViewModels
                     var sourceModList = CommonFuncs.LoadModList(sourceModListPath).Cast<IListing>().ToList();;
 
                     //var sourcePluginsListPath = Path.Combine(_importProfileSourceDirectory, "plugins.txt");
-                    var sourcePluginsList = CommonFuncs.LoadPluginListFromLoadOrder(_importProfileSourceDirectory).Cast<IListing>().ToList();;
+                    var sourcePluginsList = CommonFuncs.LoadPluginListFromLoadOrder(_importProfileSourceDirectory).Cast<IListing>().ToList();
                     
-                    var spliceModeIgnoredPluginListings = sourcePluginsList.Where(x => removedPluginNames.Contains(x.Name)).ToList();
-                                        
+                    // Define and log mods whose position is ignored due to matched name
+                    var spliceModeIgnoredModListings = new List<IListing>();
+                    if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced)
+                    {
+                        var candidateSpliceModeIgnoredModListings = _removedModsMatchingExisting
+                            .Select(x => x.SourceListing).Cast<IListing>().ToList();
+                        foreach (var candidate in candidateSpliceModeIgnoredModListings)
+                        {
+                            if (!HasSameRelativePosition(candidate, sourceModList, profileModList))
+                            {
+                                spliceModeIgnoredModListings.Add(candidate);
+                                simulator.LogModEvent(candidate as ModListing, 
+                                    "The position of this mod will be ignored during splicing because it is already in the destination mod list, potentially at a different position than in the source list.");
+                            }
+                        }
+                    }
+
+                    // Define and log plugins whose position is ignored due to matched parent mod name
+                    var spliceModeIgnoredPluginListings= new List<IListing>();
+                    if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced)
+                    {
+                        var pluginsFromRemovedAlreadyExistingsMods = _removedModsMatchingExisting.SelectMany(x =>
+                                CommonFuncs.GetPluginNamesInDir(Path.Combine(_modSourceDirectory, x.SourceDirectoryName)))
+                            .ToList();
+                        var candidateSpliceModeIgnoredPluginListings = sourcePluginsList.Where(x => pluginsFromRemovedAlreadyExistingsMods.Contains(x.Name)).ToList();
+                        foreach (var candidate in candidateSpliceModeIgnoredPluginListings)
+                        {
+                            if (!HasSameRelativePosition(candidate, sourcePluginsList, profilePluginsList))
+                            {
+                                Log($"Plugin ordering: the position of {candidate.Name} will be disregarded when importing other plugins because it is already present in the destination load order");
+                                simulator.LogPluginEvent(candidate as PluginListing, $"Position of this plugin will be disregarded for determining load order of other plugins");
+                                spliceModeIgnoredPluginListings.Add(candidate); // this plugin is not where the source mod list expects it to be in the load order, so don't use it to anchor spliced-in plugins.
+                            }
+                        }
+                    }
+                    
                     // Match the enabled/disabled status of plugins from the source mod list
                     List<PluginListing> pluginsFromExistingButNewlyActivatedMods = new();
                     if (_matchModActivationState)
@@ -318,7 +346,7 @@ namespace MO2ExportImport.ViewModels
                                 var existingPluginListing = profilePluginsList.FirstOrDefault(x => x.Name == pluginFileName);
                                 if (existingPluginListing is not null)
                                 {
-                                    Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added.");
+                                    Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added as a new plugin.");
                                     simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Detected as a member of {mod.DisplayName} but already present in destination load order");
                                     if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced && !HasSameRelativePosition(existingPluginListing, sourcePluginsList, profilePluginsList))
                                     {
@@ -448,7 +476,7 @@ namespace MO2ExportImport.ViewModels
                         else // Spliced
                         {
                             var spliceLog = new List<string>();
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, removedModListings, StringType.Mod, spliceLog);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, spliceModeIgnoredModListings, StringType.Mod, spliceLog);
                             foreach (var entry in spliceLog)
                             {
                                 simulator.LogModEvent(currentMod.SourceListing, entry);
