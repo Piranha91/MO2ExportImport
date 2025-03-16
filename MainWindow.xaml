@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MO2ExportImport.ViewModels"
         xmlns:views="clr-namespace:MO2ExportImport.Views"
+        d:DataContext="{d:DesignInstance Type=local:MainViewModel}"
+        mc:Ignorable="d"
         Title="MO2 Splicer" Height="450" Width="900">
 
     <Grid>

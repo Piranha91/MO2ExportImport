@@ -4,6 +4,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:main="clr-namespace:MO2ExportImport"
+             xmlns:vms = "clr-namespace:MO2ExportImport.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vms:ImportViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 

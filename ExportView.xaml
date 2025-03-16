@@ -5,6 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:reactiveui="http://reactiveui.net"
              xmlns:main="clr-namespace:MO2ExportImport"
+             xmlns:vms = "clr-namespace:MO2ExportImport.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vms:ExportViewModel}"
              mc:Ignorable="d">
 
     <UserControl.Resources>
