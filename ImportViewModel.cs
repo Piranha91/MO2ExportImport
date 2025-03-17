@@ -421,6 +421,7 @@ namespace MO2ExportImport.ViewModels
             var modsToRemoveLog = new List<string>();
             _removedMods_Matching_Existing = new List<Mod>();
             var modsWithPluginsToRemove = new List<string>();
+            var duplicateModViewModels = new List<DuplicateModItem>();
 
             var selectedModsToExport = ModList
                 .Where(mod => mod.SelectedInUI &&
@@ -442,7 +443,19 @@ namespace MO2ExportImport.ViewModels
                     if (SkipExisting || !mod.OverWriteExistingDuringImport)
                     {
                         modsToRemoveLog.Add(mod.DisplayName + " - Matched existing directory name.");
-                        mod.SelectedInUI = false;
+                        //mod.SelectedInUI = false;
+
+                        DuplicateModItem duplicateModItem = new DuplicateModItem(mod, DuplicateModItem.MatchMethodName);
+                        if (Directory.Exists(literalModPathInMO2))
+                        {
+                            duplicateModItem.MatchedDestinationModPath = literalModPathInMO2;
+                        }
+                        else if (Directory.Exists(simplifiedModPathInMO2))
+                        {
+                            duplicateModItem.MatchedDestinationModPath = simplifiedModPathInMO2;
+                            duplicateModItem.Label += " (as " + Path.GetFileName(simplifiedModPathInMO2) + ")";
+                        }
+                        duplicateModViewModels.Add(duplicateModItem);
                     }
 
                     if (IgnoreMatchedModsForOrdering)
@@ -471,7 +484,12 @@ namespace MO2ExportImport.ViewModels
                                 // Log and remove mod if all plugin files match an existing mod in MO2
                                 modsWithPluginsToRemove.Add(mod.DisplayName +
                                                             " - All plugins matched with an existing mod.");
-                                mod.SelectedInUI = false;
+                                //mod.SelectedInUI = false;
+
+                                DuplicateModItem duplicateModItem = new DuplicateModItem(mod, DuplicateModItem.MatchMethodPlugin)
+                                    { MatchedDestinationModPath = existingModDir };
+                                duplicateModItem.Label += " (as " + Path.GetFileName(existingModDir) + ")";
+                                duplicateModViewModels.Add(duplicateModItem);
                             }
                             
                             break;
@@ -482,10 +500,20 @@ namespace MO2ExportImport.ViewModels
             
             ShowFilteringNotification = Visibility.Hidden;
 
+            if (duplicateModViewModels.Any())
+            {
+                ImportDuplicateModSelectorViewModel duplicateModSelector = new(duplicateModViewModels, _modsRootPath);
+                foreach (var toPreserve in duplicateModSelector.UnselectedModsForOverwrite)
+                {
+                    toPreserve.SelectedInUI = false;
+                }
+            }
+
+            /*
             if (modsToRemoveLog.Any() || modsWithPluginsToRemove.Any())
             {
                 ShowRemovalSummaryPopup(modsToRemoveLog, modsWithPluginsToRemove);
-            }
+            }*/
 
             UpdateImportEnabled();
         }

@@ -24,6 +24,7 @@ namespace MO2ExportImport
         public bool IsNoDelete { get; set; } = false;
         public string? NoDeleteIndex { get; set; } = null;
         public bool EnabledInExportedModList { get; set; } = false;
+        public string? Version { get; set; } = null;
         
 
         public bool SelectedInUI
@@ -59,6 +60,7 @@ namespace MO2ExportImport
             NoDeleteIndex = copyTemplate.NoDeleteIndex;
             EnabledInExportedModList = copyTemplate.EnabledInExportedModList;
             OverWriteExistingDuringImport = copyTemplate.OverWriteExistingDuringImport;
+            Version = copyTemplate.Version;
         }
 
         private void Initialize()
