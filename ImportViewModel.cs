@@ -457,12 +457,7 @@ namespace MO2ExportImport.ViewModels
                         }
                         duplicateModViewModels.Add(duplicateModItem);
                     }
-
-                    if (IgnoreMatchedModsForOrdering)
-                    {
-                        _removedMods_Matching_Existing.Add(mod);
-                    }
-                    
+           
                     continue;
                 }
 
@@ -506,6 +501,11 @@ namespace MO2ExportImport.ViewModels
                 foreach (var toPreserve in duplicateModSelector.UnselectedModsForOverwrite)
                 {
                     toPreserve.SelectedInUI = false;
+                    
+                    if (IgnoreMatchedModsForOrdering)
+                    {
+                        _removedMods_Matching_Existing.Add(toPreserve);
+                    }
                 }
             }
 
