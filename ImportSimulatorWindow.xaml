@@ -54,34 +54,40 @@
         <TreeView.Resources>
           <!-- HierarchicalDataTemplate for ModSimulatorNode -->
           <HierarchicalDataTemplate DataType="{x:Type local:ModSimulatorNode}" ItemsSource="{Binding Children}">
-            <TextBlock Text="{Binding Label}">
-              <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                  <Setter Property="FontWeight" Value="Normal"/>
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
-                      <Setter Property="FontWeight" Value="Bold"/>
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+              <CheckBox IsChecked="{Binding SourceListing.Enabled}" IsEnabled="False" Visibility="{Binding EnabledCheckBoxVisibility}" Margin="0 0 5 0"/>
+              <TextBlock Text="{Binding Label}">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="FontWeight" Value="Normal"/>
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
+                        <Setter Property="FontWeight" Value="Bold"/>
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
+            </StackPanel>
           </HierarchicalDataTemplate>
     
           <!-- HierarchicalDataTemplate for PluginSimulatorNode -->
           <HierarchicalDataTemplate DataType="{x:Type local:PluginSimulatorNode}" ItemsSource="{Binding Children}">
-            <TextBlock Text="{Binding Label}">
-              <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                  <Setter Property="FontWeight" Value="Normal"/>
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
-                      <Setter Property="FontWeight" Value="Bold"/>
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+              <CheckBox IsChecked="{Binding SourceListing.Enabled}" IsEnabled="False" Visibility="{Binding EnabledCheckBoxVisibility}" Margin="0 0 5 0"/>
+              <TextBlock Text="{Binding Label}">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="FontWeight" Value="Normal"/>
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
+                        <Setter Property="FontWeight" Value="Bold"/>
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
+            </StackPanel>
           </HierarchicalDataTemplate>
         </TreeView.Resources>
       </TreeView>

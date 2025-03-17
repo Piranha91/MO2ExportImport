@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using ReactiveUI;
 using System.Reactive;
+using System.Windows;
 using GongSolutions.Wpf.DragDrop;
 
 namespace MO2ExportImport;
@@ -343,6 +344,7 @@ public interface ISimulatorNode
     string Label { get; set; }
     ObservableCollection<string> EventLog { get; set; }
     bool IsSectionHeader { get; set; }
+    public Visibility EnabledCheckBoxVisibility { get; set; }
 }
 
 // ModSimulatorNode now accepts a ModListing.
@@ -354,7 +356,7 @@ public class ModSimulatorNode : ISimulatorNode
     public ObservableCollection<string> EventLog { get; set; } = new ObservableCollection<string>();
     public bool IsSectionHeader { get; set; }
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
-    
+    public Visibility EnabledCheckBoxVisibility { get; set; } = Visibility.Visible;
     public ModListing SourceListing { get; set; }
     
     // Constructor accepts a ModListing, sets Label and IsSectionHeader accordingly.
@@ -369,6 +371,10 @@ public class ModSimulatorNode : ISimulatorNode
         }
         ParentCollection = parentCollection;
         IsSectionHeader = sourceListing.IsSeparator;
+        if (IsSectionHeader)
+        {
+            EnabledCheckBoxVisibility = Visibility.Collapsed;
+        }
         ParentCollection.Add(this);
     }
 }
@@ -381,7 +387,7 @@ public class PluginSimulatorNode : ISimulatorNode
     public ObservableCollection<string> EventLog { get; set; } = new ObservableCollection<string>();
     public bool IsSectionHeader { get; set; }
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
-
+    public Visibility EnabledCheckBoxVisibility { get; set; } = Visibility.Visible;
     public PluginListing SourceListing { get; set; }
 
     // Constructor accepts a PluginListing.
@@ -392,6 +398,10 @@ public class PluginSimulatorNode : ISimulatorNode
         Label = sourceListing.Name;
         ParentCollection = parentCollection;
         IsSectionHeader = isSectionHeader;
+        if (IsSectionHeader)
+        {
+            EnabledCheckBoxVisibility = Visibility.Collapsed;
+        }
         ParentCollection.Add(this);
     }
 }
