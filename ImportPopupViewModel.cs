@@ -271,6 +271,12 @@ namespace MO2ExportImport.ViewModels
                             {
                                 Log($"Plugin ordering: the position of {candidate.Name} will be disregarded when importing other plugins because it is already present in the destination load order");
                                 simulator.LogPluginEvent(candidate as PluginListing, $"Position of this plugin will be disregarded for determining load order of other plugins");
+                                var matchedPlugin = profilePluginsList.FirstOrDefault(x => x.Name == candidate.Name);
+                                if (matchedPlugin != null)
+                                {
+                                    simulator.ReplacePluginListing(matchedPlugin as PluginListing);
+                                }
+                                
                                 spliceModeIgnoredPluginListings.Add(candidate); // this plugin is not where the source mod list expects it to be in the load order, so don't use it to anchor spliced-in plugins.
                             }
                         }
@@ -348,6 +354,7 @@ namespace MO2ExportImport.ViewModels
                                 {
                                     Log($"Plugin Import: {pluginFileName} from {mod.DisplayName} is already present in the destination load order so it will not be added as a new plugin.");
                                     simulator.LogPluginEvent(existingPluginListing as PluginListing, $"Detected as a member of {mod.DisplayName} but already present in destination load order");
+                                    simulator.ReplacePluginListing(existingPluginListing as PluginListing);
                                     if (_ignoreMatchedModsForOrdering && _importMode == ImportMode.Spliced && !HasSameRelativePosition(existingPluginListing, sourcePluginsList, profilePluginsList))
                                     {
                                         Log($"Plugin ordering: the position of {pluginFileName} will be disregarded when importing other plugins because it is already present in the destination load order");

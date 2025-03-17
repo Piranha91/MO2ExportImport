@@ -335,6 +335,20 @@ public class ImportSimulatorViewModel : ReactiveObject
 
         return pluginListings;
     }
+
+    public bool ReplacePluginListing(PluginListing newPluginListing)
+    {
+        bool replaced = false;
+        var existingNode = PluginList.Cast<PluginSimulatorNode>().FirstOrDefault(n => n.SourceListing.Equals(newPluginListing));
+        if (existingNode != null)
+        {
+            existingNode.SourceListing = newPluginListing;
+            existingNode.ReinitializeDisplay(false);
+            replaced = true;
+        }
+
+        return replaced;
+    }
 }
 
 // The common interface now includes an IsSectionHeader property.
@@ -395,14 +409,19 @@ public class PluginSimulatorNode : ISimulatorNode
         bool isSectionHeader = false)
     {
         SourceListing = sourceListing;
-        Label = sourceListing.Name;
         ParentCollection = parentCollection;
+        ReinitializeDisplay(isSectionHeader);
+        ParentCollection.Add(this);
+    }
+
+    public void ReinitializeDisplay(bool isSectionHeader)
+    {
+        Label = SourceListing.Name;
         IsSectionHeader = isSectionHeader;
         if (IsSectionHeader)
         {
             EnabledCheckBoxVisibility = Visibility.Collapsed;
         }
-        ParentCollection.Add(this);
     }
 }
 
