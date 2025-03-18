@@ -5,6 +5,7 @@ using System.Linq;
 using ReactiveUI;
 using System.Reactive;
 using System.Windows;
+using System.Windows.Media;
 using GongSolutions.Wpf.DragDrop;
 
 namespace MO2ExportImport;
@@ -232,12 +233,13 @@ public class ImportSimulatorViewModel : ReactiveObject
     /// Rearranges the ModList and PluginList to match the order of the provided source lists,
     /// then arranges the mod and plugin separators.
     /// </summary>
-    public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, IEnumerable<ModListing> sourceModList, bool addMissingItems, string currentProfileName)
+    public void Initialize(IEnumerable<PluginListing> sourceLoadOrder, List<PluginListing> addedPlugins, IEnumerable<ModListing> sourceModList, bool addMissingItems, string currentProfileName)
     {
         CurrentProfileName = currentProfileName;
         SortEntries(sourceLoadOrder, sourceModList, addMissingItems);
         ArrangeModSeparators();
         ArrangePluginSeparators();
+        RecolorPlugins(addedPlugins);
     }
     
     /// <summary>
@@ -257,6 +259,7 @@ public class ImportSimulatorViewModel : ReactiveObject
             {
                 node = new ModSimulatorNode(modListing, ModList);
                 node.EventLog.Add("Unmodified. This item is from the Import Destination");
+                node.LabelColor = new SolidColorBrush(Colors.Black);
             }
             if (node != null)
             {
@@ -279,7 +282,7 @@ public class ImportSimulatorViewModel : ReactiveObject
                 newPluginNodes.Add(node);
             }
         }
-        
+
         ModList.Clear();
         foreach (var node in newModNodes)
         {
@@ -290,6 +293,27 @@ public class ImportSimulatorViewModel : ReactiveObject
         foreach (var node in newPluginNodes)
         {
             PluginList.Add(node);
+        }
+    }
+
+    public void RecolorPlugins(List<PluginListing> addedPlugins)
+    {
+        foreach (var node in PluginList)
+        {
+            bool hasAddedPlugins = false;
+            foreach (var subNode in node.Children.Cast<PluginSimulatorNode>())
+            {
+                if (addedPlugins.Any(x => x.Equals(subNode.SourceListing)))
+                {
+                    hasAddedPlugins = true;
+                    subNode.LabelColor = new SolidColorBrush(Colors.Green);
+                }
+            }
+
+            if (hasAddedPlugins)
+            {
+                node.LabelColor = new SolidColorBrush(Colors.Green);
+            }
         }
     }
 
@@ -356,6 +380,7 @@ public interface ISimulatorNode
 {
     ObservableCollection<ISimulatorNode> Children { get; }
     string Label { get; set; }
+    public SolidColorBrush LabelColor { get; set; }
     ObservableCollection<string> EventLog { get; set; }
     bool IsSectionHeader { get; set; }
     public Visibility EnabledCheckBoxVisibility { get; set; }
@@ -367,6 +392,7 @@ public class ModSimulatorNode : ISimulatorNode
 {
     public ObservableCollection<ISimulatorNode> Children { get; } = new ObservableCollection<ISimulatorNode>();
     public string Label { get; set; }
+    public SolidColorBrush LabelColor { get; set; } = Brushes.Green;
     public ObservableCollection<string> EventLog { get; set; } = new ObservableCollection<string>();
     public bool IsSectionHeader { get; set; }
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
@@ -398,6 +424,7 @@ public class PluginSimulatorNode : ISimulatorNode
 {
     public ObservableCollection<ISimulatorNode> Children { get; } = new ObservableCollection<ISimulatorNode>();
     public string Label { get; set; }
+    public SolidColorBrush LabelColor { get; set; } = Brushes.Black;
     public ObservableCollection<string> EventLog { get; set; } = new ObservableCollection<string>();
     public bool IsSectionHeader { get; set; }
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }

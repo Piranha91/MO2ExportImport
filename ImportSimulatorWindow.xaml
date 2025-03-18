@@ -60,6 +60,7 @@
                 <TextBlock.Style>
                   <Style TargetType="TextBlock">
                     <Setter Property="FontWeight" Value="Normal"/>
+                    <Setter Property="Foreground" Value="{Binding LabelColor}"/>
                     <Style.Triggers>
                       <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
                         <Setter Property="FontWeight" Value="Bold"/>
@@ -79,6 +80,7 @@
                 <TextBlock.Style>
                   <Style TargetType="TextBlock">
                     <Setter Property="FontWeight" Value="Normal"/>
+                    <Setter Property="Foreground" Value="{Binding LabelColor}"/>
                     <Style.Triggers>
                       <DataTrigger Binding="{Binding IsSectionHeader}" Value="True">
                         <Setter Property="FontWeight" Value="Bold"/>
