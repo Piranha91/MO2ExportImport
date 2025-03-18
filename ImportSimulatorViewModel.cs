@@ -112,7 +112,7 @@ public class ImportSimulatorViewModel : ReactiveObject
     // Logs a mod event by locating or creating a new ModSimulatorNode.
     public void LogModEvent(ModListing modListing, string modEvent)
     {
-        var modNode = ModList.FirstOrDefault(x => x.Label == modListing.Name)
+        var modNode = ModList.FirstOrDefault(x => (x as ModSimulatorNode).SourceListing.Equals(modListing)) // don't look up by name because ModSimulatorNode Label is edited for separators
             ?? new ModSimulatorNode(modListing, ModList);
         modNode.EventLog.Add(modEvent);
     }
