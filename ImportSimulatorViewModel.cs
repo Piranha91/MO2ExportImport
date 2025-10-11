@@ -1,18 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using ReactiveUI;
 using System.Reactive;
 using System.Windows;
 using System.Windows.Media;
 using GongSolutions.Wpf.DragDrop;
+using Mutagen.Bethesda;
+using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Plugins;
+using System.Windows.Media;
 
 namespace MO2ExportImport;
 
 public class ImportSimulatorViewModel : ReactiveObject
 {
     private string _currentProfileName = string.Empty;
+    private string _modSourceDirectory = string.Empty;
 
     public string CurrentProfileName
     {
@@ -77,6 +83,7 @@ public class ImportSimulatorViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> CloseWindowCommand { get; }
     public ReactiveCommand<Unit, Unit> ProceedCommand { get; }
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
+    public ReactiveCommand<Unit, Unit> CheckMastersCommand { get; }
     
     // Reference to the window.
     private ImportSimulatorWindow _window { get; }
@@ -88,6 +95,7 @@ public class ImportSimulatorViewModel : ReactiveObject
         CloseWindowCommand = ReactiveCommand.Create(() => _window.Close());
         ProceedCommand = ReactiveCommand.Create(Proceed);
         CancelCommand = ReactiveCommand.Create(Cancel);
+        CheckMastersCommand = ReactiveCommand.Create(CheckMasters);
 
         DropHandler = new CustomDropHandler(ModList, PluginList);
     }
@@ -107,6 +115,11 @@ public class ImportSimulatorViewModel : ReactiveObject
     {
         CancelImport = true;
         _window.Close();
+    }
+    
+    public void SetModSourceDirectory(string modSourceDirectory)
+    {
+        _modSourceDirectory = modSourceDirectory;
     }
     
     // Logs a mod event by locating or creating a new ModSimulatorNode.
@@ -373,6 +386,295 @@ public class ImportSimulatorViewModel : ReactiveObject
 
         return replaced;
     }
+    
+    private void CheckMasters()
+    {
+        try
+        {
+            // Build a set of all available plugins (destination + imported)
+            var availablePlugins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            
+            // Add all plugins from the load order
+            foreach (var node in PluginList)
+            {
+                CollectAvailablePlugins(node, availablePlugins);
+            }
+            
+            // Dictionary to store plugin -> missing masters mapping
+            var pluginMissingMasters = new Dictionary<string, List<MissingMasterInfo>>();
+            
+            // Check each plugin
+            foreach (var node in PluginList)
+            {
+                CheckNodeMasters(node, availablePlugins, pluginMissingMasters);
+            }
+            
+            // Update mod nodes based on their plugins' master status
+            UpdateModNodesMasterStatus(pluginMissingMasters);
+            
+            if (pluginMissingMasters.Count == 0)
+            {
+                MessageBox.Show("All plugin masters are satisfied!", "Master Check Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                var summary = $"Found {pluginMissingMasters.Count} plugin(s) with missing masters. Affected items are shown in red.";
+                MessageBox.Show(summary, "Master Check Complete", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            ScrollableMessageBox.Show($"Error checking masters: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
+        }
+    }
+    
+    private void CollectAvailablePlugins(ISimulatorNode node, HashSet<string> availablePlugins)
+    {
+        if (node is PluginSimulatorNode pluginNode && !pluginNode.IsSectionHeader)
+        {
+            availablePlugins.Add(pluginNode.SourceListing.Name);
+        }
+        
+        foreach (var child in node.Children)
+        {
+            CollectAvailablePlugins(child, availablePlugins);
+        }
+    }
+    
+    private void CheckNodeMasters(ISimulatorNode node, HashSet<string> availablePlugins, Dictionary<string, List<MissingMasterInfo>> pluginMissingMasters)
+    {
+        if (node is PluginSimulatorNode pluginNode && !pluginNode.IsSectionHeader)
+        {
+            var missingMasters = CheckPluginMasters(pluginNode, availablePlugins);
+            if (missingMasters.Any())
+            {
+                pluginMissingMasters[pluginNode.SourceListing.Name] = missingMasters;
+                pluginNode.LabelColor = new SolidColorBrush(Colors.Red);
+                pluginNode.MissingMasters = missingMasters;
+                
+                // Build tooltip text
+                var tooltipText = $"Missing Masters:\n" + string.Join("\n", missingMasters.Select(m => 
+                    $"  • {m.MasterName}" + (string.IsNullOrEmpty(m.SourceMod) || m.SourceMod == "Unknown Mod" ? "" : $" (from {m.SourceMod})")));
+                pluginNode.TooltipText = tooltipText;
+            }
+        }
+        
+        foreach (var child in node.Children)
+        {
+            CheckNodeMasters(child, availablePlugins, pluginMissingMasters);
+        }
+    }
+    
+    private List<MissingMasterInfo> CheckPluginMasters(PluginSimulatorNode pluginNode, HashSet<string> availablePlugins)
+    {
+        var missingMasters = new List<MissingMasterInfo>();
+        
+        try
+        {
+            // Find the plugin file path
+            string pluginPath = FindPluginPath(pluginNode.SourceListing.Name);
+            
+            if (string.IsNullOrEmpty(pluginPath) || !File.Exists(pluginPath))
+            {
+                return missingMasters; // Can't check if we can't find the file
+            }
+            
+            // Load the plugin and get its masters
+            ISkyrimModGetter plugin = null;
+            try
+            {
+                plugin = SkyrimMod.CreateFromBinaryOverlay(pluginPath, SkyrimRelease.SkyrimSE);
+                var masters = plugin.ModHeader.MasterReferences.Select(x => x.Master.FileName.String).ToList();
+                
+                foreach (var master in masters)
+                {
+                    if (!availablePlugins.Contains(master))
+                    {
+                        var masterInfo = new MissingMasterInfo
+                        {
+                            MasterName = master,
+                            SourceMod = FindModContainingPlugin(master)
+                        };
+                        missingMasters.Add(masterInfo);
+                    }
+                }
+            }
+            finally
+            {
+                //plugin?.Dispose(); // Ensure plugin is unloaded
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the error but continue checking other plugins
+            pluginNode.EventLog.Add($"Error checking masters: {ex.Message}");
+        }
+        
+        return missingMasters;
+    }
+    
+    private string FindPluginPath(string pluginName)
+    {
+        if (string.IsNullOrEmpty(_modSourceDirectory))
+        {
+            return string.Empty;
+        }
+        
+        // Search in each mod folder
+        foreach (var modNode in ModList)
+        {
+            if (modNode is ModSimulatorNode mod && !mod.IsSectionHeader)
+            {
+                var modPath = Path.Combine(_modSourceDirectory, mod.SourceListing.GetCurrentFolderName());
+                if (Directory.Exists(modPath))
+                {
+                    var pluginPath = Path.Combine(modPath, pluginName);
+                    if (File.Exists(pluginPath))
+                    {
+                        return pluginPath;
+                    }
+                }
+            }
+            
+            // Check children
+            foreach (var child in modNode.Children)
+            {
+                if (child is ModSimulatorNode childMod)
+                {
+                    var modPath = Path.Combine(_modSourceDirectory, childMod.SourceListing.GetCurrentFolderName());
+                    if (Directory.Exists(modPath))
+                    {
+                        var pluginPath = Path.Combine(modPath, pluginName);
+                        if (File.Exists(pluginPath))
+                        {
+                            return pluginPath;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return string.Empty;
+    }
+    
+    private string FindModContainingPlugin(string pluginName)
+    {
+        if (string.IsNullOrEmpty(_modSourceDirectory))
+        {
+            return "Unknown Mod";
+        }
+        
+        foreach (var modNode in ModList)
+        {
+            if (modNode is ModSimulatorNode mod && !mod.IsSectionHeader)
+            {
+                var modPath = Path.Combine(_modSourceDirectory, mod.SourceListing.GetCurrentFolderName());
+                if (Directory.Exists(modPath))
+                {
+                    var pluginPath = Path.Combine(modPath, pluginName);
+                    if (File.Exists(pluginPath))
+                    {
+                        return mod.Label;
+                    }
+                }
+            }
+            
+            // Check children
+            foreach (var child in modNode.Children)
+            {
+                if (child is ModSimulatorNode childMod)
+                {
+                    var modPath = Path.Combine(_modSourceDirectory, childMod.SourceListing.GetCurrentFolderName());
+                    if (Directory.Exists(modPath))
+                    {
+                        var pluginPath = Path.Combine(modPath, pluginName);
+                        if (File.Exists(pluginPath))
+                        {
+                            return childMod.Label;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return "Unknown Mod";
+    }
+    
+    private void UpdateModNodesMasterStatus(Dictionary<string, List<MissingMasterInfo>> pluginMissingMasters)
+    {
+        if (string.IsNullOrEmpty(_modSourceDirectory))
+        {
+            return;
+        }
+        
+        foreach (var modNode in ModList)
+        {
+            CheckModNodeMasterStatus(modNode, pluginMissingMasters);
+            
+            foreach (var child in modNode.Children)
+            {
+                CheckModNodeMasterStatus(child, pluginMissingMasters);
+            }
+        }
+    }
+    
+    private void CheckModNodeMasterStatus(ISimulatorNode node, Dictionary<string, List<MissingMasterInfo>> pluginMissingMasters)
+    {
+        if (node is ModSimulatorNode mod && !mod.IsSectionHeader)
+        {
+            var modPath = Path.Combine(_modSourceDirectory, mod.SourceListing.GetCurrentFolderName());
+            if (!Directory.Exists(modPath))
+            {
+                return;
+            }
+            
+            var modPlugins = CommonFuncs.GetPluginNamesInDir(modPath);
+            var modsWithMissingMasters = new List<PluginMasterInfo>();
+            
+            foreach (var pluginName in modPlugins)
+            {
+                if (pluginMissingMasters.ContainsKey(pluginName))
+                {
+                    modsWithMissingMasters.Add(new PluginMasterInfo
+                    {
+                        PluginName = pluginName,
+                        MissingMasters = pluginMissingMasters[pluginName]
+                    });
+                }
+            }
+            
+            if (modsWithMissingMasters.Any())
+            {
+                mod.LabelColor = new SolidColorBrush(Colors.Red);
+                mod.PluginsWithMissingMasters = modsWithMissingMasters;
+                
+                // Build tooltip text
+                var tooltipLines = new List<string> { "Plugins with missing masters:" };
+                foreach (var pluginInfo in modsWithMissingMasters)
+                {
+                    tooltipLines.Add($"\n{pluginInfo.PluginName}:");
+                    foreach (var missing in pluginInfo.MissingMasters)
+                    {
+                        tooltipLines.Add($"  • {missing.MasterName}" + 
+                            (string.IsNullOrEmpty(missing.SourceMod) || missing.SourceMod == "Unknown Mod" ? "" : $" (from {missing.SourceMod})"));
+                    }
+                }
+                mod.TooltipText = string.Join("\n", tooltipLines);
+            }
+        }
+    }
+}
+
+public class MissingMasterInfo
+{
+    public string MasterName { get; set; }
+    public string SourceMod { get; set; }
+}
+
+public class PluginMasterInfo
+{
+    public string PluginName { get; set; }
+    public List<MissingMasterInfo> MissingMasters { get; set; }
 }
 
 // The common interface now includes an IsSectionHeader property.
@@ -384,6 +686,7 @@ public interface ISimulatorNode
     ObservableCollection<string> EventLog { get; set; }
     bool IsSectionHeader { get; set; }
     public Visibility EnabledCheckBoxVisibility { get; set; }
+    public string TooltipText { get; set; }
 }
 
 // ModSimulatorNode now accepts a ModListing.
@@ -398,6 +701,8 @@ public class ModSimulatorNode : ISimulatorNode
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
     public Visibility EnabledCheckBoxVisibility { get; set; } = Visibility.Visible;
     public ModListing SourceListing { get; set; }
+    public string TooltipText { get; set; } = string.Empty;
+    public List<PluginMasterInfo> PluginsWithMissingMasters { get; set; } = new List<PluginMasterInfo>();
     
     // Constructor accepts a ModListing, sets Label and IsSectionHeader accordingly.
     public ModSimulatorNode(ModListing sourceListing, ObservableCollection<ISimulatorNode> parentCollection)
@@ -430,6 +735,9 @@ public class PluginSimulatorNode : ISimulatorNode
     public ObservableCollection<ISimulatorNode> ParentCollection { get; set; }
     public Visibility EnabledCheckBoxVisibility { get; set; } = Visibility.Visible;
     public PluginListing SourceListing { get; set; }
+    public string TooltipText { get; set; } = string.Empty;
+    public List<MissingMasterInfo> MissingMasters { get; set; } = new List<MissingMasterInfo>(); 
+
 
     // Constructor accepts a PluginListing.
     public PluginSimulatorNode(PluginListing sourceListing, ObservableCollection<ISimulatorNode> parentCollection,

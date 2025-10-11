@@ -548,6 +548,7 @@ namespace MO2ExportImport.ViewModels
 
                     if (ShowModListPreview)
                     {
+                        simulator.SetModSourceDirectory(_modSourceDirectory);
                         simulator.Initialize(profilePluginsList.Cast<PluginListing>(), validPlugins, profileModList.Cast<ModListing>(), true, profile);
                         simulator.ShowWindow();
                         if (simulator.CancelImport)

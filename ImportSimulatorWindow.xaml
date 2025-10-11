@@ -16,24 +16,23 @@
   </Window.Title>
   
   <Window.Resources>
-    <!-- Converter to display the EventLog as a newline-separated string -->
     <local:CollectionToStringConverter x:Key="CollectionToStringConverter" />
   </Window.Resources>
   
   <Grid>
-    <!-- Three rows: top (radio buttons), middle (main content), bottom (buttons) -->
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
     
-    <!-- Top row: Toggle radio buttons -->
+    <!-- Top row: Toggle radio buttons and Check Masters button -->
     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
       <RadioButton Content="Mods" GroupName="ListToggle" 
                    IsChecked="{Binding IsModListSelected}" Margin="5"/>
       <RadioButton Content="Plugins" GroupName="ListToggle" 
                    IsChecked="{Binding IsPluginListSelected}" Margin="5"/>
+      <Button Content="Check Masters" Command="{Binding CheckMastersCommand}" Margin="20,5,5,5" Padding="10,5"/>
     </StackPanel>
     
     <!-- Middle row: Split view -->
@@ -54,7 +53,7 @@
         <TreeView.Resources>
           <!-- HierarchicalDataTemplate for ModSimulatorNode -->
           <HierarchicalDataTemplate DataType="{x:Type local:ModSimulatorNode}" ItemsSource="{Binding Children}">
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" ToolTip="{Binding TooltipText}">
               <CheckBox IsChecked="{Binding SourceListing.Enabled}" IsEnabled="False" Visibility="{Binding EnabledCheckBoxVisibility}" Margin="0 0 5 0"/>
               <TextBlock Text="{Binding Label}">
                 <TextBlock.Style>
@@ -74,7 +73,7 @@
     
           <!-- HierarchicalDataTemplate for PluginSimulatorNode -->
           <HierarchicalDataTemplate DataType="{x:Type local:PluginSimulatorNode}" ItemsSource="{Binding Children}">
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" ToolTip="{Binding TooltipText}">
               <CheckBox IsChecked="{Binding SourceListing.Enabled}" IsEnabled="False" Visibility="{Binding EnabledCheckBoxVisibility}" Margin="0 0 5 0"/>
               <TextBlock Text="{Binding Label}">
                 <TextBlock.Style>
