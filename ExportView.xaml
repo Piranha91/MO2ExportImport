@@ -109,55 +109,51 @@
         </StackPanel>
         
         <ListBox Grid.Row="6" ItemsSource="{Binding FilteredModList}" Margin="10"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 SelectionMode="Extended" 
-                 Name="ModsListBox"
-                 VirtualizingStackPanel.IsVirtualizing="False"
-                 SelectionChanged="ModsListBox_SelectionChanged">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="IsSelected" Value="{Binding SelectedInUI, Mode=TwoWay}" />
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListBoxItem">
-                                <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
-                                    <ContentPresenter />
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <!-- Trigger for when the item is selected -->
-                                    <Trigger Property="IsSelected" Value="true">
-                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
-                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
-                                    </Trigger>
-                                    <!-- Trigger for when the item is selected but the ListBox is out of focus -->
-                                    <MultiTrigger>
-                                        <MultiTrigger.Conditions>
-                                            <Condition Property="IsSelected" Value="true"/>
-                                            <Condition Property="IsFocused" Value="false"/>
-                                        </MultiTrigger.Conditions>
-                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
-                                        <!--<Setter TargetName="Border" Property="Foreground" Value="White"/>-->
-                                    </MultiTrigger>
-                                    <!-- Trigger for mouse over -->
-                                    <Trigger Property="IsMouseOver" Value="true">
-                                        <Setter TargetName="Border" Property="Background" Value="LightGray"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
-                        <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
-                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+         ScrollViewer.VerticalScrollBarVisibility="Auto"
+         SelectionMode="Extended" 
+         Name="ModsListBox"
+         VirtualizingStackPanel.IsVirtualizing="True"
+         VirtualizingStackPanel.VirtualizationMode="Recycling"
+         SelectionChanged="ModsListBox_SelectionChanged">
+        <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+                <!-- Remove the IsSelected binding -->
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="true">
+                                    <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsSelected" Value="true"/>
+                                        <Condition Property="IsFocused" Value="false"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                </MultiTrigger>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter TargetName="Border" Property="Background" Value="LightGray"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
+                    <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
 
         <!-- "Please Wait" TextBlock -->
         <TextBlock x:Name="PleaseWaitText"

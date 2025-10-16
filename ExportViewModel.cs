@@ -18,6 +18,7 @@ namespace MO2ExportImport.ViewModels
 {
     public class ExportViewModel : ReactiveObject
     {
+        private ExportView _view;
         private readonly MainViewModel _mainViewModel;
         private string _mo2Directory;
         private string _selectedProfile;
@@ -128,7 +129,7 @@ namespace MO2ExportImport.ViewModels
             }
         }
 
-        public ObservableCollection<Mod> ModList { get; set; } = new ObservableCollection<Mod>();
+        public BulkObservableCollection<Mod> ModList { get; set; } = new BulkObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectSourceCommand { get; }
         public ReactiveCommand<Unit, Unit> ExportSelectedCommand { get; }
@@ -143,7 +144,7 @@ namespace MO2ExportImport.ViewModels
             IsPleaseWaitVisible = false;
 
             Profiles = new ObservableCollection<string>();
-            ModList = new ObservableCollection<Mod>();
+            ModList = new BulkObservableCollection<Mod>();
 
             string exePath = Assembly.GetExecutingAssembly()?.Location ?? string.Empty;
             string dirPath = Path.GetDirectoryName(exePath) ?? string.Empty;
@@ -249,41 +250,33 @@ namespace MO2ExportImport.ViewModels
 
             IsLoadingList = true;
             IsPleaseWaitVisible = true;
-            System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render); // when this value becomes true, render the associated texblock right away. Without this code, rendering lags until time-consuming listbox updates are done.
+            System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
             ModList.Clear();
             var modlistPath = Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");
             if (File.Exists(modlistPath))
             {
                 var mods = File.ReadAllLines(modlistPath)
-                       .Where(line => !line.StartsWith("#")) // Exclude comment lines
-                       .Select(line =>
-                       {
-                           return new Mod(line);
-                       })
-                       .Reverse(); // Invert the order
+                    .Where(line => !line.StartsWith("#"))
+                    .Select(line => new Mod(line))
+                    .Reverse()
+                    .ToList();
 
-                foreach (var mod in mods)
-                {
-                    ModList.Add(mod);
-                }
+                ModList.AddRange(mods);
             }
 
             _filteredModList = new ObservableCollection<Mod>(ModList);
-            
-            foreach (var mod in _filteredModList)
-            {
-                if (mod == _filteredModList.Last())
-                {
-                    IsLoadingList = false;
-                }
-                mod.SelectedInUI = true;
-            }
 
             this.WhenAnyValue(x => x.FilterText)
                 .Subscribe(_ => ApplyFilter());
 
             UpdateSelectedCount();
+    
+            IsLoadingList = false;
+            IsPleaseWaitVisible = false;
+    
+            // Select all items in the ListBox
+            SelectAllItemsInListBox();
         }
 
         private void ExportSelected()
@@ -338,6 +331,22 @@ namespace MO2ExportImport.ViewModels
         {
             int selectedCount = FilteredModList?.Where(x => x.SelectedInUI).Count() ?? 0;
             ExportButtonLabel = "Export " + selectedCount.ToString() + " Selected Mod" + (selectedCount != 1 ? "s" : "");
+        }
+        
+        public void OnViewLoaded(ExportView view)
+        {
+            _view = view;
+        }
+
+        private void SelectAllItemsInListBox()
+        {
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _view.ModsListBox.SelectAll();
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
         }
     }
 }

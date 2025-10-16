@@ -23,6 +23,7 @@ namespace MO2ExportImport.Views
         public ExportView()
         {
             InitializeComponent();
+            Loaded += ExportView_Loaded;
 
             _highlightThrottleTimer = new DispatcherTimer
             {
@@ -60,6 +61,14 @@ namespace MO2ExportImport.Views
             };
             _pleaseWaitTimer.Tick += PleaseWaitTimer_Tick;
         }
+        
+        private void ExportView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ExportViewModel viewModel)
+            {
+                viewModel.OnViewLoaded(this);
+            }
+        }
 
         private void ModsListBox_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
@@ -87,10 +96,23 @@ namespace MO2ExportImport.Views
                     return; // Ignore the event if triggered programmatically
                 }
 
+                // Update SelectedInUI for added items
+                foreach (Mod mod in e.AddedItems)
+                {
+                    mod.SelectedInUI = true;
+                }
+
+                // Update SelectedInUI for removed items
+                foreach (Mod mod in e.RemovedItems)
+                {
+                    mod.SelectedInUI = false;
+                }
+
                 // Determine if the selection was modified (e.g., Ctrl+click or Shift+click)
                 bool isModifiedSelection = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ||
                                            Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) ||
-                                           Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers != ModifierKeys.None;
+                                           Mouse.LeftButton == MouseButtonState.Pressed &&
+                                           Keyboard.Modifiers != ModifierKeys.None;
 
                 // Calculate the value for shouldClearExisting
                 bool shouldClearExisting = !isModifiedSelection;
