@@ -1,4 +1,5 @@
 ﻿using System;
+using MO2ExportImport.ViewModels;
 
 namespace MO2ExportImport.Models
 {
@@ -21,5 +22,7 @@ namespace MO2ExportImport.Models
         public bool ImportInterpolateMissingPluginGroups { get; set; } = false;
         public bool ImportAutoCalculateSpace { get; set; } = true;
         public string ImportPrefix { get; set; } = string.Empty;
+        public ImportViewModel.MultiPluginMode ImportMultiPluginMode { get; set; } = ImportViewModel.MultiPluginMode.WinnerOnly;
+        public ImportViewModel.PluginSelectionMode ImportPluginSelectionMode { get; set; } = ImportViewModel.PluginSelectionMode.EnabledOnly;
     }
 }

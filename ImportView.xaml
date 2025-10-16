@@ -111,20 +111,29 @@
             <ComboBox ItemsSource="{Binding ImportModes}" SelectedItem="{Binding SelectedImportMode}" MinWidth="70" Margin="5"/>
             <Grid Margin="5 0 0 0">
                 <TextBox x:Name="FilterTextBox"
-     Width="200"
-     Margin="5"
-     VerticalContentAlignment="Center"
-     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
-     TextChanged="FilterTextBox_TextChanged"/>
+                 Width="200"
+                 Margin="5"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                 TextChanged="FilterTextBox_TextChanged"/>
 
-                <TextBlock Text="Filter mods..."
-       IsHitTestVisible="False"
-       Foreground="Gray"
-       VerticalAlignment="Center"
-       HorizontalAlignment="Left"
-       Margin="10,0,0,0"
-       Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
+                            <TextBlock Text="Filter mods..."
+                   IsHitTestVisible="False"
+                   Foreground="Gray"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left"
+                   Margin="10,0,0,0"
+                   Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
             </Grid>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,0,5,0">
+                <TextBlock Text="Multi Plugin Mode:" VerticalAlignment="Center" Margin="5,0"/>
+                <ComboBox ItemsSource="{Binding MultiPluginModes}" SelectedItem="{Binding SelectedMultiPluginMode}" MinWidth="100" Margin="5,0"/>
+        
+                <TextBlock Text="Plugin Selection:" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                <ComboBox ItemsSource="{Binding PluginSelectionModes}" SelectedItem="{Binding SelectedPluginSelectionMode}" MinWidth="100" Margin="5,0"/>
+        
+                <Button Content="Add Master Dependencies" Command="{Binding AddMasterDependenciesCommand}" Margin="15,0,5,0" Padding="10,5"/>
+            </StackPanel>
         </StackPanel>
         
         <!-- Checkbox Explanation -->
@@ -197,6 +206,24 @@
        FontSize="20"
        Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=TwoWay}"
        IsHitTestVisible="False" />
+        
+        <StackPanel x:Name="ProgressDetailsPanel"
+                    Grid.Row="6"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="0,40,0,0"
+                    Visibility="{Binding ShowProgressDetails, Converter={StaticResource BoolToVisibilityConverter}}"
+                    IsHitTestVisible="False">
+            <TextBlock Text="{Binding ProgressStatusText}"
+                       Foreground="DarkRed"
+                       FontSize="14"
+                       TextAlignment="Center"
+                       Margin="0,0,0,5"/>
+            <TextBlock Text="{Binding ProgressDetailText}"
+                       Foreground="DarkRed"
+                       FontSize="11"
+                       TextAlignment="Center"/>
+        </StackPanel>
 
         <!-- Canvas to draw the blue lines -->
         <Canvas Grid.Row="6" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
