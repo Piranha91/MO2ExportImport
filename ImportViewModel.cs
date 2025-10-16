@@ -27,6 +27,7 @@ namespace MO2ExportImport.ViewModels
         private string _importButtonLabel;
         private List<Mod> _removedMods_Matching_Existing = new();
         public string StartingImportSource { get; set; } = string.Empty;
+        private ImportView _view;
 
         public string Mo2Directory
         {
@@ -435,20 +436,21 @@ namespace MO2ExportImport.ViewModels
             this.WhenAnyValue(x => x.FilterText)
                 .Subscribe(_ => ApplyFilter());
         }
-
+        
         public void OnViewLoaded(ImportView view)
         {
-            this.WhenAnyValue(x => x.ModsLoaded).Subscribe(x =>
+            _view = view; // Store the view reference
+        }
+
+        private void SelectAllItemsInListBox()
+        {
+            if (_view != null)
             {
-                if (x)
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    view.ModsListBox.SelectedItems.Clear();
-                    foreach (var item in view.ModsListBox.Items)
-                    {
-                        view.ModsListBox.SelectedItems.Add(item);
-                    }
-                }
-            });
+                    _view.ModsListBox.SelectAll();
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
         }
 
 
@@ -610,6 +612,7 @@ namespace MO2ExportImport.ViewModels
             if (!IsSourceMo2Directory)
             {
                 IsPleaseWaitVisible = false;
+                SelectAllItemsInListBox();
             }
 
             totalStopwatch.Stop();
@@ -688,6 +691,8 @@ namespace MO2ExportImport.ViewModels
             Debug.WriteLine($"  UpdateImportEnabled: {sw.ElapsedMilliseconds}ms");
 
             IsPleaseWaitVisible = false;
+            
+            SelectAllItemsInListBox();
 
             totalStopwatch.Stop();
             Debug.WriteLine($"=== LoadModsFromSourceProfile TOTAL: {totalStopwatch.ElapsedMilliseconds}ms ===");
