@@ -85,6 +85,10 @@
         <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
             <Button Content="Select Import Source Folder" Command="{Binding SelectImportSourceFolderCommand}" Margin="5"/>
             <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="{Binding IsSourceMo2Directory, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Source Profile:" VerticalAlignment="Center" Margin="5"/>
+                <ComboBox ItemsSource="{Binding SourceProfiles}" SelectedItem="{Binding SelectedSourceProfile}" MinWidth="150" Margin="5"/>
+            </StackPanel>
         </StackPanel>
 
         <WrapPanel Orientation="Horizontal" Grid.Row="3" Margin="5">

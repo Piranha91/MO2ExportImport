@@ -48,6 +48,29 @@ namespace MO2ExportImport.ViewModels
                 UpdateImportEnabled();
             }
         }
+        
+        private bool _isSourceMo2Directory;
+        public bool IsSourceMo2Directory
+        {
+            get => _isSourceMo2Directory;
+            set => this.RaiseAndSetIfChanged(ref _isSourceMo2Directory, value);
+        }
+
+        public ObservableCollection<string> SourceProfiles { get; } = new();
+
+        private string _selectedSourceProfile;
+        public string SelectedSourceProfile
+        {
+            get => _selectedSourceProfile;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedSourceProfile, value);
+                if (value != null)
+                {
+                    LoadModsFromSourceProfile();
+                }
+            }
+        }
 
         public string SelectedProfile
         {
@@ -320,11 +343,22 @@ namespace MO2ExportImport.ViewModels
 
         public void UpdateImportEnabled()
         {
+            bool sourceReady = false;
+            if (IsSourceMo2Directory)
+            {
+                sourceReady = !string.IsNullOrEmpty(SelectedSourceProfile);
+            }
+            else
+            {
+                sourceReady = !string.IsNullOrEmpty(ImportSourceFolder) && Directory.Exists(ImportSourceFolder);
+            }
+
             IsImportEnabled =
                 !string.IsNullOrEmpty(Mo2Directory) && Directory.Exists(Mo2Directory) &&
-                !string.IsNullOrEmpty(ImportSourceFolder) && Directory.Exists(ImportSourceFolder) &&
+                sourceReady &&
                 ModList.Any(x => x.SelectedInUI);
         }
+
 
         private void SelectMo2Directory()
         {
@@ -375,44 +409,109 @@ namespace MO2ExportImport.ViewModels
         private void AnalyzeImportSourceFolder()
         {
             IsPleaseWaitVisible = true;
-
             ModList.Clear();
             _modsRootPath = string.Empty;
+            IsSourceMo2Directory = false;
+            SelectedSourceProfile = null;
+            SourceProfiles.Clear();
 
-            var modlistJsonPath = Path.Combine(ImportSourceFolder, "modlist.json");
-            if (File.Exists(modlistJsonPath))
+            var moIniPath = Path.Combine(ImportSourceFolder, "ModOrganizer.ini");
+            if (File.Exists(moIniPath))
             {
-                var jsonString = File.ReadAllText(modlistJsonPath);
-                var modlistData = JsonSerializer.Deserialize<ModlistJson>(jsonString);
-                _modsRootPath = modlistData?.ModsRootPath ?? string.Empty;
-
-                foreach (var mod in modlistData?.SelectedMods ?? new())
-                {
-                    var modItem = new Mod(mod) { SelectedInUI = true }; // Always select the mod
-                    ModList.Add(modItem);
-                }
+                IsSourceMo2Directory = true;
+                _modsRootPath = Path.Combine(ImportSourceFolder, "mods");
+                LoadSourceProfiles();
+                // Don't load any mods yet. Wait for user to select a profile.
+                IsPleaseWaitVisible = false;
             }
             else
             {
-                _modsRootPath = ImportSourceFolder;
-
-                var modListPath = Path.Combine(ImportSourceFolder, "modlist.txt");
-                var modList = CommonFuncs.LoadModList(modListPath);
-
-                var modDirs = Directory.GetDirectories(ImportSourceFolder);
-
-                foreach (var modListEntry in modList)
+                var modlistJsonPath = Path.Combine(ImportSourceFolder, "modlist.json");
+                if (File.Exists(modlistJsonPath))
                 {
-                    var matchingDir = modDirs.FirstOrDefault(x => Path.GetFileName(x) == modListEntry.GetCurrentFolderName());
-                    if (matchingDir != null)
+                    var jsonString = File.ReadAllText(modlistJsonPath); 
+                    var modlistData = JsonSerializer.Deserialize<ModlistJson>(jsonString); 
+                    _modsRootPath = modlistData?.ModsRootPath ?? string.Empty; 
+
+                    foreach (var mod in modlistData?.SelectedMods ?? new())
                     {
-                        var mod = new Mod(modListEntry) { SelectedInUI = true }; // Selected by default | If for some reason the mod doesn't exist in the modlist.txt, build the Mod entry from the mod name (starts disabled).
-                        ModList.Add(mod);
+                        var modItem = new Mod(mod) { SelectedInUI = true }; 
+                        ModList.Add(modItem); 
+                    }
+                }
+                else
+                {
+                    _modsRootPath = ImportSourceFolder; 
+                    var modListPath = Path.Combine(ImportSourceFolder, "modlist.txt"); 
+                    var modList = CommonFuncs.LoadModList(modListPath); 
+
+                    var modDirs = Directory.GetDirectories(ImportSourceFolder); 
+                    foreach (var modListEntry in modList)
+                    {
+                        var matchingDir = modDirs.FirstOrDefault(x => Path.GetFileName(x) == modListEntry.GetCurrentFolderName()); 
+                        if (matchingDir != null)
+                        {
+                            var mod = new Mod(modListEntry) { SelectedInUI = true }; 
+                            ModList.Add(mod); 
+                        }
                     }
                 }
             }
+            
+            UpdateImportEnabled(); 
+            // It is important to hide the please wait indicator here if not an mo2 source.
+            // If it is an MO2 source, it will be hidden inside LoadModsFromSourceProfile after mods are loaded.
+            if (!IsSourceMo2Directory)
+            {
+                IsPleaseWaitVisible = false;
+            }
+        }
+        
+        private void LoadSourceProfiles()
+        {
+            SourceProfiles.Clear();
 
-            UpdateImportEnabled(); // Update import enabled status based on all conditions
+            if (Directory.Exists(ImportSourceFolder))
+            {
+                var profilesPath = Path.Combine(ImportSourceFolder, "profiles");
+                if (Directory.Exists(profilesPath))
+                {
+                    var profileDirs = Directory.GetDirectories(profilesPath);
+                    foreach (var dir in profileDirs)
+                    {
+                        SourceProfiles.Add(Path.GetFileName(dir));
+                    }
+                }
+            }
+        }
+
+        private void LoadModsFromSourceProfile()
+        {
+            IsPleaseWaitVisible = true;
+            ModList.Clear();
+
+            if (string.IsNullOrEmpty(SelectedSourceProfile) || !IsSourceMo2Directory)
+            {
+                IsPleaseWaitVisible = false;
+                return;
+            }
+
+            var modListPath = Path.Combine(ImportSourceFolder, "profiles", SelectedSourceProfile, "modlist.txt");
+            var modList = CommonFuncs.LoadModList(modListPath);
+
+            var modDirs = Directory.GetDirectories(_modsRootPath); // _modsRootPath is already set to the source MO2 mods folder
+            foreach (var modListEntry in modList)
+            {
+                var matchingDir = modDirs.FirstOrDefault(x => Path.GetFileName(x) == modListEntry.GetCurrentFolderName());
+                if (matchingDir != null)
+                {
+                    var mod = new Mod(modListEntry) { SelectedInUI = true };
+                    ModList.Add(mod);
+                }
+            }
+
+            UpdateImportEnabled();
+            IsPleaseWaitVisible = false;
         }
 
         public void FilterModsForImport()
@@ -584,19 +683,27 @@ namespace MO2ExportImport.ViewModels
         private void LaunchImportPopup()
         {
             // Filter the mods before launching the import popup
-            FilterModsForImport();
-
+            FilterModsForImport(); 
             // If no mods are selected after filtering, don't open the popup
             if (ModList.Any(x => x.SelectedInUI))
             {
-                var importPopup = new ImportPopupView();
-                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, ImportSourceFolder, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups);
-                importPopup.DataContext = viewModel;
-                importPopup.ShowDialog();
+                var importPopup = new ImportPopupView(); 
+                string profileSourceDir;
+                if (IsSourceMo2Directory)
+                {
+                    profileSourceDir = Path.Combine(ImportSourceFolder, "profiles", SelectedSourceProfile);
+                }
+                else
+                {
+                    profileSourceDir = ImportSourceFolder;
+                }
+                var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, profileSourceDir, SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete, MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion, _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering, InterpolateMissingPluginGroups); 
+                importPopup.DataContext = viewModel; 
+                importPopup.ShowDialog(); 
             }
             else
             {
-                MessageBox.Show("No mods are available for import after filtering.", "No Mods to Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No mods are available for import after filtering.", "No Mods to Import", MessageBoxButton.OK, MessageBoxImage.Information); 
             }
         }
         
