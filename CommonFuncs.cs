@@ -336,5 +336,41 @@ namespace MO2ExportImport
             //ignoredEntries.Add(currentEntry); Commented out for now. Double checking my logic, I don't think this makes sense to include.
             return "end";
         }
+        
+        // Add to CommonFuncs.cs:
+
+        public static string GetSelectedProfileFromIni(string mo2Directory)
+        {
+            var iniPath = Path.Combine(mo2Directory, "ModOrganizer.ini");
+    
+            if (!File.Exists(iniPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var lines = File.ReadAllLines(iniPath);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("selected_profile=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Format is: selected_profile=@ByteArray(Profile Name)
+                        var match = Regex.Match(line, @"@ByteArray\((.+?)\)");
+                        if (match.Success && match.Groups.Count > 1)
+                        {
+                            return match.Groups[1].Value;
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // If there's any error reading the file, return null to fall back to first profile
+                return null;
+            }
+
+            return null;
+        }
     }
 }

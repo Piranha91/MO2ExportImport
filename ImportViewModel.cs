@@ -520,104 +520,103 @@ namespace MO2ExportImport.ViewModels
         }
 
         private void AnalyzeImportSourceFolder()
+{
+    var totalStopwatch = Stopwatch.StartNew();
+    Debug.WriteLine("=== AnalyzeImportSourceFolder START ===");
+    
+    IsPleaseWaitVisible = true;
+    ModList.Clear();
+    _modsRootPath = string.Empty;
+    IsSourceMo2Directory = false;
+    SelectedSourceProfile = null;
+    SourceProfiles.Clear();
+
+    var moIniPath = Path.Combine(ImportSourceFolder, "ModOrganizer.ini");
+    if (File.Exists(moIniPath))
+    {
+        Debug.WriteLine("Detected MO2 directory");
+        IsSourceMo2Directory = true;
+        _modsRootPath = Path.Combine(ImportSourceFolder, "mods");
+        LoadSourceProfiles();
+        // Don't load any mods yet. Wait for user to select a profile.
+        IsPleaseWaitVisible = false;
+    }
+    else
+    {
+        var modlistJsonPath = Path.Combine(ImportSourceFolder, "modlist.json");
+        if (File.Exists(modlistJsonPath))
         {
-            var totalStopwatch = Stopwatch.StartNew();
-            Debug.WriteLine("=== AnalyzeImportSourceFolder START ===");
+            Debug.WriteLine("Loading from modlist.json");
+            var sw = Stopwatch.StartNew();
+            var jsonString = File.ReadAllText(modlistJsonPath);
+            Debug.WriteLine($"  Read JSON file: {sw.ElapsedMilliseconds}ms");
+            
+            sw.Restart();
+            var modlistData = JsonSerializer.Deserialize<ModlistJson>(jsonString);
+            Debug.WriteLine($"  Deserialize JSON: {sw.ElapsedMilliseconds}ms");
+            
+            _modsRootPath = modlistData?.ModsRootPath ?? string.Empty;
 
-            IsPleaseWaitVisible = true;
-            ModList.Clear();
-            _modsRootPath = string.Empty;
-            IsSourceMo2Directory = false;
-            SelectedSourceProfile = null;
-            SourceProfiles.Clear();
-
-            var moIniPath = Path.Combine(ImportSourceFolder, "ModOrganizer.ini");
-            if (File.Exists(moIniPath))
+            sw.Restart();
+            var modsToAdd = new List<Mod>();
+            foreach (var mod in modlistData?.SelectedMods ?? new())
             {
-                Debug.WriteLine("Detected MO2 directory");
-                IsSourceMo2Directory = true;
-                _modsRootPath = Path.Combine(ImportSourceFolder, "mods");
-                LoadSourceProfiles();
-                // Don't load any mods yet. Wait for user to select a profile.
-                IsPleaseWaitVisible = false;
+                var modItem = new Mod(mod) { SelectedInUI = true };
+                modsToAdd.Add(modItem);
             }
-            else
-            {
-                var modlistJsonPath = Path.Combine(ImportSourceFolder, "modlist.json");
-                if (File.Exists(modlistJsonPath))
-                {
-                    Debug.WriteLine("Loading from modlist.json");
-                    var sw = Stopwatch.StartNew();
-                    var jsonString = File.ReadAllText(modlistJsonPath);
-                    Debug.WriteLine($"  Read JSON file: {sw.ElapsedMilliseconds}ms");
-
-                    sw.Restart();
-                    var modlistData = JsonSerializer.Deserialize<ModlistJson>(jsonString);
-                    Debug.WriteLine($"  Deserialize JSON: {sw.ElapsedMilliseconds}ms");
-
-                    _modsRootPath = modlistData?.ModsRootPath ?? string.Empty;
-
-                    sw.Restart();
-                    var modsToAdd = new List<Mod>();
-                    foreach (var mod in modlistData?.SelectedMods ?? new())
-                    {
-                        var modItem = new Mod(mod) { SelectedInUI = true };
-                        modsToAdd.Add(modItem);
-                    }
-
-                    Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
-
-                    sw.Restart();
-                    ModList.AddRange(modsToAdd);
-                    Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
-                }
-                else
-                {
-                    Debug.WriteLine("Loading from modlist.txt");
-                    _modsRootPath = ImportSourceFolder;
-                    var modListPath = Path.Combine(ImportSourceFolder, "modlist.txt");
-
-                    var sw = Stopwatch.StartNew();
-                    var modList = CommonFuncs.LoadModList(modListPath);
-                    Debug.WriteLine($"  Load modlist.txt: {sw.ElapsedMilliseconds}ms");
-
-                    sw.Restart();
-                    var modDirs = Directory.GetDirectories(ImportSourceFolder);
-                    Debug.WriteLine($"  Get directories: {sw.ElapsedMilliseconds}ms");
-
-                    sw.Restart();
-                    var modsToAdd = new List<Mod>();
-                    foreach (var modListEntry in modList)
-                    {
-                        var matchingDir = modDirs.FirstOrDefault(x =>
-                            Path.GetFileName(x) == modListEntry.GetCurrentFolderName());
-                        if (matchingDir != null)
-                        {
-                            var mod = new Mod(modListEntry) { SelectedInUI = true };
-                            modsToAdd.Add(mod);
-                        }
-                    }
-
-                    Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
-
-                    sw.Restart();
-                    ModList.AddRange(modsToAdd);
-                    Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
-                }
-            }
-
-            UpdateImportEnabled();
-            // It is important to hide the please wait indicator here if not an mo2 source.
-            // If it is an MO2 source, it will be hidden inside LoadModsFromSourceProfile after mods are loaded.
-            if (!IsSourceMo2Directory)
-            {
-                IsPleaseWaitVisible = false;
-                SelectAllItemsInListBox();
-            }
-
-            totalStopwatch.Stop();
-            Debug.WriteLine($"=== AnalyzeImportSourceFolder TOTAL: {totalStopwatch.ElapsedMilliseconds}ms ===");
+            Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
+            
+            sw.Restart();
+            ModList.AddRange(modsToAdd);
+            Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
         }
+        else
+        {
+            Debug.WriteLine("Loading from modlist.txt");
+            _modsRootPath = ImportSourceFolder;
+            var modListPath = Path.Combine(ImportSourceFolder, "modlist.txt");
+            
+            var sw = Stopwatch.StartNew();
+            var modList = CommonFuncs.LoadModList(modListPath);
+            Debug.WriteLine($"  Load modlist.txt: {sw.ElapsedMilliseconds}ms");
+
+            sw.Restart();
+            var modDirs = Directory.GetDirectories(ImportSourceFolder);
+            Debug.WriteLine($"  Get directories: {sw.ElapsedMilliseconds}ms");
+            
+            sw.Restart();
+            var modsToAdd = new List<Mod>();
+            foreach (var modListEntry in modList)
+            {
+                var matchingDir = modDirs.FirstOrDefault(x =>
+                    Path.GetFileName(x) == modListEntry.GetCurrentFolderName());
+                if (matchingDir != null)
+                {
+                    var mod = new Mod(modListEntry) { SelectedInUI = true };
+                    modsToAdd.Add(mod);
+                }
+            }
+            Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
+            
+            sw.Restart();
+            ModList.AddRange(modsToAdd);
+            Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
+        }
+    }
+
+    UpdateImportEnabled();
+    // It is important to hide the please wait indicator here if not an mo2 source.
+    // If it is an MO2 source, it will be hidden inside LoadModsFromSourceProfile after mods are loaded.
+    if (!IsSourceMo2Directory)
+    {
+        IsPleaseWaitVisible = false;
+        // Select all items in the ListBox for non-MO2 sources
+        SelectAllItemsInListBox();
+    }
+    
+    totalStopwatch.Stop();
+    Debug.WriteLine($"=== AnalyzeImportSourceFolder TOTAL: {totalStopwatch.ElapsedMilliseconds}ms ===");
+}
 
         private void LoadSourceProfiles()
         {
@@ -633,6 +632,22 @@ namespace MO2ExportImport.ViewModels
                     {
                         SourceProfiles.Add(Path.GetFileName(dir));
                     }
+                }
+            }
+
+            // Auto-select the profile from ModOrganizer.ini or fall back to first profile
+            if (SourceProfiles.Any())
+            {
+                var selectedProfile = CommonFuncs.GetSelectedProfileFromIni(ImportSourceFolder);
+
+                if (!string.IsNullOrEmpty(selectedProfile) && SourceProfiles.Contains(selectedProfile))
+                {
+                    SelectedSourceProfile = selectedProfile;
+                }
+                else
+                {
+                    // Fall back to first profile
+                    SelectedSourceProfile = SourceProfiles.First();
                 }
             }
         }

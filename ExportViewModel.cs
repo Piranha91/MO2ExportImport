@@ -237,11 +237,21 @@ namespace MO2ExportImport.ViewModels
                 Profiles.Add(profile);
             }
 
-            /* Too much perforance hit with long lists
+            // Auto-select the profile from ModOrganizer.ini or fall back to first profile
             if (Profiles.Any())
             {
-                SelectedProfile = Profiles.First();
-            }*/
+                var selectedProfile = CommonFuncs.GetSelectedProfileFromIni(_mo2Directory);
+        
+                if (!string.IsNullOrEmpty(selectedProfile) && Profiles.Contains(selectedProfile))
+                {
+                    SelectedProfile = selectedProfile;
+                }
+                else
+                {
+                    // Fall back to first profile
+                    SelectedProfile = Profiles.First();
+                }
+            }
         }
 
         private void LoadModList()
