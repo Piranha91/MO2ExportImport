@@ -4,6 +4,7 @@ using MO2ExportImport.Models;
 using MO2ExportImport.Views;
 using ReactiveUI;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reactive;
 using System.Text;
@@ -380,7 +381,7 @@ namespace MO2ExportImport.ViewModels
         }
 
         public ObservableCollection<string> Profiles { get; } = new ObservableCollection<string>();
-        public ObservableCollection<Mod> ModList { get; } = new ObservableCollection<Mod>();
+        public BulkObservableCollection<Mod> ModList { get; } = new BulkObservableCollection<Mod>();
 
         public ReactiveCommand<Unit, Unit> SelectMo2DirectoryCommand { get; }
         public ReactiveCommand<Unit, Unit> SelectImportSourceFolderCommand { get; }
@@ -409,16 +410,26 @@ namespace MO2ExportImport.ViewModels
 
             ModList.ToObservableChangeSet().Subscribe(x =>
             {
+                var sw = Stopwatch.StartNew();
+                Debug.WriteLine($"=== ModList.ToObservableChangeSet event fired ({x.Count()} changes) ===");
+
                 if (x.Any())
                 {
                     _modsLoaded = true;
                     _filteredModList = new ObservableCollection<Mod>(ModList);
+                    Debug.WriteLine($"  Set _filteredModList: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
                     ApplyFilter();
+                    Debug.WriteLine($"  ApplyFilter completed: {sw.ElapsedMilliseconds}ms");
                 }
                 else
                 {
                     _modsLoaded = false;
                 }
+
+                sw.Stop();
+                Debug.WriteLine($"=== ModList.ToObservableChangeSet TOTAL: {sw.ElapsedMilliseconds}ms ===");
             });
 
             this.WhenAnyValue(x => x.FilterText)
@@ -508,6 +519,9 @@ namespace MO2ExportImport.ViewModels
 
         private void AnalyzeImportSourceFolder()
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            Debug.WriteLine("=== AnalyzeImportSourceFolder START ===");
+
             IsPleaseWaitVisible = true;
             ModList.Clear();
             _modsRootPath = string.Empty;
@@ -518,6 +532,7 @@ namespace MO2ExportImport.ViewModels
             var moIniPath = Path.Combine(ImportSourceFolder, "ModOrganizer.ini");
             if (File.Exists(moIniPath))
             {
+                Debug.WriteLine("Detected MO2 directory");
                 IsSourceMo2Directory = true;
                 _modsRootPath = Path.Combine(ImportSourceFolder, "mods");
                 LoadSourceProfiles();
@@ -529,23 +544,47 @@ namespace MO2ExportImport.ViewModels
                 var modlistJsonPath = Path.Combine(ImportSourceFolder, "modlist.json");
                 if (File.Exists(modlistJsonPath))
                 {
+                    Debug.WriteLine("Loading from modlist.json");
+                    var sw = Stopwatch.StartNew();
                     var jsonString = File.ReadAllText(modlistJsonPath);
+                    Debug.WriteLine($"  Read JSON file: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
                     var modlistData = JsonSerializer.Deserialize<ModlistJson>(jsonString);
+                    Debug.WriteLine($"  Deserialize JSON: {sw.ElapsedMilliseconds}ms");
+
                     _modsRootPath = modlistData?.ModsRootPath ?? string.Empty;
 
+                    sw.Restart();
+                    var modsToAdd = new List<Mod>();
                     foreach (var mod in modlistData?.SelectedMods ?? new())
                     {
                         var modItem = new Mod(mod) { SelectedInUI = true };
-                        ModList.Add(modItem);
+                        modsToAdd.Add(modItem);
                     }
+
+                    Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
+                    ModList.AddRange(modsToAdd);
+                    Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
                 }
                 else
                 {
+                    Debug.WriteLine("Loading from modlist.txt");
                     _modsRootPath = ImportSourceFolder;
                     var modListPath = Path.Combine(ImportSourceFolder, "modlist.txt");
-                    var modList = CommonFuncs.LoadModList(modListPath);
 
+                    var sw = Stopwatch.StartNew();
+                    var modList = CommonFuncs.LoadModList(modListPath);
+                    Debug.WriteLine($"  Load modlist.txt: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
                     var modDirs = Directory.GetDirectories(ImportSourceFolder);
+                    Debug.WriteLine($"  Get directories: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
+                    var modsToAdd = new List<Mod>();
                     foreach (var modListEntry in modList)
                     {
                         var matchingDir = modDirs.FirstOrDefault(x =>
@@ -553,9 +592,15 @@ namespace MO2ExportImport.ViewModels
                         if (matchingDir != null)
                         {
                             var mod = new Mod(modListEntry) { SelectedInUI = true };
-                            ModList.Add(mod);
+                            modsToAdd.Add(mod);
                         }
                     }
+
+                    Debug.WriteLine($"  Create {modsToAdd.Count} Mod objects: {sw.ElapsedMilliseconds}ms");
+
+                    sw.Restart();
+                    ModList.AddRange(modsToAdd);
+                    Debug.WriteLine($"  Add mods to ModList: {sw.ElapsedMilliseconds}ms");
                 }
             }
 
@@ -566,6 +611,9 @@ namespace MO2ExportImport.ViewModels
             {
                 IsPleaseWaitVisible = false;
             }
+
+            totalStopwatch.Stop();
+            Debug.WriteLine($"=== AnalyzeImportSourceFolder TOTAL: {totalStopwatch.ElapsedMilliseconds}ms ===");
         }
 
         private void LoadSourceProfiles()
@@ -588,20 +636,35 @@ namespace MO2ExportImport.ViewModels
 
         private void LoadModsFromSourceProfile()
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            Debug.WriteLine("=== LoadModsFromSourceProfile START ===");
+
             IsPleaseWaitVisible = true;
+
+            var sw = Stopwatch.StartNew();
             ModList.Clear();
+            Debug.WriteLine($"  Clear ModList: {sw.ElapsedMilliseconds}ms");
 
             if (string.IsNullOrEmpty(SelectedSourceProfile) || !IsSourceMo2Directory)
             {
                 IsPleaseWaitVisible = false;
+                Debug.WriteLine("=== LoadModsFromSourceProfile EARLY EXIT ===");
                 return;
             }
 
             var modListPath = Path.Combine(ImportSourceFolder, "profiles", SelectedSourceProfile, "modlist.txt");
-            var modList = CommonFuncs.LoadModList(modListPath);
 
-            var modDirs =
-                Directory.GetDirectories(_modsRootPath); // _modsRootPath is already set to the source MO2 mods folder
+            sw.Restart();
+            var modList = CommonFuncs.LoadModList(modListPath);
+            Debug.WriteLine($"  Load modlist.txt ({modList.Count} entries): {sw.ElapsedMilliseconds}ms");
+
+            sw.Restart();
+            var modDirs = Directory.GetDirectories(_modsRootPath);
+            Debug.WriteLine($"  Get directories ({modDirs.Length} dirs): {sw.ElapsedMilliseconds}ms");
+
+            sw.Restart();
+            var modsToAdd = new List<Mod>();
+            int matchCount = 0;
             foreach (var modListEntry in modList)
             {
                 var matchingDir =
@@ -609,12 +672,25 @@ namespace MO2ExportImport.ViewModels
                 if (matchingDir != null)
                 {
                     var mod = new Mod(modListEntry) { SelectedInUI = true };
-                    ModList.Add(mod);
+                    modsToAdd.Add(mod);
+                    matchCount++;
                 }
             }
 
+            Debug.WriteLine($"  Create {matchCount} Mod objects: {sw.ElapsedMilliseconds}ms");
+
+            sw.Restart();
+            ModList.AddRange(modsToAdd); // Add all at once!
+            Debug.WriteLine($"  Add {modsToAdd.Count} mods to ModList: {sw.ElapsedMilliseconds}ms");
+
+            sw.Restart();
             UpdateImportEnabled();
+            Debug.WriteLine($"  UpdateImportEnabled: {sw.ElapsedMilliseconds}ms");
+
             IsPleaseWaitVisible = false;
+
+            totalStopwatch.Stop();
+            Debug.WriteLine($"=== LoadModsFromSourceProfile TOTAL: {totalStopwatch.ElapsedMilliseconds}ms ===");
         }
 
         public void FilterModsForImport()
@@ -849,10 +925,14 @@ namespace MO2ExportImport.ViewModels
 
         private void ApplyFilter()
         {
+            var sw = Stopwatch.StartNew();
+            Debug.WriteLine("=== ApplyFilter START ===");
+
             if (string.IsNullOrEmpty(FilterText))
             {
                 // If the filter is empty, show all mods
                 FilteredModList = new ObservableCollection<Mod>(ModList);
+                Debug.WriteLine($"  No filter - showing all {ModList.Count} mods: {sw.ElapsedMilliseconds}ms");
             }
             else
             {
@@ -868,7 +948,12 @@ namespace MO2ExportImport.ViewModels
                 }
 
                 FilteredModList = new ObservableCollection<Mod>(matchedMods);
+                Debug.WriteLine(
+                    $"  Filtered to {matchedMods.Count} mods from {ModList.Count}: {sw.ElapsedMilliseconds}ms");
             }
+
+            sw.Stop();
+            Debug.WriteLine($"=== ApplyFilter TOTAL: {sw.ElapsedMilliseconds}ms ===");
         }
 
         private void AddMasterDependencies()

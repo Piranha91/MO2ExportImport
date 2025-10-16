@@ -118,31 +118,36 @@ namespace MO2ExportImport.Views
         {
             if (DataContext is ImportViewModel viewModel)
             {
-                // Determine if the selection was modified (e.g., Ctrl+click or Shift+click)
+                // Update SelectedInUI for added items
+                foreach (Mod mod in e.AddedItems)
+                {
+                    mod.SelectedInUI = true;
+                }
+        
+                // Update SelectedInUI for removed items
+                foreach (Mod mod in e.RemovedItems)
+                {
+                    mod.SelectedInUI = false;
+                }
+
+                // Determine if the selection was modified
                 bool isModifiedSelection = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ||
                                            Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) ||
                                            Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers != ModifierKeys.None;
 
-                // Calculate the value for shouldClearExisting
                 bool shouldClearExisting = !isModifiedSelection;
 
-                // Update the selected item count for the view model
-                // If the selection is modified, do not clear existing rectangles
                 if (e.AddedItems.Count > 0 || e.RemovedItems.Count > 0)
                 {
                     if ((DateTime.Now - _lastHighlightUpdate).TotalMilliseconds > 50)
                     {
-                        // If 50ms have passed, update immediately
                         _lastHighlightUpdate = DateTime.Now;
                         UpdateHighlightPositions(shouldClearExisting);
                         PleaseWaitText.Visibility = Visibility.Collapsed;
                     }
                     else
                     {
-                        // Otherwise, flag that an update is pending
                         _pendingHighlightUpdate = true;
-
-                        // If shouldClearExisting is true at any time within the 50ms period, we want to preserve that state
                         _shouldClearExisting = _shouldClearExisting || shouldClearExisting;
 
                         if (!_highlightThrottleTimer.IsEnabled)
@@ -190,72 +195,45 @@ namespace MO2ExportImport.Views
                 HighlightCanvas.Children.Clear();
             }
 
+            if (DataContext is not ImportViewModel viewModel)
+                return;
+
+            var totalItemCount = viewModel.FilteredModList.Count;
+            if (totalItemCount == 0)
+                return;
+
             // Get the ScrollViewer inside the ListBox
             var scrollViewer = GetScrollViewer(ModsListBox);
-
             if (scrollViewer == null)
                 return;
 
-            // Calculate the scrollbar button height (same as scrollbar width)
+            // Calculate the scrollbar button height
             double scrollbarButtonHeight = SystemParameters.VerticalScrollBarWidth;
 
-            // Calculate the adjusted scrollable height
-            double adjustedScrollableHeight = scrollViewer.ScrollableHeight + (2 * scrollbarButtonHeight);
-
-            // Calculate the average height of visible items
-            double totalVisibleHeight = 0;
-            int visibleItemCount = 0;
-
-            foreach (var item in ModsListBox.Items)
+            // Get selected indices
+            var selectedIndices = new List<int>();
+            foreach (var item in ModsListBox.SelectedItems)
             {
-                var container = ModsListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                if (container != null)
+                int index = viewModel.FilteredModList.IndexOf(item as Mod);
+                if (index >= 0)
                 {
-                    totalVisibleHeight += container.ActualHeight;
-                    visibleItemCount++;
+                    selectedIndices.Add(index);
                 }
             }
 
-            // Calculate the average item height
-            // Fallback to an estimated height if no items are visible
-            double averageItemHeight;
-            if (visibleItemCount > 0)
+            // Draw rectangles based on index positions
+            foreach (var index in selectedIndices)
             {
-                averageItemHeight = totalVisibleHeight / visibleItemCount;
-            }
-            else
-            {
-                // Create a virtual StackPanel to mimic the DataTemplate
-                var virtualStackPanel = new StackPanel { Orientation = Orientation.Horizontal };
-                var virtualCheckBox = new CheckBox { IsChecked = true, IsEnabled = false, Margin = new Thickness(0, 0, 10, 0) };
-                var virtualTextBlock = new TextBlock { Text = "Sample Text", VerticalAlignment = VerticalAlignment.Center };
+                // Calculate position ratio (0.0 to 1.0)
+                double positionRatio = totalItemCount > 1 ? (double)index / (totalItemCount - 1) : 0.5;
 
-                virtualStackPanel.Children.Add(virtualCheckBox);
-                virtualStackPanel.Children.Add(virtualTextBlock);
-
-                virtualStackPanel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                averageItemHeight = virtualStackPanel.DesiredSize.Height;
-            }
-
-            // Estimate the total height of all items
-            double totalHeight = averageItemHeight * ModsListBox.Items.Count;
-
-            // Iterate over each SelectedItem in the ListBox
-            foreach (var item in ModsListBox.SelectedItems)
-            {
-                // Calculate the cumulative height up to this item using the average height
-                int itemIndex = ModsListBox.Items.IndexOf(item);
-                double cumulativeHeight = averageItemHeight * itemIndex;
-
-                // Calculate the ratio of the selected item's position relative to the total theoretical height
-                double selectedPositionRatio = cumulativeHeight / totalHeight;
-
-                // Calculate the position of the rectangle relative to the adjusted scrollable height
-                double rectanglePosition = selectedPositionRatio * (HighlightCanvas.ActualHeight - (2 * scrollbarButtonHeight)) + scrollbarButtonHeight;
+                // Calculate the position on the scrollbar
+                double availableHeight = HighlightCanvas.ActualHeight - (2 * scrollbarButtonHeight);
+                double rectanglePosition = (positionRatio * availableHeight) + scrollbarButtonHeight;
 
                 // Create and place the rectangle
-                double rectangleHeight = 2; // Thickness of the rectangle
-                double scrollbarWidth = scrollbarButtonHeight; // Use the scrollbar width for the rectangle width
+                double rectangleHeight = 2;
+                double scrollbarWidth = scrollbarButtonHeight;
                 double canvasWidth = HighlightCanvas.ActualWidth;
                 double lineLeft = canvasWidth - scrollbarWidth + scrollbarWidth / 2;
 
@@ -267,7 +245,7 @@ namespace MO2ExportImport.Views
                 };
 
                 Canvas.SetLeft(line, lineLeft);
-                Canvas.SetTop(line, rectanglePosition - (rectangleHeight / 2)); // Adjust for centering the rectangle
+                Canvas.SetTop(line, rectanglePosition - (rectangleHeight / 2));
 
                 HighlightCanvas.Children.Add(line);
             }
