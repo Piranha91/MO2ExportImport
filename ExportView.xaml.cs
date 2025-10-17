@@ -340,6 +340,10 @@ namespace MO2ExportImport.Views
                 var container = ModsListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
                 if (container != null && item is Mod mod)
                 {
+                    // Attach PreviewMouseRightButtonDown to all items to prevent selection changes
+                    container.PreviewMouseRightButtonDown -= ListBoxItem_PreviewMouseRightButtonDown;
+                    container.PreviewMouseRightButtonDown += ListBoxItem_PreviewMouseRightButtonDown;
+            
                     // Only attach context menu to separators
                     if (mod.SourceListing.IsSeparator)
                     {
@@ -367,6 +371,25 @@ namespace MO2ExportImport.Views
                         contextMenu.Items.Add(deselectAllItem);
                 
                         container.ContextMenu = contextMenu;
+                    }
+                }
+            }
+        }
+        
+        private void ListBoxItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Prevent right-click from changing selection
+            e.Handled = true;
+    
+            // Optionally, if right-clicking on an unselected item, select it without deselecting others
+            if (sender is ListBoxItem item && item.DataContext is Mod mod)
+            {
+                if (!mod.SelectedInUI)
+                {
+                    mod.SelectedInUI = true;
+                    if (!ModsListBox.SelectedItems.Contains(mod))
+                    {
+                        ModsListBox.SelectedItems.Add(mod);
                     }
                 }
             }
