@@ -138,7 +138,10 @@
         </StackPanel>
         
         <!-- Checkbox Explanation -->
+        <!-- Checkbox Explanation -->
         <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10">
+            <Button Content="Undo" Command="{Binding UndoSelectionCommand}" Margin="0 0 5 0" ToolTip="Undo selection change (Ctrl+Z)"/>
+            <Button Content="Redo" Command="{Binding RedoSelectionCommand}" Margin="0 0 10 0" ToolTip="Redo selection change (Ctrl+Y)"/>
             <CheckBox IsChecked="False" IsEnabled="False" Content="Mod is Activated" Margin="0 0 10 0" VerticalAlignment="Center"/>
             <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)" VerticalAlignment="Center"/>
             <Button Content="Set as Overwriting Mods" Command="{Binding SetSelectedAsOverrideCommand}" Margin="20 0 10 0" />

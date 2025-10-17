@@ -20,6 +20,7 @@ namespace MO2ExportImport.ViewModels
     {
         private ExportView _view;
         private readonly MainViewModel _mainViewModel;
+        private readonly SelectionHistoryManager _selectionHistory = new();
         private string _mo2Directory;
         private string _selectedProfile;
         private ObservableCollection<string> _profiles;
@@ -128,6 +129,23 @@ namespace MO2ExportImport.ViewModels
                 _mainViewModel.SaveSettings(); 
             }
         }
+        
+        private bool _canUndo;
+        public bool CanUndo
+        {
+            get => _canUndo;
+            set => this.RaiseAndSetIfChanged(ref _canUndo, value);
+        }
+
+        private bool _canRedo;
+        public bool CanRedo
+        {
+            get => _canRedo;
+            set => this.RaiseAndSetIfChanged(ref _canRedo, value);
+        }
+
+        public ReactiveCommand<Unit, Unit> UndoSelectionCommand { get; }
+        public ReactiveCommand<Unit, Unit> RedoSelectionCommand { get; }
 
         public BulkObservableCollection<Mod> ModList { get; set; } = new BulkObservableCollection<Mod>();
 
@@ -190,6 +208,9 @@ namespace MO2ExportImport.ViewModels
             
             SelectAllInGroupCommand = ReactiveCommand.Create<Mod>(SelectAllInGroup);
             DeselectAllInGroupCommand = ReactiveCommand.Create<Mod>(DeselectAllInGroup);
+            
+            UndoSelectionCommand = ReactiveCommand.Create(UndoSelection, this.WhenAnyValue(x => x.CanUndo));
+            RedoSelectionCommand = ReactiveCommand.Create(RedoSelection, this.WhenAnyValue(x => x.CanRedo));
         }
 
         private async Task SelectSource()
@@ -450,6 +471,76 @@ namespace MO2ExportImport.ViewModels
             }
 
             return modsInGroup;
+        }
+        
+        public void SaveSelectionState()
+        {
+            if (!_selectionHistory.IsUndoRedoOperation)
+            {
+                var selectedMods = ModList.Where(m => m.SelectedInUI).ToList();
+                _selectionHistory.SaveState(selectedMods);
+                UpdateUndoRedoButtons();
+            }
+        }
+
+        private void UndoSelection()
+        {
+            _selectionHistory.SetUndoRedoOperation(true);
+    
+            var previousState = _selectionHistory.Undo();
+    
+            if (previousState != null)
+            {
+                ApplySelectionState(previousState);
+            }
+    
+            _selectionHistory.SetUndoRedoOperation(false);
+            UpdateUndoRedoButtons();
+        }
+
+        private void RedoSelection()
+        {
+            _selectionHistory.SetUndoRedoOperation(true);
+    
+            var nextState = _selectionHistory.Redo();
+    
+            if (nextState != null)
+            {
+                ApplySelectionState(nextState);
+            }
+    
+            _selectionHistory.SetUndoRedoOperation(false);
+            UpdateUndoRedoButtons();
+        }
+
+        private void ApplySelectionState(HashSet<string> selectedModNames)
+        {
+            if (_view == null)
+                return;
+
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                _view.ModsListBox.SelectedItems.Clear();
+        
+                foreach (var mod in ModList)
+                {
+                    bool shouldBeSelected = selectedModNames.Contains(mod.DisplayName);
+                    mod.SelectedInUI = shouldBeSelected;
+            
+                    if (shouldBeSelected)
+                    {
+                        _view.ModsListBox.SelectedItems.Add(mod);
+                    }
+                }
+            });
+    
+            UpdateSelectedCount();
+        }
+
+        private void UpdateUndoRedoButtons()
+        {
+            CanUndo = _selectionHistory.CanUndo;
+            CanRedo = _selectionHistory.CanRedo;
         }
     }
 }

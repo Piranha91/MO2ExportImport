@@ -97,6 +97,8 @@
         </Grid>
 
         <StackPanel Grid.Row="4" VerticalAlignment="Top" Orientation="Horizontal" Margin="10">
+            <Button Content="Undo" Command="{Binding UndoSelectionCommand}" Margin="0 0 5 0" ToolTip="Undo selection change (Ctrl+Z)"/>
+            <Button Content="Redo" Command="{Binding RedoSelectionCommand}" Margin="0 0 10 0" ToolTip="Redo selection change (Ctrl+Y)"/>
             <Button Content="Set as Overwriting Mods" Command="{Binding SetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
             <Button Content="Unset as Overwriting Mods" Command="{Binding UnsetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
             <Button Content="{Binding ExportButtonLabel}" Command="{Binding ExportSelectedCommand}" Margin="50 0 0 0" />

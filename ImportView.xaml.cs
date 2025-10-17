@@ -124,7 +124,7 @@ namespace MO2ExportImport.Views
                 {
                     mod.SelectedInUI = true;
                 }
-        
+
                 // Update SelectedInUI for removed items
                 foreach (Mod mod in e.RemovedItems)
                 {
@@ -156,6 +156,9 @@ namespace MO2ExportImport.Views
                             _highlightThrottleTimer.Start();
                         }
                     }
+            
+                    // Save selection state for undo/redo
+                    viewModel.SaveSelectionState();
                 }
 
                 viewModel.UpdateSelectedCount();
