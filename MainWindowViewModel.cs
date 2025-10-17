@@ -132,6 +132,7 @@ namespace MO2ExportImport.ViewModels
                 _importViewModel.AutoCalculateSpace = settings?.ImportAutoCalculateSpace ?? true;
                 _importViewModel.ImportPrefix = settings?.ImportPrefix ?? string.Empty;
                 _importViewModel.InterpolateMissingPluginGroups = settings?.ImportInterpolateMissingPluginGroups ?? false;
+                _importViewModel.TransferDownloads = settings?.ImportTransferDownloads ?? false;
                 _importViewModel.IgnoreMatchedModsForOrdering = settings?.ImportIgnoreMatchedModsForOrdering ?? true;
 
                 _importViewModel.StartingImportSource = _exportViewModel.ExportDestinationFolder;
@@ -163,6 +164,7 @@ namespace MO2ExportImport.ViewModels
                 ImportAutoCalculateSpace = _importViewModel.AutoCalculateSpace,
                 ImportPrefix = _importViewModel.ImportPrefix,
                 ImportInterpolateMissingPluginGroups = _importViewModel.InterpolateMissingPluginGroups,
+                ImportTransferDownloads = _importViewModel.TransferDownloads,
                 ImportIgnoreMatchedModsForOrdering = _importViewModel.IgnoreMatchedModsForOrdering
             };
 

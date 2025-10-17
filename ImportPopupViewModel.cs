@@ -35,6 +35,8 @@ namespace MO2ExportImport.ViewModels
         private List<Mod> _removedModsMatchingExisting = new();
         private bool _ignoreMatchedModsForOrdering;
         private bool _interpolateMissingPluginGroups;
+        private bool _transferDownloads;
+        private bool _isSourceMo2Directory;
 
         private const string _manifestRelativePath = "ImportManifests";
 
@@ -83,7 +85,12 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> ImportCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, bool interpolateMissingPluginGroups)
+        public ImportPopupViewModel(ImportPopupView view, string mo2Directory, string modSourceDirectory, 
+            string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, 
+            ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, 
+            bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, 
+            string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, 
+            bool interpolateMissingPluginGroups, bool transferDownloads, bool isSourceMo2Directory)
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -101,6 +108,8 @@ namespace MO2ExportImport.ViewModels
             _importPrefix = importPrefix;
             _removedModsMatchingExisting = removedMods_Matching_Existing;
             _ignoreMatchedModsForOrdering = IgnoreMatchedModsForOrdering;
+            _transferDownloads = transferDownloads;
+            _isSourceMo2Directory = isSourceMo2Directory;
             _interpolateMissingPluginGroups = interpolateMissingPluginGroups;
 
             CalculateSpaceCommand = ReactiveCommand.Create(CalculateSpace);
@@ -611,6 +620,47 @@ namespace MO2ExportImport.ViewModels
 
                 // Wait for all copy tasks to complete
                 await Task.WhenAll(copyTasks);
+                
+                if (_transferDownloads)
+                {
+                    try
+                    {
+                        Log("Beginning download transfer process...");
+        
+                        var sourceDownloadDir = DownloadTransferHelper.ResolveSourceDownloadDirectory(
+                            _importProfileSourceDirectory, _modSourceDirectory, _isSourceMo2Directory);
+        
+                        if (string.IsNullOrEmpty(sourceDownloadDir))
+                        {
+                            Log("Download transfer cancelled - could not determine source downloads directory");
+                        }
+                        else
+                        {
+                            var destDownloadDir = DownloadTransferHelper.ResolveDestinationDownloadDirectory(_mo2Directory);
+            
+                            if (string.IsNullOrEmpty(destDownloadDir))
+                            {
+                                Log("Download transfer cancelled - could not determine destination downloads directory");
+                            }
+                            else if (string.Equals(sourceDownloadDir, destDownloadDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                Log("Source and destination downloads directories are the same - skipping download transfer");
+                            }
+                            else
+                            {
+                                Log($"Transferring downloads from: {sourceDownloadDir}");
+                                Log($"Transferring downloads to: {destDownloadDir}");
+                
+                                await TransferDownloads(validSourceMods, sourceDownloadDir, destDownloadDir, manifest);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Error during download transfer: {ex.Message}");
+                        ScrollableMessageBox.Show($"Error transferring downloads: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Warning");
+                    }
+                }
 
                 SaveManifest(manifest);
                 MessageBox.Show("Import completed successfully.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -621,6 +671,60 @@ namespace MO2ExportImport.ViewModels
                 Log($"An error occurred during the import process: {ex.Message}");
                 ScrollableMessageBox.Show($"An error occurred during the import process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
+        }
+        
+        private async Task TransferDownloads(List<Mod> mods, string sourceDownloadDir, string destDownloadDir, ImportOperation manifest)
+        {
+            var downloadTasks = new List<Task>();
+    
+            foreach (var mod in mods)
+            {
+                var modDirectory = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
+                var installationFile = DownloadTransferHelper.GetInstallationFileFromMeta(modDirectory);
+        
+                if (string.IsNullOrEmpty(installationFile))
+                {
+                    Log($"-- No installation file found for {mod.DisplayName}");
+                    continue;
+                }
+        
+                var sourceFilePath = Path.Combine(sourceDownloadDir, installationFile);
+                var destFilePath = Path.Combine(destDownloadDir, installationFile);
+        
+                if (!File.Exists(sourceFilePath))
+                {
+                    Log($"-- Download not found: {installationFile}");
+                    continue;
+                }
+        
+                if (File.Exists(destFilePath))
+                {
+                    Log($"-- Download already exists: {installationFile}");
+                    continue;
+                }
+        
+                downloadTasks.Add(Task.Run(async () =>
+                {
+                    try
+                    {
+                        await FileOperation.CopyFileWithUIAsync(sourceFilePath, destFilePath);
+                        Log($"-- Transferred download: {installationFile}");
+                
+                        manifest.TransferredDownloads.Add(new TransferredDownload
+                        {
+                            FileName = installationFile,
+                            DestinationPath = destFilePath
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"-- Failed to transfer {installationFile}: {ex.Message}");
+                    }
+                }));
+            }
+    
+            await Task.WhenAll(downloadTasks);
+            Log($"Download transfer complete. Transferred {manifest.TransferredDownloads.Count} files.");
         }
 
         private bool HasSameRelativePosition(IListing listing, List<IListing> list1, List<IListing> list2)

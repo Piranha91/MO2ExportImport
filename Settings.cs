@@ -20,6 +20,7 @@ namespace MO2ExportImport.Models
         public bool ImportMatchModActivationState { get; set; } = true;
         public bool ImportMatchPluginActivationState { get; set; } = true;
         public bool ImportInterpolateMissingPluginGroups { get; set; } = false;
+        public bool ImportTransferDownloads { get; set; } = false;
         public bool ImportAutoCalculateSpace { get; set; } = true;
         public string ImportPrefix { get; set; } = string.Empty;
         public ImportViewModel.MultiPluginMode ImportMultiPluginMode { get; set; } = ImportViewModel.MultiPluginMode.WinnerOnly;

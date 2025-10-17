@@ -223,6 +223,32 @@ namespace MO2ExportImport.ViewModels
                     _operationNotes.Add("Could not remove " + mod + ". The path does not exist: " + modDirPath);
                 }
             }
+            
+            // Delete transferred downloads
+            if (SelectedOperation.TransferredDownloads != null && SelectedOperation.TransferredDownloads.Any())
+            {
+                _operationNotes.Add("Deleting transferred downloads...");
+    
+                foreach (var download in SelectedOperation.TransferredDownloads)
+                {
+                    if (File.Exists(download.DestinationPath))
+                    {
+                        try
+                        {
+                            File.Delete(download.DestinationPath);
+                            _operationNotes.Add($"Deleted download: {download.FileName}");
+                        }
+                        catch (Exception e)
+                        {
+                            _operationNotes.Add($"Could not delete download {download.FileName}: {e.Message}");
+                        }
+                    }
+                    else
+                    {
+                        _operationNotes.Add($"Download not found (may have been already deleted): {download.FileName}");
+                    }
+                }
+            }
 
             // Then remove the reference to each plugin from each profile
 

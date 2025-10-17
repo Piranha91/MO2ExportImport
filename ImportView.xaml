@@ -101,6 +101,7 @@
             <CheckBox Content="Match [Enabled/Disabled] Mods From Import" IsChecked="{Binding MatchModActivationState}" Margin="10 0 0 0"/>
             <CheckBox Content="Match [Enabled/Disabled] Plugins From Import" IsChecked="{Binding MatchPluginActivationState}" Margin="10 0 0 0"/>
             <CheckBox Content="Interpolate Missing Plugin Groups" IsChecked="{Binding InterpolateMissingPluginGroups}" Margin="10 0 0 0"/>
+            <CheckBox Content="Transfer Downloads" IsChecked="{Binding TransferDownloads}" Margin="10 0 0 0"/>
             <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>
             <TextBlock Text="Add Prefix to Imported Mod Names:" Margin="10 0 0 0"/>
             <TextBox Text="{Binding ImportPrefix}" MinWidth="100" Margin="5 0 0 0"/>

@@ -28,9 +28,16 @@ namespace MO2ExportImport
         public List<ProfileImportOperation> ProfileImports { get; set; } = new();
         public List<string> AddedModNames => ProfileImports.SelectMany(x => x.AddedModNames).Distinct().ToList();
         public List<ImportOwnedPlugin> AddedPlugins => ProfileImports.SelectMany(x => x.AddedPluginNames).Distinct().ToList();
+        public List<TransferredDownload> TransferredDownloads { get; set; } = new();
 
         [JsonIgnore]
         public string ThisFilePath { get; set; } = string.Empty;
+    }
+    
+    public class TransferredDownload
+    {
+        public string FileName { get; set; }
+        public string DestinationPath { get; set; }
     }
 
     public class ProfileImportOperation

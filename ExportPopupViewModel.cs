@@ -134,7 +134,8 @@ namespace MO2ExportImport.ViewModels
             var exportLog = new
             {
                 DateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                ProgramVersion = _programVersion
+                ProgramVersion = _programVersion,
+                SourceMO2Directory = _mo2Directory
             };
 
             var exportLogJson = JsonSerializer.Serialize(exportLog, new JsonSerializerOptions { WriteIndented = true });

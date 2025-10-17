@@ -306,6 +306,17 @@ namespace MO2ExportImport.ViewModels
                 _mainViewModel.SaveSettings();
             }
         }
+        
+        private bool _transferDownloads;
+        public bool TransferDownloads
+        {
+            get => _transferDownloads;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _transferDownloads, value);
+                _mainViewModel.SaveSettings();
+            }
+        }
 
         public enum MultiPluginMode
         {
@@ -910,7 +921,7 @@ namespace MO2ExportImport.ViewModels
                     SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete,
                     MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion,
                     _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering,
-                    InterpolateMissingPluginGroups);
+                    InterpolateMissingPluginGroups, TransferDownloads, IsSourceMo2Directory);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
