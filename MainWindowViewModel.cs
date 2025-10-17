@@ -12,7 +12,7 @@ namespace MO2ExportImport.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        public string ProgramVersion { get; } = "1.4";
+        public string ProgramVersion { get; } = "1.5";
 
         private const string SettingsFilePath = "settings.json";
 
