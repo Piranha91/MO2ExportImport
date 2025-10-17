@@ -401,6 +401,8 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> UnsetSelectedAsOverrideCommand { get; }
         public ReactiveCommand<Unit, Unit> LaunchImportPopupCommand { get; }
         public ReactiveCommand<Unit, Unit> AddMasterDependenciesCommand { get; }
+        public ReactiveCommand<Mod, Unit> SelectAllInGroupCommand { get; }
+        public ReactiveCommand<Mod, Unit> DeselectAllInGroupCommand { get; }
 
         public ImportViewModel(MainViewModel mainViewModel, StreamWriter logWriter)
         {
@@ -413,6 +415,8 @@ namespace MO2ExportImport.ViewModels
             LaunchImportPopupCommand =
                 ReactiveCommand.Create(LaunchImportPopup, this.WhenAnyValue(x => x.IsImportEnabled));
             AddMasterDependenciesCommand = ReactiveCommand.Create(AddMasterDependencies);
+            SelectAllInGroupCommand = ReactiveCommand.Create<Mod>(SelectAllInGroup);
+            DeselectAllInGroupCommand = ReactiveCommand.Create<Mod>(DeselectAllInGroup);
 
             Profiles.Add("All");
             SelectedProfile = "All";
@@ -1372,6 +1376,94 @@ namespace MO2ExportImport.ViewModels
             public string SourceMod { get; set; }
             public bool IsNewlyAdded { get; set; }
             public List<MasterDependency> SubMasters { get; set; } = new(); // For nested dependencies
+        }
+        
+        private void SelectAllInGroup(Mod separatorMod)
+        {
+            if (separatorMod?.SourceListing?.IsSeparator != true)
+                return;
+
+            var modsInGroup = GetModsInGroup(separatorMod);
+    
+            // Update the SelectedInUI property
+            foreach (var mod in modsInGroup)
+            {
+                mod.SelectedInUI = true;
+            }
+    
+            // Update the actual ListBox selection
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var mod in modsInGroup)
+                    {
+                        if (!_view.ModsListBox.SelectedItems.Contains(mod))
+                        {
+                            _view.ModsListBox.SelectedItems.Add(mod);
+                        }
+                    }
+                });
+            }
+    
+            UpdateSelectedCount();
+        }
+
+        private void DeselectAllInGroup(Mod separatorMod)
+        {
+            if (separatorMod?.SourceListing?.IsSeparator != true)
+                return;
+
+            var modsInGroup = GetModsInGroup(separatorMod);
+    
+            // Update the SelectedInUI property
+            foreach (var mod in modsInGroup)
+            {
+                mod.SelectedInUI = false;
+            }
+    
+            // Update the actual ListBox selection
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var mod in modsInGroup)
+                    {
+                        if (_view.ModsListBox.SelectedItems.Contains(mod))
+                        {
+                            _view.ModsListBox.SelectedItems.Remove(mod);
+                        }
+                    }
+                });
+            }
+    
+            UpdateSelectedCount();
+        }
+
+        private List<Mod> GetModsInGroup(Mod separatorMod)
+        {
+            var modsInGroup = new List<Mod>();
+    
+            // Use FilteredModList if filtering is active, otherwise use ModList
+            var sourceList = string.IsNullOrEmpty(FilterText) ? ModList : FilteredModList;
+    
+            int separatorIndex = sourceList.IndexOf(separatorMod);
+            if (separatorIndex == -1)
+                return modsInGroup;
+
+            // Get all mods after this separator until the next separator or end of list
+            for (int i = separatorIndex + 1; i < sourceList.Count; i++)
+            {
+                var currentMod = sourceList[i];
+        
+                // Stop if we hit another separator
+                if (currentMod.SourceListing.IsSeparator)
+                    break;
+            
+                modsInGroup.Add(currentMod);
+            }
+
+            return modsInGroup;
         }
     }
 }

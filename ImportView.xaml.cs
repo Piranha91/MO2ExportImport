@@ -27,6 +27,7 @@ namespace MO2ExportImport.Views
         {
             InitializeComponent();
             Loaded += ImportView_Loaded;
+            ModsListBox.ItemContainerGenerator.StatusChanged += ItemContainerGenerator_StatusChanged;
 
             _highlightThrottleTimer = new DispatcherTimer
             {
@@ -270,6 +271,53 @@ namespace MO2ExportImport.Views
             }
 
             return null;
+        }
+        
+        private void ItemContainerGenerator_StatusChanged(object sender, EventArgs e)
+        {
+            if (ModsListBox.ItemContainerGenerator.Status == System.Windows.Controls.Primitives.GeneratorStatus.ContainersGenerated)
+            {
+                AttachContextMenus();
+            }
+        }
+
+        private void AttachContextMenus()
+        {
+            foreach (var item in ModsListBox.Items)
+            {
+                var container = ModsListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                if (container != null && item is Mod mod)
+                {
+                    // Only attach context menu to separators
+                    if (mod.SourceListing.IsSeparator)
+                    {
+                        var contextMenu = new ContextMenu();
+                
+                        var selectAllItem = new MenuItem { Header = "Select All In Group" };
+                        selectAllItem.Click += (s, e) =>
+                        {
+                            if (DataContext is ImportViewModel viewModel)
+                            {
+                                viewModel.SelectAllInGroupCommand.Execute(mod).Subscribe();
+                            }
+                        };
+                
+                        var deselectAllItem = new MenuItem { Header = "Deselect All In Group" };
+                        deselectAllItem.Click += (s, e) =>
+                        {
+                            if (DataContext is ImportViewModel viewModel)
+                            {
+                                viewModel.DeselectAllInGroupCommand.Execute(mod).Subscribe();
+                            }
+                        };
+                
+                        contextMenu.Items.Add(selectAllItem);
+                        contextMenu.Items.Add(deselectAllItem);
+                
+                        container.ContextMenu = contextMenu;
+                    }
+                }
+            }
         }
     }
 }

@@ -136,6 +136,8 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> SetSelectedAsOverrideCommand { get; }
         public ReactiveCommand<Unit, Unit> UnsetSelectedAsOverrideCommand { get; }
         public ReactiveCommand<Unit, Unit> BrowseFolderCommand { get; }
+        public ReactiveCommand<Mod, Unit> SelectAllInGroupCommand { get; }
+        public ReactiveCommand<Mod, Unit> DeselectAllInGroupCommand { get; }
 
         public ExportViewModel(MainViewModel mainViewModel)
         {
@@ -185,6 +187,9 @@ namespace MO2ExportImport.ViewModels
             ExportSelectedCommand = ReactiveCommand.Create(ExportSelected, canExport);
 
             BrowseFolderCommand = ReactiveCommand.CreateFromTask(BrowseFolder);
+            
+            SelectAllInGroupCommand = ReactiveCommand.Create<Mod>(SelectAllInGroup);
+            DeselectAllInGroupCommand = ReactiveCommand.Create<Mod>(DeselectAllInGroup);
         }
 
         private async Task SelectSource()
@@ -357,6 +362,94 @@ namespace MO2ExportImport.ViewModels
                     _view.ModsListBox.SelectAll();
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
+        }
+        
+        private void SelectAllInGroup(Mod separatorMod)
+        {
+            if (separatorMod?.SourceListing?.IsSeparator != true)
+                return;
+
+            var modsInGroup = GetModsInGroup(separatorMod);
+    
+            // Update the SelectedInUI property
+            foreach (var mod in modsInGroup)
+            {
+                mod.SelectedInUI = true;
+            }
+    
+            // Update the actual ListBox selection
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var mod in modsInGroup)
+                    {
+                        if (!_view.ModsListBox.SelectedItems.Contains(mod))
+                        {
+                            _view.ModsListBox.SelectedItems.Add(mod);
+                        }
+                    }
+                });
+            }
+    
+            UpdateSelectedCount();
+        }
+
+        private void DeselectAllInGroup(Mod separatorMod)
+        {
+            if (separatorMod?.SourceListing?.IsSeparator != true)
+                return;
+
+            var modsInGroup = GetModsInGroup(separatorMod);
+    
+            // Update the SelectedInUI property
+            foreach (var mod in modsInGroup)
+            {
+                mod.SelectedInUI = false;
+            }
+    
+            // Update the actual ListBox selection
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var mod in modsInGroup)
+                    {
+                        if (_view.ModsListBox.SelectedItems.Contains(mod))
+                        {
+                            _view.ModsListBox.SelectedItems.Remove(mod);
+                        }
+                    }
+                });
+            }
+    
+            UpdateSelectedCount();
+        }
+
+        private List<Mod> GetModsInGroup(Mod separatorMod)
+        {
+            var modsInGroup = new List<Mod>();
+    
+            // Use FilteredModList if filtering is active, otherwise use ModList
+            var sourceList = string.IsNullOrEmpty(FilterText) ? ModList : FilteredModList;
+    
+            int separatorIndex = sourceList.IndexOf(separatorMod);
+            if (separatorIndex == -1)
+                return modsInGroup;
+
+            // Get all mods after this separator until the next separator or end of list
+            for (int i = separatorIndex + 1; i < sourceList.Count; i++)
+            {
+                var currentMod = sourceList[i];
+        
+                // Stop if we hit another separator
+                if (currentMod.SourceListing.IsSeparator)
+                    break;
+            
+                modsInGroup.Add(currentMod);
+            }
+
+            return modsInGroup;
         }
     }
 }
