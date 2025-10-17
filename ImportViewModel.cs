@@ -1203,6 +1203,21 @@ namespace MO2ExportImport.ViewModels
                 {
                     mod.SelectedInUI = true;
                 }
+                
+                // Update the actual ListBox selection
+                if (_view != null)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        foreach (var mod in modsToAdd)
+                        {
+                            if (!_view.ModsListBox.SelectedItems.Contains(mod))
+                            {
+                                _view.ModsListBox.SelectedItems.Add(mod);
+                            }
+                        }
+                    });
+                }
 
                 IsPleaseWaitVisible = false;
                 ShowProgressDetails = false;
