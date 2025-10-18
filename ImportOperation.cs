@@ -12,16 +12,18 @@ namespace MO2ExportImport
 {
     public class ImportOperation
     {
-        public ImportOperation(string modSourceRootDir, string destinationMO2Dir, DateTime importTime, string programVersion)
+        public ImportOperation(string modSourceRootDir, string destinationMO2Dir, DateTime importTime, string programVersion, string importSourceFolder)
         {
             ModSourceRootDir = modSourceRootDir;
             DestinationMO2Dir = destinationMO2Dir;
             ImportTime = importTime;
             ProgramVersion = programVersion;
+            ImportSourceFolder = importSourceFolder;
         }
 
         public string ModSourceRootDir { get; set; }
         public string ModSourceDirName => new DirectoryInfo(ModSourceRootDir)?.Name ?? string.Empty;
+        public string ImportSourceFolder { get; set; } // The folder user selected (for display)
         public string DestinationMO2Dir { get; set; }
         public DateTime ImportTime { get; set; }
         public string ProgramVersion { get; set; }

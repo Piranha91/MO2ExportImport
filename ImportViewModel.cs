@@ -945,7 +945,8 @@ namespace MO2ExportImport.ViewModels
                     SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete,
                     MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion,
                     _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering,
-                    InterpolateMissingPluginGroups, TransferDownloads, IsSourceMo2Directory);
+                    InterpolateMissingPluginGroups, TransferDownloads, IsSourceMo2Directory, 
+                    ImportSourceFolder);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }

@@ -19,6 +19,7 @@ namespace MO2ExportImport.ViewModels
         private readonly string _mo2Directory;
         private string _modSourceDirectory;
         private string _importProfileSourceDirectory;
+        private readonly string _importSourceFolder;
         private readonly ObservableCollection<Mod> _selectedModList;
         private bool _isImportEnabled;
         private readonly ImportPopupView _view;
@@ -90,12 +91,14 @@ namespace MO2ExportImport.ViewModels
             ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, 
             bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, 
             string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, 
-            bool interpolateMissingPluginGroups, bool transferDownloads, bool isSourceMo2Directory)
+            bool interpolateMissingPluginGroups, bool transferDownloads, bool isSourceMo2Directory,
+            string importSourceFolder) 
         {
             _view = view;
             _mo2Directory = mo2Directory;
             _modSourceDirectory = modSourceDirectory;
             _importProfileSourceDirectory = importProfileSourceDirectory;
+            _importSourceFolder = importSourceFolder;
             _selectedModList = modList;
             _selectedProfile = selectedProfile;
             _importMode = importMode;
@@ -178,7 +181,7 @@ namespace MO2ExportImport.ViewModels
 
             BackupSelectedProfiles(); // Start logging
 
-            var manifest = new ImportOperation(_modSourceDirectory, _mo2Directory, DateTime.Now, _programVersion);
+            var manifest = new ImportOperation(_modSourceDirectory, _mo2Directory, DateTime.Now, _programVersion, _importSourceFolder);
 
             try
             {

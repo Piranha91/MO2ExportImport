@@ -171,8 +171,26 @@ namespace MO2ExportImport.ViewModels
 
             if (SelectedOperation != null)
             {
+                string sourceDisplayName;
+        
+                if (!string.IsNullOrEmpty(SelectedOperation.ImportSourceFolder))
+                {
+                    var folderName = Path.GetFileName(SelectedOperation.ImportSourceFolder.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            
+                    // Check if it's an MO2 directory by checking for ModOrganizer.ini
+                    bool isMO2Directory = File.Exists(Path.Combine(SelectedOperation.ImportSourceFolder, "ModOrganizer.ini"));
+            
+                    sourceDisplayName = isMO2Directory ? $"{folderName} (MO2 Directory)" : folderName;
+                }
+                else
+                {
+                    // Fallback for old imports that don't have ImportSourceFolder
+                    sourceDisplayName = SelectedOperation.ModSourceDirName;
+                }
+
                 CurrentOperationInfo =
-                    "From: " + SelectedOperation.ModSourceDirName + Environment.NewLine +
+                    "From: " + sourceDisplayName + Environment.NewLine +
                     "To: " + SelectedOperation.DestinationMO2Dir;
 
                 foreach (var mod in SelectedOperation.AddedModNames)
