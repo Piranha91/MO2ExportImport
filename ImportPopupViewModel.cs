@@ -675,44 +675,72 @@ namespace MO2ExportImport.ViewModels
                 ScrollableMessageBox.Show($"An error occurred during the import process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
         }
-        
-        private async Task TransferDownloads(List<Mod> mods, string sourceDownloadDir, string destDownloadDir, ImportOperation manifest)
+
+        private async Task TransferDownloads(List<Mod> mods, string sourceDownloadDir, string destDownloadDir,
+            ImportOperation manifest)
         {
-            var downloadTasks = new List<Task>();
-    
+            // First, collect all expected downloads and check which ones are missing
+            var missingDownloads = new List<string>();
+            var downloadsToTransfer =
+                new List<(Mod mod, string sourceFilePath, string destFilePath, string installationFile)>();
+
             foreach (var mod in mods)
             {
                 var modDirectory = Path.Combine(_modSourceDirectory, mod.SourceDirectoryName);
                 var installationFile = DownloadTransferHelper.GetInstallationFileFromMeta(modDirectory);
-        
+
                 if (string.IsNullOrEmpty(installationFile))
                 {
                     Log($"-- No installation file found for {mod.DisplayName}");
                     continue;
                 }
-        
+
                 var sourceFilePath = Path.Combine(sourceDownloadDir, installationFile);
                 var destFilePath = Path.Combine(destDownloadDir, installationFile);
-        
+
                 if (!File.Exists(sourceFilePath))
                 {
+                    missingDownloads.Add($"{mod.DisplayName}: {sourceFilePath}");
                     Log($"-- Download not found: {installationFile}");
                     continue;
                 }
-        
+
                 if (File.Exists(destFilePath))
                 {
                     Log($"-- Download already exists: {installationFile}");
                     continue;
                 }
-        
+
+                downloadsToTransfer.Add((mod, sourceFilePath, destFilePath, installationFile));
+            }
+
+            // If there are missing downloads, show them to the user
+            if (missingDownloads.Any())
+            {
+                var message = new List<string>
+                {
+                    "The following downloads could not be found:",
+                    ""
+                };
+                message.AddRange(missingDownloads);
+                message.Add("");
+                message.Add($"Found downloads will still be transferred ({downloadsToTransfer.Count} file(s)).");
+
+                ScrollableMessageBox.Show(message, "Missing Downloads");
+            }
+
+            // Now transfer the downloads that were found
+            var downloadTasks = new List<Task>();
+
+            foreach (var (mod, sourceFilePath, destFilePath, installationFile) in downloadsToTransfer)
+            {
                 downloadTasks.Add(Task.Run(async () =>
                 {
                     try
                     {
                         await FileOperation.CopyFileWithUIAsync(sourceFilePath, destFilePath);
                         Log($"-- Transferred download: {installationFile}");
-                
+
                         manifest.TransferredDownloads.Add(new TransferredDownload
                         {
                             FileName = installationFile,
@@ -725,7 +753,7 @@ namespace MO2ExportImport.ViewModels
                     }
                 }));
             }
-    
+
             await Task.WhenAll(downloadTasks);
             Log($"Download transfer complete. Transferred {manifest.TransferredDownloads.Count} files.");
         }
