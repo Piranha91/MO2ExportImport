@@ -682,7 +682,8 @@ namespace MO2ExportImport.ViewModels
             // First, collect all expected downloads and check which ones are missing
             var missingDownloads = new List<string>();
             var downloadsToTransfer =
-                new List<(Mod mod, string sourceFilePath, string destFilePath, string installationFile)>();
+                new List<(Mod mod, string sourceFilePath, string destFilePath, string installationFile, bool hasDownload
+                    , bool hasMeta)>();
 
             foreach (var mod in mods)
             {
@@ -696,22 +697,51 @@ namespace MO2ExportImport.ViewModels
                 }
 
                 var sourceFilePath = Path.Combine(sourceDownloadDir, installationFile);
+                var sourceMetaPath = sourceFilePath + ".meta";
                 var destFilePath = Path.Combine(destDownloadDir, installationFile);
+                var destMetaPath = destFilePath + ".meta";
 
-                if (!File.Exists(sourceFilePath))
+                bool downloadExists = File.Exists(sourceFilePath);
+                bool metaExists = File.Exists(sourceMetaPath);
+
+                // Check what's missing
+                if (!downloadExists && !metaExists)
                 {
-                    missingDownloads.Add($"{mod.DisplayName}: {sourceFilePath}");
-                    Log($"-- Download not found: {installationFile}");
+                    missingDownloads.Add($"{mod.DisplayName}: {sourceFilePath} (and .meta)");
+                    Log($"-- Download and meta not found: {installationFile}");
                     continue;
                 }
+                else if (!downloadExists)
+                {
+                    missingDownloads.Add($"{mod.DisplayName}: {sourceFilePath}");
+                }
+                else if (!metaExists)
+                {
+                    missingDownloads.Add($"{mod.DisplayName}: {sourceMetaPath}");
+                }
 
-                if (File.Exists(destFilePath))
+                // Check if already exists in destination
+                bool destDownloadExists = File.Exists(destFilePath);
+                bool destMetaExists = File.Exists(destMetaPath);
+
+                if (destDownloadExists && destMetaExists)
+                {
+                    Log($"-- Download and meta already exist: {installationFile}");
+                    continue;
+                }
+                else if (destDownloadExists && !metaExists)
                 {
                     Log($"-- Download already exists: {installationFile}");
                     continue;
                 }
+                else if (destMetaExists && !downloadExists)
+                {
+                    Log($"-- Meta already exists: {installationFile}.meta");
+                    continue;
+                }
 
-                downloadsToTransfer.Add((mod, sourceFilePath, destFilePath, installationFile));
+                downloadsToTransfer.Add((mod, sourceFilePath, destFilePath, installationFile, downloadExists,
+                    metaExists));
             }
 
             // If there are missing downloads, show them to the user
@@ -719,12 +749,12 @@ namespace MO2ExportImport.ViewModels
             {
                 var message = new List<string>
                 {
-                    "The following downloads could not be found:",
+                    "The following download files could not be found:",
                     ""
                 };
                 message.AddRange(missingDownloads);
                 message.Add("");
-                message.Add($"Found downloads will still be transferred ({downloadsToTransfer.Count} file(s)).");
+                message.Add($"Available downloads will still be transferred ({downloadsToTransfer.Count} mod(s)).");
 
                 ScrollableMessageBox.Show(message, "Missing Downloads");
             }
@@ -732,20 +762,38 @@ namespace MO2ExportImport.ViewModels
             // Now transfer the downloads that were found
             var downloadTasks = new List<Task>();
 
-            foreach (var (mod, sourceFilePath, destFilePath, installationFile) in downloadsToTransfer)
+            foreach (var (mod, sourceFilePath, destFilePath, installationFile, hasDownload, hasMeta) in
+                     downloadsToTransfer)
             {
                 downloadTasks.Add(Task.Run(async () =>
                 {
                     try
                     {
-                        await FileOperation.CopyFileWithUIAsync(sourceFilePath, destFilePath);
-                        Log($"-- Transferred download: {installationFile}");
-
-                        manifest.TransferredDownloads.Add(new TransferredDownload
+                        // Transfer the download file if it exists and destination doesn't have it
+                        if (hasDownload && !File.Exists(destFilePath))
                         {
-                            FileName = installationFile,
-                            DestinationPath = destFilePath
-                        });
+                            await FileOperation.CopyFileWithUIAsync(sourceFilePath, destFilePath);
+                            Log($"-- Transferred download: {installationFile}");
+
+                            manifest.TransferredDownloads.Add(new TransferredDownload
+                            {
+                                FileName = installationFile,
+                                DestinationPath = destFilePath
+                            });
+                        }
+
+                        // Transfer the .meta file if it exists and destination doesn't have it
+                        if (hasMeta && !File.Exists(destFilePath + ".meta"))
+                        {
+                            await FileOperation.CopyFileWithUIAsync(sourceFilePath + ".meta", destFilePath + ".meta");
+                            Log($"-- Transferred meta: {installationFile}.meta");
+
+                            manifest.TransferredDownloads.Add(new TransferredDownload
+                            {
+                                FileName = installationFile + ".meta",
+                                DestinationPath = destFilePath + ".meta"
+                            });
+                        }
                     }
                     catch (Exception ex)
                     {
