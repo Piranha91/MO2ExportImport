@@ -65,11 +65,14 @@
         </Grid.RowDefinitions>
 
         <!-- Top section with button and ComboBox -->
-        <Button Grid.Row="0" 
-                Content="Select MO2 Directory" 
-                Command="{Binding SelectSourceCommand}" 
-                Margin="10"
-                ToolTip="Select the root directory of your Mod Organizer 2 installation"/>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Content="Select MO2 Directory" 
+                    Command="{Binding SelectSourceCommand}"
+                    ToolTip="Select the root directory of your Mod Organizer 2 installation"/>
+            <TextBlock Text="{Binding Mo2Directory}" 
+                       VerticalAlignment="Center" 
+                       Margin="10,0,0,0"/>
+        </StackPanel>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <TextBlock Text="Profile:" Margin="10" VerticalAlignment="Center"/>
@@ -99,6 +102,7 @@
                      Width="200"
                      Margin="5"
                      VerticalContentAlignment="Center"
+                     HorizontalAlignment="Left"
                      Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
                      TextChanged="FilterTextBox_TextChanged"
                      ToolTip="Filter the mod list by typing a search term"/>

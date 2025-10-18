@@ -21,10 +21,17 @@ namespace MO2ExportImport.ViewModels
         private ExportView _view;
         private readonly MainViewModel _mainViewModel;
         private readonly SelectionHistoryManager _selectionHistory = new();
-        private string _mo2Directory;
         private string _selectedProfile;
         private ObservableCollection<string> _profiles;
         private ObservableCollection<string> _modList;
+        
+        private string _mo2Directory;
+        public string Mo2Directory
+        {
+            get => _mo2Directory;
+            set => this.RaiseAndSetIfChanged(ref _mo2Directory, value);
+        }
+        
         private string _filterText;
         public string FilterText
         {
@@ -219,7 +226,7 @@ namespace MO2ExportImport.ViewModels
             var result = dialog.ShowDialog();
             if (result != null && result.Value)
             {
-                _mo2Directory = dialog.FolderName;
+                Mo2Directory = dialog.FolderName;
                 ValidateMo2Directory();
             }
         }
@@ -242,8 +249,8 @@ namespace MO2ExportImport.ViewModels
 
         private void ValidateMo2Directory()
         {
-            if (Directory.Exists(Path.Combine(_mo2Directory, "mods")) &&
-                Directory.Exists(Path.Combine(_mo2Directory, "profiles")))
+            if (Directory.Exists(Path.Combine(Mo2Directory, "mods")) &&
+                Directory.Exists(Path.Combine(Mo2Directory, "profiles")))
             {
                 LoadProfiles();
             }
@@ -256,7 +263,7 @@ namespace MO2ExportImport.ViewModels
         private void LoadProfiles()
         {
             Profiles.Clear();
-            var profilesDir = Path.Combine(_mo2Directory, "profiles");
+            var profilesDir = Path.Combine(Mo2Directory, "profiles");
             var profiles = Directory.GetDirectories(profilesDir).Select(Path.GetFileName);
             foreach (var profile in profiles)
             {
@@ -266,7 +273,7 @@ namespace MO2ExportImport.ViewModels
             // Auto-select the profile from ModOrganizer.ini or fall back to first profile
             if (Profiles.Any())
             {
-                var selectedProfile = CommonFuncs.GetSelectedProfileFromIni(_mo2Directory);
+                var selectedProfile = CommonFuncs.GetSelectedProfileFromIni(Mo2Directory);
         
                 if (!string.IsNullOrEmpty(selectedProfile) && Profiles.Contains(selectedProfile))
                 {
@@ -289,7 +296,7 @@ namespace MO2ExportImport.ViewModels
             System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
             ModList.Clear();
-            var modlistPath = Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");
+            var modlistPath = Path.Combine(Mo2Directory, "profiles", _selectedProfile, "modlist.txt");
             if (File.Exists(modlistPath))
             {
                 var mods = File.ReadAllLines(modlistPath)
