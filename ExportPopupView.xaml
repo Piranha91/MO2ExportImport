@@ -8,21 +8,40 @@
         mc:Ignorable="d"
         Title="Export Confirmation" Height="225" Width="400">
     <StackPanel>
-        <Button Content="Calculate Space" Command="{Binding CalculateSpaceCommand}" Margin="10"/>
+        <Button Content="Calculate Space" 
+                Command="{Binding CalculateSpaceCommand}" 
+                Margin="10"
+                ToolTip="Calculate the total size of selected mods and check if there is enough available disk space"/>
 
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="Export Folder Name:" Margin="10,0,0,5"/>
-            <TextBox Text="{Binding ExportDestinationFolderName}" Margin="10,0,0,10" MinWidth="250" />
+            <TextBox Text="{Binding ExportDestinationFolderName}" 
+                     Margin="10,0,0,10" 
+                     MinWidth="250"
+                     ToolTip="Specify the name of the folder where mods will be exported"/>
         </StackPanel>
 
         <!-- Display space info with dynamic color -->
-        <TextBlock Text="{Binding SpaceInfo}" Margin="10" Foreground="{Binding SpaceInfoColor}" TextWrapping="Wrap"/>
+        <TextBlock Text="{Binding SpaceInfo}" 
+                   Margin="10" 
+                   Foreground="{Binding SpaceInfoColor}" 
+                   TextWrapping="Wrap"/>
 
         <!-- Control buttons -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-            <Button Content="Export Mods and List" Command="{Binding ExportModsAndListCommand}" IsEnabled="{Binding IsExportEnabled}" Margin="10"/>
-            <Button Content="Export List" Command="{Binding ExportListCommand}" Margin="10"/>
-            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="10"/>
+            <Button Content="Export Mods and List" 
+                    Command="{Binding ExportModsAndListCommand}" 
+                    IsEnabled="{Binding IsExportEnabled}" 
+                    Margin="10"
+                    ToolTip="Export all selected mod files and the mod list to the destination folder"/>
+            <Button Content="Export List" 
+                    Command="{Binding ExportListCommand}" 
+                    Margin="10"
+                    ToolTip="Export only the mod list (modlist.json) without copying mod files"/>
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}" 
+                    Margin="10"
+                    ToolTip="Cancel the export operation and close this window"/>
         </StackPanel>
 
     </StackPanel>

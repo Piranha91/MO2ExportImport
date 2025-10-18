@@ -23,10 +23,12 @@
         </Grid.ColumnDefinitions>
 
         <!-- List of Import Operations -->
-        <ListBox ItemsSource="{Binding ImportOperations}" ScrollViewer.VerticalScrollBarVisibility="Auto"
+        <ListBox ItemsSource="{Binding ImportOperations}" 
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                  Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
-         SelectedItem="{Binding SelectedOperation}"
-         HorizontalContentAlignment="Stretch">
+                 SelectedItem="{Binding SelectedOperation}"
+                 HorizontalContentAlignment="Stretch"
+                 ToolTip="Select a past import operation to view its details and undo changes">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Border BorderBrush="Black" BorderThickness="1" CornerRadius="5">
@@ -41,15 +43,16 @@
 
                             <!-- Red "x" Button to delete the entry -->
                             <Button Content="X" 
-                            Foreground="Red"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            FontWeight="Bold"
-                            Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                            CommandParameter="{Binding}"
-                            Grid.Column="1"
-                            VerticalAlignment="Center"
-                            Margin="5,0,0,0" />
+                                    Foreground="Red"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    FontWeight="Bold"
+                                    Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}"
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Margin="5,0,0,0"
+                                    ToolTip="Delete this import log (only use AFTER undoing the import)"/>
                         </Grid>
                     </Border>
                 </DataTemplate>
@@ -58,14 +61,20 @@
 
         <!-- List of Mods Added in Selected Operation -->
         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentOperationInfo}"/>
-        <ListBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AddedModNames}"
-         SelectionMode="Extended"
-         behaviors:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedMods}">
+        <ListBox Grid.Row="1" Grid.Column="1" 
+                 ItemsSource="{Binding AddedModNames}"
+                 SelectionMode="Extended"
+                 behaviors:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedMods}"
+                 ToolTip="Select which mods to remove when undoing this import (Ctrl+Click for multiple, Shift+Click for range)">
         </ListBox>
 
         <!-- Undo Button -->
-        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Undo" HorizontalAlignment="Center"
-                Command="{Binding UndoCommand}" Margin="10"
-                IsEnabled="{Binding IsUndoEnabled}"/>
+        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
+                Content="Undo" 
+                HorizontalAlignment="Center"
+                Command="{Binding UndoCommand}" 
+                Margin="10"
+                IsEnabled="{Binding IsUndoEnabled}"
+                ToolTip="Undo the selected import operation by removing selected mods and their plugins from all affected profiles"/>
     </Grid>
 </UserControl>

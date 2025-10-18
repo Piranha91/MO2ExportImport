@@ -65,43 +65,74 @@
         </Grid.RowDefinitions>
 
         <!-- Top section with button and ComboBox -->
-        <Button Grid.Row="0" Content="Select MO2 Directory" Command="{Binding SelectSourceCommand}" Margin="10"/>
+        <Button Grid.Row="0" 
+                Content="Select MO2 Directory" 
+                Command="{Binding SelectSourceCommand}" 
+                Margin="10"
+                ToolTip="Select the root directory of your Mod Organizer 2 installation"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <TextBlock Text="Profile:" Margin="10" VerticalAlignment="Center"/>
-            <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" Margin="10"/>
+            <ComboBox ItemsSource="{Binding Profiles}" 
+                      SelectedItem="{Binding SelectedProfile}" 
+                      Margin="10"
+                      ToolTip="Select the MO2 profile to export mods from"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10">
-            <CheckBox Content="Ignore Disabled" IsChecked="{Binding IgnoreDisabled}" />
-            <CheckBox Content="Ignore Separators" IsChecked="{Binding IgnoreSeparators}" Margin="10 0 0 0"/>
-            <CheckBox Content="Calculate Available Space Automatically" IsChecked="{Binding AutoCalculateSpace}" Margin="10 0 0 0"/>
+            <CheckBox Content="Ignore Disabled" 
+                      IsChecked="{Binding IgnoreDisabled}"
+                      ToolTip="When checked, disabled mods will not be exported"/>
+            <CheckBox Content="Ignore Separators" 
+                      IsChecked="{Binding IgnoreSeparators}" 
+                      Margin="10 0 0 0"
+                      ToolTip="When checked, separator entries will not be exported"/>
+            <CheckBox Content="Calculate Available Space Automatically" 
+                      IsChecked="{Binding AutoCalculateSpace}" 
+                      Margin="10 0 0 0"
+                      ToolTip="Automatically calculate and display available disk space before exporting"/>
         </StackPanel>
 
         <!-- ListBox with constrained height in the remaining space -->
         <Grid Grid.Row="3">
             <TextBox x:Name="FilterTextBox"
-             Width="200"
-             Margin="5"
-             VerticalContentAlignment="Center"
-             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
-             TextChanged="FilterTextBox_TextChanged"/>
+                     Width="200"
+                     Margin="5"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                     TextChanged="FilterTextBox_TextChanged"
+                     ToolTip="Filter the mod list by typing a search term"/>
 
             <TextBlock Text="Filter mods..."
-               IsHitTestVisible="False"
-               Foreground="Gray"
-               VerticalAlignment="Center"
-               HorizontalAlignment="Left"
-               Margin="10,0,0,0"
-               Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
+                       IsHitTestVisible="False"
+                       Foreground="Gray"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Left"
+                       Margin="10,0,0,0"
+                       Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
         </Grid>
 
         <StackPanel Grid.Row="4" VerticalAlignment="Top" Orientation="Horizontal" Margin="10">
-            <Button Content="Undo" Command="{Binding UndoSelectionCommand}" Margin="0 0 5 0" ToolTip="Undo selection change (Ctrl+Z)"/>
-            <Button Content="Redo" Command="{Binding RedoSelectionCommand}" Margin="0 0 10 0" ToolTip="Redo selection change (Ctrl+Y)"/>
-            <Button Content="Set as Overwriting Mods" Command="{Binding SetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
-            <Button Content="Unset as Overwriting Mods" Command="{Binding UnsetSelectedAsOverrideCommand}" Margin="0 0 10 0" />
-            <Button Content="{Binding ExportButtonLabel}" Command="{Binding ExportSelectedCommand}" Margin="50 0 0 0" />
+            <Button Content="Undo" 
+                    Command="{Binding UndoSelectionCommand}" 
+                    Margin="0 0 5 0" 
+                    ToolTip="Undo selection change (Ctrl+Z)"/>
+            <Button Content="Redo" 
+                    Command="{Binding RedoSelectionCommand}" 
+                    Margin="0 0 10 0" 
+                    ToolTip="Redo selection change (Ctrl+Y)"/>
+            <Button Content="Set as Overwriting Mods" 
+                    Command="{Binding SetSelectedAsOverrideCommand}" 
+                    Margin="0 0 10 0"
+                    ToolTip="Mark selected mods to overwrite existing files during import"/>
+            <Button Content="Unset as Overwriting Mods" 
+                    Command="{Binding UnsetSelectedAsOverrideCommand}" 
+                    Margin="0 0 10 0"
+                    ToolTip="Unmark selected mods from overwriting existing files during import"/>
+            <Button Content="{Binding ExportButtonLabel}" 
+                    Command="{Binding ExportSelectedCommand}" 
+                    Margin="50 0 0 0"
+                    ToolTip="Export the selected mods to the destination folder"/>
         </StackPanel>
 
         <!-- Checkbox Explanation -->
@@ -110,67 +141,70 @@
             <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)"/>
         </StackPanel>
         
-        <ListBox Grid.Row="6" ItemsSource="{Binding FilteredModList}" Margin="10"
-         ScrollViewer.VerticalScrollBarVisibility="Auto"
-         SelectionMode="Extended" 
-         Name="ModsListBox"
-         VirtualizingStackPanel.IsVirtualizing="True"
-         VirtualizingStackPanel.VirtualizationMode="Recycling"
-         SelectionChanged="ModsListBox_SelectionChanged">
-        <ListBox.ItemContainerStyle>
-            <Style TargetType="ListBoxItem">
-                <!-- Remove the IsSelected binding -->
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ListBoxItem">
-                            <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
-                                <ContentPresenter />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsSelected" Value="true">
-                                    <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
-                                </Trigger>
-                                <MultiTrigger>
-                                    <MultiTrigger.Conditions>
-                                        <Condition Property="IsSelected" Value="true"/>
-                                        <Condition Property="IsFocused" Value="false"/>
-                                    </MultiTrigger.Conditions>
-                                    <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
-                                </MultiTrigger>
-                                <Trigger Property="IsMouseOver" Value="true">
-                                    <Setter TargetName="Border" Property="Background" Value="LightGray"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </ListBox.ItemContainerStyle>
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <StackPanel Orientation="Horizontal">
-                    <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
-                    <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
-                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
+        <ListBox Grid.Row="6" 
+                 ItemsSource="{Binding FilteredModList}" 
+                 Margin="10"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 SelectionMode="Extended" 
+                 Name="ModsListBox"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 SelectionChanged="ModsListBox_SelectionChanged"
+                 ToolTip="Select mods to export (Ctrl+Click for multiple, Shift+Click for range, right-click separators for group selection)">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <!-- Remove the IsSelected binding -->
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSelected" Value="true"/>
+                                            <Condition Property="IsFocused" Value="false"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="LightBlue"/>
+                                    </MultiTrigger>
+                                    <Trigger Property="IsMouseOver" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="LightGray"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding EnabledInExportedModList}" IsEnabled="False" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding OverWriteExistingDuringImport}"  Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
 
         <!-- "Please Wait" TextBlock -->
         <TextBlock x:Name="PleaseWaitText"
                    Grid.Row="6"
-               Text="Please Wait"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               Foreground="Red"
-               FontSize="20"
-               Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=TwoWay}"
-               IsHitTestVisible="False" />
+                   Text="Please Wait"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="Red"
+                   FontSize="20"
+                   Visibility="{Binding IsPleaseWaitVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=TwoWay}"
+                   IsHitTestVisible="False" />
 
         <!-- Canvas to draw the blue lines -->
         <Canvas Grid.Row="6" IsHitTestVisible="False" Name="HighlightCanvas" Width="{Binding ActualWidth, ElementName=ModsListBox}" 
-        Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
+                Height="{Binding ActualHeight, ElementName=ModsListBox}" Opacity="1">
             <ItemsControl ItemsSource="{Binding ElementName=ModsListBox, Path=SelectedItems}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -190,8 +224,14 @@
         <!-- Bottom panel for Export Destination Folder selection -->
         <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="7" Orientation="Horizontal"  VerticalAlignment="Center" Margin="5 0 0 5">
             <TextBlock Text="Export Destination:" VerticalAlignment="Center"/>
-            <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" Width="400" Margin="10,0" VerticalContentAlignment="Center"/>
-            <Button Content="Browse" Command="{Binding BrowseFolderCommand}"/>
+            <TextBox Text="{Binding ExportDestinationFolder, Mode=TwoWay}" 
+                     Width="400" 
+                     Margin="10,0" 
+                     VerticalContentAlignment="Center"
+                     ToolTip="The folder where exported mods will be saved"/>
+            <Button Content="Browse" 
+                    Command="{Binding BrowseFolderCommand}"
+                    ToolTip="Browse for a folder to save exported mods"/>
         </StackPanel>
     </Grid>
 </UserControl>

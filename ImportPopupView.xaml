@@ -16,7 +16,12 @@
         </Grid.RowDefinitions>
 
         <!-- Calculate Space Button -->
-        <Button Grid.Row="0" Content="Calculate Space" Command="{Binding CalculateSpaceCommand}" Margin="10" HorizontalAlignment="Center"/>
+        <Button Grid.Row="0" 
+                Content="Calculate Space" 
+                Command="{Binding CalculateSpaceCommand}" 
+                Margin="10" 
+                HorizontalAlignment="Center"
+                ToolTip="Calculate the total size of mods to import and check if there is enough available disk space"/>
 
         <!-- Display calculated space and available space -->
         <StackPanel Grid.Row="1" Margin="10">
@@ -27,14 +32,22 @@
 
         <!-- Options -->
         <StackPanel Grid.Row="2" Margin="10" Orientation="Horizontal">
-            <CheckBox IsChecked="{Binding ShowModListPreview}"/>
+            <CheckBox IsChecked="{Binding ShowModListPreview}"
+                      ToolTip="When checked, display a preview of the final mod and plugin order before completing the import"/>
             <TextBlock Margin="5 0 0 0">Show Order Preview Before Importing</TextBlock>
         </StackPanel>
 
         <!-- Import and Cancel Buttons -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-            <Button Content="Import" Command="{Binding ImportCommand}" IsEnabled="{Binding IsImportEnabled}" Margin="5"/>
-            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="5"/>
+            <Button Content="Import" 
+                    Command="{Binding ImportCommand}" 
+                    IsEnabled="{Binding IsImportEnabled}" 
+                    Margin="5"
+                    ToolTip="Begin importing the selected mods to the destination MO2 directory"/>
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}" 
+                    Margin="5"
+                    ToolTip="Cancel the import operation and close this window"/>
         </StackPanel>
     </Grid>
 </Window>
