@@ -1,5 +1,6 @@
 ﻿using System.Windows.Controls;
 using System.Linq;
+using System.Reactive;
 using MO2ExportImport.ViewModels;
 using DynamicData.Binding;
 using ReactiveUI;
@@ -295,11 +296,11 @@ namespace MO2ExportImport.Views
                     container.PreviewMouseRightButtonDown -= ListBoxItem_PreviewMouseRightButtonDown;
                     container.PreviewMouseRightButtonDown += ListBoxItem_PreviewMouseRightButtonDown;
             
-                    // Only attach context menu to separators
+                    var contextMenu = new ContextMenu();
+                    
                     if (mod.SourceListing.IsSeparator)
                     {
-                        var contextMenu = new ContextMenu();
-                
+                        // Context menu for separators
                         var selectAllItem = new MenuItem { Header = "Select All In Group" };
                         selectAllItem.Click += (s, e) =>
                         {
@@ -320,9 +321,23 @@ namespace MO2ExportImport.Views
                 
                         contextMenu.Items.Add(selectAllItem);
                         contextMenu.Items.Add(deselectAllItem);
-                
-                        container.ContextMenu = contextMenu;
                     }
+                    else
+                    {
+                        // Context menu for non-separators
+                        var addDependenciesItem = new MenuItem { Header = "Add Master Dependencies" };
+                        addDependenciesItem.Click += (s, e) =>
+                        {
+                            if (DataContext is ImportViewModel viewModel)
+                            {
+                                viewModel.AddMasterDependenciesCommand.Execute(Unit.Default).Subscribe();
+                            }
+                        };
+                
+                        contextMenu.Items.Add(addDependenciesItem);
+                    }
+                    
+                    container.ContextMenu = contextMenu;
                 }
             }
         }
@@ -331,19 +346,6 @@ namespace MO2ExportImport.Views
         {
             // Prevent right-click from changing selection
             e.Handled = true;
-    
-            // Optionally, if right-clicking on an unselected item, select it without deselecting others
-            if (sender is ListBoxItem item && item.DataContext is Mod mod)
-            {
-                if (!mod.SelectedInUI)
-                {
-                    mod.SelectedInUI = true;
-                    if (!ModsListBox.SelectedItems.Contains(mod))
-                    {
-                        ModsListBox.SelectedItems.Add(mod);
-                    }
-                }
-            }
         }
     }
 }
