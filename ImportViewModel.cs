@@ -1187,13 +1187,37 @@ namespace MO2ExportImport.ViewModels
                         // Add found mods and queue their plugins for analysis
                         foreach (var mod in modsWithMaster)
                         {
+                            var modPath = Path.Combine(_modsRootPath, mod.SourceDirectoryName); // Declare once here
+    
                             bool isNewlyAdded = modsToAdd.Add(mod);
                             if (isNewlyAdded)
                             {
                                 modsAdded++;
+        
+                                // NEW CODE: Analyze ALL plugins in this newly-added mod
+                                var allPluginsInMod = CommonFuncs.GetPluginPathsInDir(modPath);
+        
+                                foreach (var pluginPath in allPluginsInMod)
+                                {
+                                    string pluginName = Path.GetFileName(pluginPath);
+            
+                                    // Check if plugin should be analyzed based on enabled status
+                                    if (SelectedPluginSelectionMode == PluginSelectionMode.EnabledOnly)
+                                    {
+                                        if (!enabledPlugins.Contains(pluginName))
+                                        {
+                                            continue;
+                                        }
+                                    }
+            
+                                    if (!analyzedPluginPaths.Contains(pluginPath))
+                                    {
+                                        pluginsToAnalyze.Enqueue((pluginPath, pluginName, mod.DisplayName, true));
+                                    }
+                                }
                             }
 
-                            var modPath = Path.Combine(_modsRootPath, mod.SourceDirectoryName);
+                            // Existing code continues here - handles the specific master that triggered adding this mod
                             var masterPath = Path.Combine(modPath, masterName);
 
                             var masterDep = new MasterDependency
