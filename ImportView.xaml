@@ -226,6 +226,10 @@
                     Command="{Binding UnsetSelectedAsOverrideCommand}" 
                     Margin="20 0 0 0"
                     ToolTip="Unmark selected mods from overwriting existing files during import"/>
+            <Button Content="Toggle Parent Separators" 
+                    Command="{Binding ToggleParentSeparatorsCommand}" 
+                    Margin="20 0 0 0"
+                    ToolTip="Toggle selection of parent separators for selected mods"/>
         </StackPanel>
 
         <!-- Mod List -->

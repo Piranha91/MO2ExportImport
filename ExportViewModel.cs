@@ -163,6 +163,7 @@ namespace MO2ExportImport.ViewModels
         public ReactiveCommand<Unit, Unit> BrowseFolderCommand { get; }
         public ReactiveCommand<Mod, Unit> SelectAllInGroupCommand { get; }
         public ReactiveCommand<Mod, Unit> DeselectAllInGroupCommand { get; }
+        public ReactiveCommand<Unit, Unit> ToggleParentSeparatorsCommand { get; }
 
         public ExportViewModel(MainViewModel mainViewModel)
         {
@@ -215,6 +216,7 @@ namespace MO2ExportImport.ViewModels
             
             SelectAllInGroupCommand = ReactiveCommand.Create<Mod>(SelectAllInGroup);
             DeselectAllInGroupCommand = ReactiveCommand.Create<Mod>(DeselectAllInGroup);
+            ToggleParentSeparatorsCommand = ReactiveCommand.Create(ToggleParentSeparators);
             
             UndoSelectionCommand = ReactiveCommand.Create(UndoSelection, this.WhenAnyValue(x => x.CanUndo));
             RedoSelectionCommand = ReactiveCommand.Create(RedoSelection, this.WhenAnyValue(x => x.CanRedo));
@@ -479,7 +481,90 @@ namespace MO2ExportImport.ViewModels
 
             return modsInGroup;
         }
-        
+
+        private void ToggleParentSeparators()
+        {
+            var selectedMods = ModList.Where(m => m.SelectedInUI && !m.SourceListing.IsSeparator).ToList();
+
+            if (!selectedMods.Any())
+                return;
+
+            // Use FilteredModList if filtering is active, otherwise use ModList
+            var sourceList = string.IsNullOrEmpty(FilterText) ? ModList : FilteredModList;
+
+            // Find all parent separators for selected mods
+            var parentSeparators = new HashSet<Mod>();
+
+            foreach (var selectedMod in selectedMods)
+            {
+                var parentSeparator = FindParentSeparator(selectedMod, sourceList);
+                if (parentSeparator != null)
+                {
+                    parentSeparators.Add(parentSeparator);
+                }
+            }
+
+            if (!parentSeparators.Any())
+                return;
+
+            // Check if all parent separators are already selected
+            bool allSelected = parentSeparators.All(sep => sep.SelectedInUI);
+
+            // Toggle: if all selected, deselect them; otherwise select them
+            foreach (var separator in parentSeparators)
+            {
+                separator.SelectedInUI = !allSelected;
+            }
+
+            // Update the actual ListBox selection
+            if (_view != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var separator in parentSeparators)
+                    {
+                        if (!allSelected)
+                        {
+                            // Select the separator
+                            if (!_view.ModsListBox.SelectedItems.Contains(separator))
+                            {
+                                _view.ModsListBox.SelectedItems.Add(separator);
+                            }
+                        }
+                        else
+                        {
+                            // Deselect the separator
+                            if (_view.ModsListBox.SelectedItems.Contains(separator))
+                            {
+                                _view.ModsListBox.SelectedItems.Remove(separator);
+                            }
+                        }
+                    }
+                });
+            }
+
+            SaveSelectionState();
+            UpdateSelectedCount();
+        }
+
+        private Mod FindParentSeparator(Mod mod, IList<Mod> sourceList)
+        {
+            int modIndex = sourceList.IndexOf(mod);
+            if (modIndex == -1)
+                return null;
+
+            // Search backwards from the mod's position to find the nearest separator
+            for (int i = modIndex - 1; i >= 0; i--)
+            {
+                if (sourceList[i].SourceListing.IsSeparator)
+                {
+                    return sourceList[i];
+                }
+            }
+
+            return null;
+        }
+
         public void SaveSelectionState()
         {
             if (!_selectionHistory.IsUndoRedoOperation)
