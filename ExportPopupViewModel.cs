@@ -86,14 +86,16 @@ namespace MO2ExportImport.ViewModels
         {
             long totalSize = 0;
 
+            var modsPath = CommonFuncs.GetModsDirectory(_mo2Directory);  // ADDED
+
             // Calculate the total size of the selected mod folders
             foreach (var mod in _selectedMods)
             {
-                var modPath = System.IO.Path.Combine(_mo2Directory, "mods", mod.SourceDirectoryName);
+                var modPath = System.IO.Path.Combine(modsPath, mod.SourceDirectoryName);  // CHANGED
                 if (System.IO.Directory.Exists(modPath))
                 {
                     totalSize += System.IO.Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
-                                          .Sum(f => new System.IO.FileInfo(f).Length);
+                        .Sum(f => new System.IO.FileInfo(f).Length);
                 }
             }
 
@@ -124,10 +126,13 @@ namespace MO2ExportImport.ViewModels
 
         private async Task ExportModsAndList()
         {
-            var pluginsSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "plugins.txt");
-            var pluginsGroupsSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "plugingroups.txt");
-            var modlistSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "modlist.txt");
-            var loadOrderSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "loadorder.txt");
+            var profilesPath = CommonFuncs.GetProfilesDirectory(_mo2Directory);  // ADDED
+            var profilePath = System.IO.Path.Combine(profilesPath, _selectedProfile);  // ADDED
+    
+            var pluginsSourcePath = System.IO.Path.Combine(profilePath, "plugins.txt");  // CHANGED
+            var pluginsGroupsSourcePath = System.IO.Path.Combine(profilePath, "plugingroups.txt");  // CHANGED
+            var modlistSourcePath = System.IO.Path.Combine(profilePath, "modlist.txt");  // CHANGED
+            var loadOrderSourcePath = System.IO.Path.Combine(profilePath, "loadorder.txt");  // CHANGED
 
             (string exportFolderPath, bool isMergeOperation) = CreateExportFolder();
 
@@ -156,9 +161,11 @@ namespace MO2ExportImport.ViewModels
                               (!_exportViewModel.IgnoreSeparators || !mod.SourceListing.IsSeparator))
                 .ToList();
             
+            var modsPath = CommonFuncs.GetModsDirectory(_mo2Directory);  // ADDED
+            
             foreach (var mod in selectedModsToExport)
             {
-                var modSourcePath = System.IO.Path.Combine(_mo2Directory, "mods", mod.SourceDirectoryName);
+                var modSourcePath = System.IO.Path.Combine(modsPath, mod.SourceDirectoryName);  // CHANGED
                 var modDestinationPath = System.IO.Path.Combine(exportFolderPath, mod.GetDestinationName());
 
                 if (!Alphaleonis.Win32.Filesystem.Directory.Exists(modDestinationPath))
@@ -204,7 +211,7 @@ namespace MO2ExportImport.ViewModels
             // Create the JSON file with mod paths
             var exportData = new
             {
-                ModsRootPath = System.IO.Path.Combine(_mo2Directory, "mods"),
+                ModsRootPath = CommonFuncs.GetModsDirectory(_mo2Directory),  // CHANGED
                 SelectedMods = selectedModsToExport
             };
 
@@ -235,11 +242,12 @@ namespace MO2ExportImport.ViewModels
 
         private async Task CopyModAndPluginListFiles(string exportFolderPath)
         {
-            var profilePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile);
-            
+            var profilesPath = CommonFuncs.GetProfilesDirectory(_mo2Directory);  // ADDED
+            var profilePath = System.IO.Path.Combine(profilesPath, _selectedProfile);  // CHANGED
+    
             var modlistSourcePath = System.IO.Path.Combine(profilePath, "modlist.txt");
             var pluginsSourcePath = System.IO.Path.Combine(profilePath, "plugins.txt");
-            var pluginsGroupsSourcePath = System.IO.Path.Combine(_mo2Directory, "profiles", _selectedProfile, "plugingroups.txt");
+            var pluginsGroupsSourcePath = System.IO.Path.Combine(profilePath, "plugingroups.txt");  // CHANGED
             var loadOrderSourcePath = System.IO.Path.Combine(profilePath, "loadorder.txt");
 
             var copyTasks = new List<Task>();

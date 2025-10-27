@@ -10,44 +10,6 @@ namespace MO2ExportImport
 {
     public class DownloadTransferHelper
     {
-        private static string? GetDownloadDirectoryFromIni(string mo2Directory)
-        {
-            var iniPath = Path.Combine(mo2Directory, "ModOrganizer.ini");
-    
-            if (!File.Exists(iniPath))
-            {
-                return null;
-            }
-    
-            var lines = File.ReadAllLines(iniPath);
-    
-            foreach (var line in lines)
-            {
-                if (line.StartsWith("download_directory=", StringComparison.OrdinalIgnoreCase))
-                {
-                    var downloadDir = line.Substring("download_directory=".Length).Trim();
-            
-                    // Handle relative paths
-                    if (!Path.IsPathRooted(downloadDir))
-                    {
-                        downloadDir = Path.Combine(mo2Directory, downloadDir);
-                    }
-            
-                    return downloadDir;
-                }
-            }
-    
-            // If no download_directory line exists, check if {base MO2 directory}\downloads exists
-            var defaultDownloadDir = Path.Combine(mo2Directory, "downloads");
-            if (Directory.Exists(defaultDownloadDir))
-            {
-                return defaultDownloadDir;
-            }
-    
-            // Only return null if no download_directory is specified AND default doesn't exist
-            return null;
-        }
-
         public static string GetInstallationFileFromMeta(string modDirectory)
         {
             var metaPath = Path.Combine(modDirectory, "meta.ini");
@@ -182,7 +144,7 @@ namespace MO2ExportImport
             // Try to get download directory from MO2 directory
             if (!string.IsNullOrEmpty(sourceMO2Dir) && Directory.Exists(sourceMO2Dir))
             {
-                var downloadDir = GetDownloadDirectoryFromIni(sourceMO2Dir);
+                var downloadDir = CommonFuncs.GetDownloadsDirectory(sourceMO2Dir);  // CHANGED
                 if (!string.IsNullOrEmpty(downloadDir) && Directory.Exists(downloadDir))
                 {
                     return downloadDir;
@@ -195,8 +157,8 @@ namespace MO2ExportImport
 
         public static string ResolveDestinationDownloadDirectory(string mo2Directory)
         {
-            var downloadDir = GetDownloadDirectoryFromIni(mo2Directory);
-            
+            var downloadDir = CommonFuncs.GetDownloadsDirectory(mo2Directory);  // CHANGED
+    
             if (!string.IsNullOrEmpty(downloadDir) && Directory.Exists(downloadDir))
             {
                 return downloadDir;

@@ -556,6 +556,7 @@ namespace MO2ExportImport.ViewModels
             if (result != null && result.Value)
             {
                 Mo2Directory = dialog.FolderName;
+                _modsRootPath = CommonFuncs.GetModsDirectory(Mo2Directory);
                 LoadProfiles();
             }
         }
@@ -565,17 +566,22 @@ namespace MO2ExportImport.ViewModels
             Profiles.Clear();
             Profiles.Add("All");
 
-            if (Directory.Exists(Mo2Directory))
+            if (string.IsNullOrEmpty(Mo2Directory) || !Directory.Exists(Mo2Directory))
             {
-                var profilesPath = Path.Combine(Mo2Directory, "profiles");
-                if (Directory.Exists(profilesPath))
-                {
-                    var profileDirs = Directory.GetDirectories(profilesPath);
-                    foreach (var dir in profileDirs)
-                    {
-                        Profiles.Add(Path.GetFileName(dir));
-                    }
-                }
+                return;
+            }
+
+            var profilesPath = CommonFuncs.GetProfilesDirectory(Mo2Directory);  // CHANGED
+
+            if (!Directory.Exists(profilesPath))
+            {
+                return;
+            }
+            
+            var profileDirs = Directory.GetDirectories(profilesPath);
+            foreach (var dir in profileDirs)
+            {
+                Profiles.Add(Path.GetFileName(dir));
             }
 
             // Set default selection to "All"
@@ -747,6 +753,11 @@ namespace MO2ExportImport.ViewModels
             }
 
             var modListPath = Path.Combine(ImportSourceFolder, "profiles", SelectedSourceProfile, "modlist.txt");
+            if (IsSourceMo2Directory)
+            {
+                var sourceProfileRoot = CommonFuncs.GetProfilesDirectory(ImportSourceFolder);
+                modListPath = Path.Combine(sourceProfileRoot, SelectedSourceProfile, "modlist.txt");
+            }
 
             sw.Restart();
             var modList = CommonFuncs.LoadModList(modListPath);
@@ -1730,7 +1741,8 @@ namespace MO2ExportImport.ViewModels
                 {
                     return;
                 }
-                profileToLoad = actualProfiles.First();
+
+                profileToLoad = CommonFuncs.GetSelectedProfileFromIni(_mo2Directory);
             }
             
             if (string.IsNullOrEmpty(Mo2Directory) || string.IsNullOrEmpty(profileToLoad))
@@ -1738,7 +1750,8 @@ namespace MO2ExportImport.ViewModels
             
             try
             {
-                var profilePath = Path.Combine(Mo2Directory, "profiles", profileToLoad);
+                var profilesPath = CommonFuncs.GetProfilesDirectory(Mo2Directory);  // CHANGED
+                var profilePath = Path.Combine(profilesPath, profileToLoad);
                 var modlistPath = Path.Combine(profilePath, "modlist.txt");
 
                 if (!File.Exists(modlistPath))

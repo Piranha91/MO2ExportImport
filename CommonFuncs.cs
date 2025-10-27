@@ -372,5 +372,61 @@ namespace MO2ExportImport
 
             return null;
         }
+        
+        // Add these methods to CommonFuncs class
+
+        private static string GetMO2FolderFromIni(string mo2Directory, string iniKey, string defaultSubfolder)
+        {
+            var iniPath = Path.Combine(mo2Directory, "ModOrganizer.ini");
+
+            if (!File.Exists(iniPath))
+            {
+                // If INI doesn't exist, fall back to default subfolder
+                var defaultPath = Path.Combine(mo2Directory, defaultSubfolder);
+                return defaultPath;
+            }
+
+            var lines = File.ReadAllLines(iniPath);
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith($"{iniKey}=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var folderPath = line.Substring($"{iniKey}=".Length).Trim();
+
+                    // Handle relative paths
+                    if (!Path.IsPathRooted(folderPath))
+                    {
+                        folderPath = Path.Combine(mo2Directory, folderPath);
+                    }
+
+                    return folderPath;
+                }
+            }
+
+            // If no line exists for this key, fall back to default subfolder
+            var defaultDir = Path.Combine(mo2Directory, defaultSubfolder);
+            return defaultDir;
+        }
+
+        public static string GetModsDirectory(string mo2Directory)
+        {
+            return GetMO2FolderFromIni(mo2Directory, "mod_directory", "mods");
+        }
+
+        public static string GetProfilesDirectory(string mo2Directory)
+        {
+            return GetMO2FolderFromIni(mo2Directory, "profiles_directory", "profiles");
+        }
+
+        public static string GetDownloadsDirectory(string mo2Directory)
+        {
+            return GetMO2FolderFromIni(mo2Directory, "download_directory", "downloads");
+        }
+
+        public static string GetOverwriteDirectory(string mo2Directory)
+        {
+            return GetMO2FolderFromIni(mo2Directory, "overwrite_directory", "overwrite");
+        }
     }
 }

@@ -219,11 +219,13 @@ namespace MO2ExportImport.ViewModels
 
             // Implement the logic to undo the selected mods
             _operationNotes.Clear();
+            
+            var modsPath = CommonFuncs.GetModsDirectory(SelectedOperation.DestinationMO2Dir);  // ADDED
 
             // First remove files
             foreach (var mod in SelectedMods)
             {
-                var modDirPath = Path.Combine(SelectedOperation.DestinationMO2Dir, "mods", mod);
+                var modDirPath = Path.Combine(modsPath, mod);
 
                 if (Directory.Exists(modDirPath))
                 {
@@ -269,11 +271,13 @@ namespace MO2ExportImport.ViewModels
             }
 
             // Then remove the reference to each plugin from each profile
+            
+            var profilesPath = CommonFuncs.GetProfilesDirectory(SelectedOperation.DestinationMO2Dir);  // ADDED
 
             foreach (var profile in SelectedOperation.ProfileImports)
             {
                 var profileName = profile.ProfileName;
-                var profileDir = Path.Combine(SelectedOperation.DestinationMO2Dir, "profiles", profileName);
+                var profileDir = Path.Combine(profilesPath, profileName);  // CHANGED
                 if (Directory.Exists(profileDir))
                 {
                     var profileModListPath = Path.Combine(profileDir, "modlist.txt");
@@ -301,7 +305,7 @@ namespace MO2ExportImport.ViewModels
                             if (modListing is not null)
                             {
                                 modListing.Enable();
-                                var modDir = Path.Combine(SelectedOperation.DestinationMO2Dir, "mods", modListing.GetCurrentFolderName());
+                                var modDir = Path.Combine(modsPath, modListing.GetCurrentFolderName());
                                 var pluginPaths = CommonFuncs.GetPluginPathsInDir(modDir);
                                 var pluginNames = pluginPaths.Select(x => Path.GetFileName(x)).ToArray();
 

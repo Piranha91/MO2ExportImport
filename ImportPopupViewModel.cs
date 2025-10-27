@@ -187,7 +187,7 @@ namespace MO2ExportImport.ViewModels
 
             try
             {
-                var modsOutputDir = Path.Combine(_mo2Directory, "mods");
+                var modsOutputDir = CommonFuncs.GetModsDirectory(_mo2Directory);  // CHANGED
                 
                 // Filter SourceModList to include only mods with corresponding directories
                     
@@ -1241,9 +1241,11 @@ namespace MO2ExportImport.ViewModels
 
                 // Determine which profiles to back up
                 var profilesToBackup = new List<string>();
+                var profilesPath = CommonFuncs.GetProfilesDirectory(_mo2Directory);  // ADDED
+        
                 if (_selectedProfile == "All")
                 {
-                    profilesToBackup.AddRange(Directory.GetDirectories(Path.Combine(_mo2Directory, "profiles")).Select(Path.GetFileName));
+                    profilesToBackup.AddRange(Directory.GetDirectories(profilesPath).Select(Path.GetFileName));  // CHANGED
                 }
                 else
                 {
@@ -1252,7 +1254,7 @@ namespace MO2ExportImport.ViewModels
 
                 foreach (var profile in profilesToBackup)
                 {
-                    string profileDir = Path.Combine(_mo2Directory, "profiles", profile);
+                    string profileDir = Path.Combine(profilesPath, profile);  // CHANGED
                     string profileBackupDir = Path.Combine(currentBackupDir, profile);
 
                     if (Directory.Exists(profileDir))
@@ -1299,9 +1301,11 @@ namespace MO2ExportImport.ViewModels
 
         private IEnumerable<string> ProfilesToImport()
         {
+            var profilesPath = CommonFuncs.GetProfilesDirectory(_mo2Directory);  // ADDED
+    
             if (_selectedProfile == "All")
             {
-                return Directory.GetDirectories(Path.Combine(_mo2Directory, "profiles")).Select(Path.GetFileName);
+                return Directory.GetDirectories(profilesPath).Select(Path.GetFileName);  // CHANGED
             }
             else
             {

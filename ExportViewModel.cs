@@ -265,8 +265,19 @@ namespace MO2ExportImport.ViewModels
         private void LoadProfiles()
         {
             Profiles.Clear();
-            var profilesDir = Path.Combine(Mo2Directory, "profiles");
-            var profiles = Directory.GetDirectories(profilesDir).Select(Path.GetFileName);
+            if (string.IsNullOrEmpty(Mo2Directory) || !Directory.Exists(Mo2Directory))
+            {
+                return;
+            }
+
+            var profilesPath = CommonFuncs.GetProfilesDirectory(Mo2Directory);  // CHANGED
+
+            if (!Directory.Exists(profilesPath))
+            {
+                return;
+            }
+            
+            var profiles = Directory.GetDirectories(profilesPath).Select(Path.GetFileName);
             foreach (var profile in profiles)
             {
                 Profiles.Add(profile);
@@ -298,17 +309,27 @@ namespace MO2ExportImport.ViewModels
             System.Windows.Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
             ModList.Clear();
-            var modlistPath = Path.Combine(Mo2Directory, "profiles", _selectedProfile, "modlist.txt");
-            if (File.Exists(modlistPath))
+            if (string.IsNullOrEmpty(Mo2Directory) || string.IsNullOrEmpty(SelectedProfile))
             {
-                var mods = File.ReadAllLines(modlistPath)
-                    .Where(line => !line.StartsWith("#"))
-                    .Select(line => new Mod(line))
-                    .Reverse()
-                    .ToList();
-
-                ModList.AddRange(mods);
+                return;
             }
+
+            var profilesPath = CommonFuncs.GetProfilesDirectory(Mo2Directory);  // CHANGED
+            var profilePath = Path.Combine(profilesPath, SelectedProfile);
+            var modlistPath = Path.Combine(profilePath, "modlist.txt");
+
+            if (!File.Exists(modlistPath))
+            {
+                return;
+            }
+            
+            var mods = File.ReadAllLines(modlistPath)
+                .Where(line => !line.StartsWith("#"))
+                .Select(line => new Mod(line))
+                .Reverse()
+                .ToList();
+
+            ModList.AddRange(mods);
 
             _filteredModList = new ObservableCollection<Mod>(ModList);
 
