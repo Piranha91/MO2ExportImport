@@ -584,31 +584,35 @@ namespace MO2ExportImport.ViewModels
                     }
                     else if (_importMode == ImportMode.Before && !string.IsNullOrEmpty(_anchorModName))
                     {
-                        pluginInsertionIndex = FindFirstPluginFromMod(profilePluginsList, _anchorModName);
+                        var result = FindPluginAnchorForBeforeMode(profilePluginsList, profileModList, _anchorModName);
     
-                        if (pluginInsertionIndex >= 0)
+                        if (result.Index >= 0)
                         {
+                            pluginInsertionIndex = result.Index;
                             usePluginInsertionIndex = true;
-                            Log($"Before mode: Will insert plugins before first plugin from '{_anchorModName}' (index {pluginInsertionIndex})");
+                            Log($"Before mode: Will insert plugins before first plugin from '{result.ModName}' (index {pluginInsertionIndex})");
                         }
                         else
                         {
-                            Log($"Warning: No plugins found from anchor mod '{_anchorModName}'. Falling back to End mode.");
+                            Log($"Warning: No suitable anchor mod with plugins found. Falling back to Beginning mode.");
+                            pluginInsertionIndex = 0;
+                            usePluginInsertionIndex = true;
                         }
                     }
                     else if (_importMode == ImportMode.After && !string.IsNullOrEmpty(_anchorModName))
                     {
-                        int lastPluginIndex = FindLastPluginFromMod(profilePluginsList, _anchorModName);
+                        var result = FindPluginAnchorForAfterMode(profilePluginsList, profileModList, _anchorModName);
     
-                        if (lastPluginIndex >= 0)
+                        if (result.Index >= 0)
                         {
-                            pluginInsertionIndex = lastPluginIndex + 1;
+                            pluginInsertionIndex = result.Index;
                             usePluginInsertionIndex = true;
-                            Log($"After mode: Will insert plugins after last plugin from '{_anchorModName}' (index {pluginInsertionIndex})");
+                            Log($"After mode: Will insert plugins after last plugin from '{result.ModName}' (index {pluginInsertionIndex})");
                         }
                         else
                         {
-                            Log($"Warning: No plugins found from anchor mod '{_anchorModName}'. Falling back to End mode.");
+                            Log($"Warning: No suitable anchor mod with plugins found. Falling back to End mode.");
+                            // Keep default behavior (append to end)
                         }
                     }
                     
@@ -798,11 +802,79 @@ namespace MO2ExportImport.ViewModels
             }
         }
         
+        private (int Index, string ModName) FindPluginAnchorForBeforeMode(List<IListing> pluginsList, List<IListing> modList, string anchorModName)
+        {
+            // Find the anchor mod's position in the mod list
+            int anchorModIndex = modList.FindIndex(m => 
+                FormatHandler.TrimModActivationStatus(m.Name).Equals(anchorModName, StringComparison.OrdinalIgnoreCase));
+            
+            if (anchorModIndex < 0)
+                return (-1, null);
+
+            // Check if anchor mod has plugins
+            int firstPluginIndex = FindFirstPluginFromMod(pluginsList, anchorModName);
+            if (firstPluginIndex >= 0)
+            {
+                return (firstPluginIndex, anchorModName);
+            }
+
+            // Anchor mod has no plugins - search backwards for a mod with plugins
+            for (int i = anchorModIndex - 1; i >= 0; i--)
+            {
+                string candidateModName = FormatHandler.TrimModActivationStatus(modList[i].Name);
+                int candidateFirstPlugin = FindFirstPluginFromMod(pluginsList, candidateModName);
+                
+                if (candidateFirstPlugin >= 0)
+                {
+                    // Found a mod with plugins - use its first plugin as anchor
+                    Log($"-- Anchor mod '{anchorModName}' has no plugins. Using first plugin from preceding mod '{candidateModName}'");
+                    return (candidateFirstPlugin, candidateModName);
+                }
+            }
+
+            // No suitable anchor found - return -1 to trigger fallback to Beginning
+            return (-1, null);
+        }
+
+        private (int Index, string ModName) FindPluginAnchorForAfterMode(List<IListing> pluginsList, List<IListing> modList, string anchorModName)
+        {
+            // Find the anchor mod's position in the mod list
+            int anchorModIndex = modList.FindIndex(m => 
+                FormatHandler.TrimModActivationStatus(m.Name).Equals(anchorModName, StringComparison.OrdinalIgnoreCase));
+            
+            if (anchorModIndex < 0)
+                return (-1, null);
+
+            // Check if anchor mod has plugins
+            int lastPluginIndex = FindLastPluginFromMod(pluginsList, anchorModName);
+            if (lastPluginIndex >= 0)
+            {
+                return (lastPluginIndex + 1, anchorModName);
+            }
+
+            // Anchor mod has no plugins - search forwards for a mod with plugins
+            for (int i = anchorModIndex + 1; i < modList.Count; i++)
+            {
+                string candidateModName = FormatHandler.TrimModActivationStatus(modList[i].Name);
+                int candidateLastPlugin = FindLastPluginFromMod(pluginsList, candidateModName);
+                
+                if (candidateLastPlugin >= 0)
+                {
+                    // Found a mod with plugins - use position after its last plugin
+                    Log($"-- Anchor mod '{anchorModName}' has no plugins. Using last plugin from subsequent mod '{candidateModName}'");
+                    return (candidateLastPlugin + 1, candidateModName);
+                }
+            }
+
+            // No suitable anchor found - return -1 to trigger fallback to End
+            return (-1, null);
+        }
+
         private int FindFirstPluginFromMod(List<IListing> pluginsList, string modName)
         {
             // Get the mod directory path using _mo2Directory which is available in ImportPopupViewModel
             var modPath = Path.Combine(_mo2Directory, "mods", modName);
-    
+
             if (!Directory.Exists(modPath))
                 return -1;
 
@@ -829,7 +901,7 @@ namespace MO2ExportImport.ViewModels
         {
             // Get the mod directory path using _mo2Directory which is available in ImportPopupViewModel
             var modPath = Path.Combine(_mo2Directory, "mods", modName);
-    
+
             if (!Directory.Exists(modPath))
                 return -1;
 
