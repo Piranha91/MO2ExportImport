@@ -69,180 +69,186 @@
             <!-- Import Button -->
         </Grid.RowDefinitions>
 
-        <!-- MO2 Directory Selection -->
-        <StackPanel Orientation="Horizontal" Margin="5">
-            <Button Content="Select MO2 Directory" 
-                    Command="{Binding SelectMo2DirectoryCommand}" 
-                    Margin="5"
-                    ToolTip="Select the destination MO2 directory where mods will be imported"/>
-            <TextBlock Text="{Binding Mo2Directory}" VerticalAlignment="Center" Margin="5,0"/>
-        </StackPanel>
+        <GroupBox Grid.Row="0" Header="Import Target">
+            <WrapPanel Orientation="Horizontal">
+                <!-- MO2 Directory Selection -->
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <Button Content="Select MO2 Directory" 
+                            Command="{Binding SelectMo2DirectoryCommand}" 
+                            Margin="5"
+                            ToolTip="Select the destination MO2 directory where mods will be imported"/>
+                    <TextBlock Text="{Binding Mo2Directory}" VerticalAlignment="Center" Margin="5,0"/>
+                </StackPanel>
 
-        <!-- Profile Selection -->
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
-            <TextBlock Text="Profile:" VerticalAlignment="Center" Margin="5"/>
-            <ComboBox ItemsSource="{Binding Profiles}" 
-                      SelectedItem="{Binding SelectedProfile}" 
-                      Margin="5"
-                      ToolTip="Select the destination profile for importing mods (use 'All' to import to all profiles)"/>
-        </StackPanel>
-
-        <!-- Import Source Folder Selection -->
-        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
-            <Button Content="Select Import Source Folder" 
-                    Command="{Binding SelectImportSourceFolderCommand}" 
-                    Margin="5"
-                    ToolTip="Select the folder containing mods to import (can be an export folder, MO2 directory, or folder with modlist.json)"/>
-            <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="{Binding IsSourceMo2Directory, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock Text="Source Profile:" VerticalAlignment="Center" Margin="5"/>
-                <ComboBox ItemsSource="{Binding SourceProfiles}" 
-                          SelectedItem="{Binding SelectedSourceProfile}" 
-                          MinWidth="150" 
+                <!-- Profile Selection -->
+                <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
+                    <TextBlock Text="Profile:" VerticalAlignment="Center" Margin="5"/>
+                    <ComboBox ItemsSource="{Binding Profiles}" 
+                              SelectedItem="{Binding SelectedProfile}" 
+                              Margin="5"
+                              ToolTip="Select the destination profile for importing mods (use 'All' to import to all profiles)"/>
+                </StackPanel>
+            </WrapPanel>
+        </GroupBox>
+        <GroupBox Grid.Row="2" Header="Main Import Options">
+            <WrapPanel Orientation="Horizontal">
+                <Button Content="Select Import Source Folder" 
+                        Command="{Binding SelectImportSourceFolderCommand}" 
+                        Margin="5"
+                        ToolTip="Select the folder containing mods to import (can be an export folder, MO2 directory, or folder with modlist.json)"/>
+                <TextBlock Text="{Binding ImportSourceFolder}" VerticalAlignment="Center" Margin="5,0"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="{Binding IsSourceMo2Directory, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Source Profile:" VerticalAlignment="Center" Margin="5"/>
+                    <ComboBox ItemsSource="{Binding SourceProfiles}" 
+                              SelectedItem="{Binding SelectedSourceProfile}" 
+                              MinWidth="150" 
+                              Margin="5"
+                              VerticalContentAlignment="Center"
+                              ToolTip="Select the source profile to import from when importing from another MO2 directory"/>
+                </StackPanel>
+                <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
+                <ComboBox ItemsSource="{Binding ImportModes}" 
+                          SelectedItem="{Binding SelectedImportMode}" 
+                          MinWidth="70" 
                           Margin="5"
-                          ToolTip="Select the source profile to import from when importing from another MO2 directory"/>
-            </StackPanel>
-        </StackPanel>
-
-        <WrapPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
-            <CheckBox Content="Ignore Disabled" 
-                      IsChecked="{Binding IgnoreDisabled}" 
-                      Margin="10 0 0 0"
-                      ToolTip="When checked, disabled mods will not be imported"/>
-            <CheckBox Content="Ignore Separators" 
-                      IsChecked="{Binding IgnoreSeparators}" 
-                      Margin="10 0 0 0"
-                      ToolTip="When checked, separator entries will not be imported"/>
-            <CheckBox Content="Add [NoDelete] Flags" 
-                      IsChecked="{Binding AddNoDeleteFlags}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Add [NoDelete] prefix to imported mod folder names to prevent them from being deleted"/>
-            <CheckBox Content="Remove [NoDelete] Flags" 
-                      IsChecked="{Binding StripNoDelete}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Remove existing [NoDelete] prefixes from imported mod folder names"/>
-            <CheckBox Content="Disallow All Mod Overwrites" 
-                      IsChecked="{Binding SkipExisting}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Skip importing mods that already exist in the destination (overrides individual mod overwrite settings)"/>
-            <CheckBox Content="Ignore Splice Order of Existing Mods" 
-                      IsChecked="{Binding IgnoreMatchedModsForOrdering}" 
-                      Margin="10 0 0 0"
-                      ToolTip="When checked, if the Import Mode is Splice Mode, imported mods that already exist in the destination mod list won't be spliced (their position will stay the same)"/>
-            <CheckBox Content="Match [Enabled/Disabled] Mods From Import" 
-                      IsChecked="{Binding MatchModActivationState}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Match the enabled/disabled state of mods from the import source. All mods that were enabled in the source mod list will be force-enabled (if they exist) in the destination mod list. All mods that were disabled in the source mod list will be force-disabled in the destination mod list(if they exist)."/>
-            <CheckBox Content="Match [Enabled/Disabled] Plugins From Import" 
-                      IsChecked="{Binding MatchPluginActivationState}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Match the enabled/disabled state of plugins from the import source. All plugins that were enabled in the source load order will be force-enabled (if they exist) in the destination load order. All plugins that were disabled in the source load order will be force-disabled in the destination plugin list (if they exist)."/>
-            <CheckBox Content="Interpolate Missing Plugin Groups" 
-                      IsChecked="{Binding InterpolateMissingPluginGroups}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Automatically create plugin groups for plugins that don't have assigned groups"/>
-            <CheckBox Content="Transfer Downloads" 
-                      IsChecked="{Binding TransferDownloads}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Copy the downloads folder from the source MO2 directory to the destination MO2 directory"/>
-            <CheckBox Content="Calculate Available Space Automatically" 
-                      IsChecked="{Binding AutoCalculateSpace}" 
-                      Margin="10 0 0 0"
-                      ToolTip="Automatically calculate and display available disk space before importing"/>
-            <TextBlock Text="Add Prefix to Imported Mod Names:" 
-                       Margin="10 0 0 0" 
-                       VerticalAlignment="Center"/>
-            <TextBox Text="{Binding ImportPrefix}" 
-                     MinWidth="100" 
-                     Margin="5 0 0 0"
-                     ToolTip="Add a prefix to all imported mod folder names (e.g., 'Imported_' or 'Backup_')"/>
-        </WrapPanel>
-
-        <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="5">
-            <TextBlock Text="Import Mode:" VerticalAlignment="Center" Margin="5"/>
-            <ComboBox ItemsSource="{Binding ImportModes}" 
-                      SelectedItem="{Binding SelectedImportMode}" 
-                      MinWidth="70" 
-                      Margin="5"
-                      ToolTip="End: Add to end | Spliced: Insert based on relative position | Beginning: Add to beginning | Before/After: Insert relative to anchor mod"/>
+                          VerticalContentAlignment="Center"
+                          ToolTip="End: Add to end | Spliced: Insert based on relative position | Beginning: Add to beginning | Before/After: Insert relative to anchor mod"/>
     
-            <!-- NEW: Anchor Mod Selection -->
-            <StackPanel Orientation="Horizontal" 
-                        Visibility="{Binding IsAnchorSelectionVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Margin="10 0 0 0">
-                <TextBlock Text="Anchor Mod:" VerticalAlignment="Center" Margin="5"/>
-                <ComboBox ItemsSource="{Binding AvailableAnchorMods}" 
-                          SelectedItem="{Binding SelectedAnchorMod}"
-                          DisplayMemberPath="DisplayName"
-                          MinWidth="200"
-                          Margin="5"
-                          ToolTip="Select the mod to insert before or after"/>
-            </StackPanel>
-            <Grid Margin="5 0 0 0">
-                <TextBox x:Name="FilterTextBox"
-                         Width="200"
-                         Margin="5"
-                         VerticalContentAlignment="Center"
-                         Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
-                         TextChanged="FilterTextBox_TextChanged"
-                         ToolTip="Filter the mod list by typing a search term"/>
+                <!-- NEW: Anchor Mod Selection -->
+                <StackPanel Orientation="Horizontal" 
+                            Visibility="{Binding IsAnchorSelectionVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Margin="10 0 0 0">
+                    <TextBlock Text="Anchor Mod:" VerticalAlignment="Center" Margin="5"/>
+                    <ComboBox ItemsSource="{Binding AvailableAnchorMods}" 
+                              SelectedItem="{Binding SelectedAnchorMod}"
+                              DisplayMemberPath="DisplayName"
+                              MinWidth="200"
+                              Margin="5"
+                              VerticalContentAlignment="Center"
+                              ToolTip="Select the mod to insert before or after"/>
+                </StackPanel>
+            </WrapPanel>
+        </GroupBox>
 
-                <TextBlock Text="Filter mods..."
-                           IsHitTestVisible="False"
-                           Foreground="Gray"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Left"
-                           Margin="10,0,0,0"
-                           Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
-            </Grid>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,0,5,0">
-                <TextBlock Text="Multi Plugin Mode:" VerticalAlignment="Center" Margin="5,0"/>
-                <ComboBox ItemsSource="{Binding MultiPluginModes}" 
-                          SelectedItem="{Binding SelectedMultiPluginMode}" 
-                          MinWidth="100" 
-                          Margin="5,0"
-                          ToolTip="[Add Master Dependencies] All: If multiple mods containing the same master plugin exist, select all of them | WinnerOnly: Add only the highest-priority mod containing the detected master plugin"/>
+        <GroupBox Grid.Row="3" Margin="5" Header="Secondary Import Options" >
+            <WrapPanel Orientation="Horizontal" >
+                <CheckBox Content="Ignore Disabled" 
+                          IsChecked="{Binding IgnoreDisabled}" 
+                          Margin="10 0 0 0"
+                          ToolTip="When checked, disabled mods will not be imported"/>
+                <CheckBox Content="Ignore Separators" 
+                          IsChecked="{Binding IgnoreSeparators}" 
+                          Margin="10 0 0 0"
+                          ToolTip="When checked, separator entries will not be imported"/>
+                <CheckBox Content="Add [NoDelete] Flags" 
+                          IsChecked="{Binding AddNoDeleteFlags}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Add [NoDelete] prefix to imported mod folder names to prevent them from being deleted"/>
+                <CheckBox Content="Remove [NoDelete] Flags" 
+                          IsChecked="{Binding StripNoDelete}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Remove existing [NoDelete] prefixes from imported mod folder names"/>
+                <CheckBox Content="Disallow All Mod Overwrites" 
+                          IsChecked="{Binding SkipExisting}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Skip importing mods that already exist in the destination (overrides individual mod overwrite settings)"/>
+                <CheckBox Content="Ignore Splice Order of Existing Mods" 
+                          IsChecked="{Binding IgnoreMatchedModsForOrdering}" 
+                          Margin="10 0 0 0"
+                          ToolTip="When checked, if the Import Mode is Splice Mode, imported mods that already exist in the destination mod list won't be spliced (their position will stay the same)"/>
+                <CheckBox Content="Match [Enabled/Disabled] Mods From Import" 
+                          IsChecked="{Binding MatchModActivationState}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Match the enabled/disabled state of mods from the import source. All mods that were enabled in the source mod list will be force-enabled (if they exist) in the destination mod list. All mods that were disabled in the source mod list will be force-disabled in the destination mod list(if they exist)."/>
+                <CheckBox Content="Match [Enabled/Disabled] Plugins From Import" 
+                          IsChecked="{Binding MatchPluginActivationState}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Match the enabled/disabled state of plugins from the import source. All plugins that were enabled in the source load order will be force-enabled (if they exist) in the destination load order. All plugins that were disabled in the source load order will be force-disabled in the destination plugin list (if they exist)."/>
+                <CheckBox Content="Interpolate Missing Plugin Groups" 
+                          IsChecked="{Binding InterpolateMissingPluginGroups}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Automatically create plugin groups for plugins that don't have assigned groups"/>
+                <CheckBox Content="Transfer Downloads" 
+                          IsChecked="{Binding TransferDownloads}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Copy the downloads folder from the source MO2 directory to the destination MO2 directory"/>
+                <CheckBox Content="Calculate Available Space Automatically" 
+                          IsChecked="{Binding AutoCalculateSpace}" 
+                          Margin="10 0 0 0"
+                          ToolTip="Automatically calculate and display available disk space before importing"/>
+                <TextBlock Text="Add Prefix to Imported Mod Names:" 
+                           Margin="10 0 0 0" 
+                           VerticalAlignment="Center"/>
+                <TextBox Text="{Binding ImportPrefix}" 
+                         MinWidth="100" 
+                         Margin="5 0 0 0"
+                         ToolTip="Add a prefix to all imported mod folder names (e.g., 'Imported_' or 'Backup_')"/>
+            </WrapPanel>
+        </GroupBox>
+
+        <WrapPanel Grid.Row="4">
+            <GroupBox Margin="5" Header="Batch Actions">
+                <WrapPanel Orientation="Horizontal">
+                    <Button Content="Set as Overwriting Mods" 
+                            Command="{Binding SetSelectedAsOverrideCommand}" 
+                            Margin="20 0 10 0"
+                            ToolTip="Mark selected mods to overwrite existing files during import"/>
+                    <Button Content="Unset as Overwriting Mods" 
+                            Command="{Binding UnsetSelectedAsOverrideCommand}" 
+                            Margin="20 0 0 0"
+                            ToolTip="Unmark selected mods from overwriting existing files during import"/>
+                    <Button Content="Toggle Parent Separators" 
+                            Command="{Binding ToggleParentSeparatorsCommand}" 
+                            Margin="20 0 0 0"
+                            ToolTip="Toggle selection of parent separators for selected mods"/>
+                </WrapPanel>
+            </GroupBox>
+            <GroupBox Margin="5" Header="Batch Plugin Master Controls">
+                <WrapPanel Orientation="Horizontal" >
+                    <Button Content="Add Master Dependencies" 
+                            Command="{Binding AddMasterDependenciesCommand}" 
+                            Margin="15,0,5,0" 
+                            Padding="10,5"
+                            ToolTip="Automatically select mods containing master files (dependencies) required by the currently selected mods"/>
+                    <TextBlock Text="Multi Plugin Mode:" VerticalAlignment="Center" Margin="5,0"/>
+                    <ComboBox ItemsSource="{Binding MultiPluginModes}" 
+                              SelectedItem="{Binding SelectedMultiPluginMode}" 
+                              MinWidth="100" 
+                              Margin="5,0"
+                              VerticalContentAlignment="Center"
+                              ToolTip="[Add Master Dependencies] All: If multiple mods containing the same master plugin exist, select all of them | WinnerOnly: Add only the highest-priority mod containing the detected master plugin"/>
+            
+                    <TextBlock Text="Plugin Selection:" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                    <ComboBox ItemsSource="{Binding PluginSelectionModes}" 
+                              SelectedItem="{Binding SelectedPluginSelectionMode}" 
+                              MinWidth="100" 
+                              Margin="5,0"
+                              VerticalContentAlignment="Center"
+                              ToolTip="[Add Master Dependencies] EnabledOnly: Only analyze enabled plugins for master dependencies | All: Analyze all plugins regardless of enabled state"/>
+                </WrapPanel>
+            </GroupBox>
+        </WrapPanel>
         
-                <TextBlock Text="Plugin Selection:" VerticalAlignment="Center" Margin="15,0,5,0"/>
-                <ComboBox ItemsSource="{Binding PluginSelectionModes}" 
-                          SelectedItem="{Binding SelectedPluginSelectionMode}" 
-                          MinWidth="100" 
-                          Margin="5,0"
-                          ToolTip="[Add Master Dependencies] EnabledOnly: Only analyze enabled plugins for master dependencies | All: Analyze all plugins regardless of enabled state"/>
-        
-                <Button Content="Add Master Dependencies" 
-                        Command="{Binding AddMasterDependenciesCommand}" 
-                        Margin="15,0,5,0" 
-                        Padding="10,5"
-                        ToolTip="Automatically select mods containing master files (dependencies) required by the currently selected mods"/>
-            </StackPanel>
-        </StackPanel>
-        
-        <!-- Checkbox Explanation -->
-        <!-- Checkbox Explanation -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10">
-            <Button Content="Undo" 
-                    Command="{Binding UndoSelectionCommand}" 
-                    Margin="0 0 5 0" 
-                    ToolTip="Undo selection change (Ctrl+Z)"/>
-            <Button Content="Redo" 
-                    Command="{Binding RedoSelectionCommand}" 
-                    Margin="0 0 10 0" 
-                    ToolTip="Redo selection change (Ctrl+Y)"/>
-            <CheckBox IsChecked="False" IsEnabled="False" Content="Mod is Activated" Margin="0 0 10 0" VerticalAlignment="Center"/>
-            <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)" VerticalAlignment="Center"/>
-            <Button Content="Set as Overwriting Mods" 
-                    Command="{Binding SetSelectedAsOverrideCommand}" 
-                    Margin="20 0 10 0"
-                    ToolTip="Mark selected mods to overwrite existing files during import"/>
-            <Button Content="Unset as Overwriting Mods" 
-                    Command="{Binding UnsetSelectedAsOverrideCommand}" 
-                    Margin="20 0 0 0"
-                    ToolTip="Unmark selected mods from overwriting existing files during import"/>
-            <Button Content="Toggle Parent Separators" 
-                    Command="{Binding ToggleParentSeparatorsCommand}" 
-                    Margin="20 0 0 0"
-                    ToolTip="Toggle selection of parent separators for selected mods"/>
+        <StackPanel Grid.Row="5" Orientation="Horizontal">
+            <GroupBox Grid.Row="5" Margin="10" Header="Checkbox Legend">
+                <WrapPanel Orientation="Horizontal">
+                    <CheckBox IsChecked="False" IsEnabled="False" Content="Mod is Activated" Margin="0 0 10 0" VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="False" IsEnabled="True" Content="Mod will Overwrite Existing (if present)" VerticalAlignment="Center"/>
+                </WrapPanel>
+            </GroupBox>
+            
+            <GroupBox Margin="10" Header="Selections">
+                <WrapPanel Orientation="Horizontal">
+                    <Button Content="Undo" 
+                            Command="{Binding UndoSelectionCommand}" 
+                            Margin="0 0 5 0" 
+                            ToolTip="Undo selection change (Ctrl+Z)"/>
+                    <Button Content="Redo" 
+                            Command="{Binding RedoSelectionCommand}" 
+                            Margin="0 0 10 0" 
+                            ToolTip="Redo selection change (Ctrl+Y)"/>
+                </WrapPanel>
+            </GroupBox>
         </StackPanel>
 
         <!-- Mod List -->
@@ -340,6 +346,25 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Canvas>
+        
+        <Grid Grid.Row="7" Margin="5 0 0 0">
+            <TextBox x:Name="FilterTextBox"
+                     Width="200"
+                     Margin="5"
+                     VerticalContentAlignment="Center"
+                     HorizontalAlignment="Left"
+                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                     TextChanged="FilterTextBox_TextChanged"
+                     ToolTip="Filter the mod list by typing a search term"/>
+
+            <TextBlock Text="Filter mods..."
+                       IsHitTestVisible="False"
+                       Foreground="Gray"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Left"
+                       Margin="10,0,0,0"
+                       Visibility="{Binding Text, ElementName=FilterTextBox, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}" />
+        </Grid>
 
         <!-- Import Button -->
         <Button Grid.Row="7" 
