@@ -9,6 +9,9 @@ namespace MO2ExportImport
     public enum ImportMode
     {
         End,
-        Spliced
+        Spliced,
+        Beginning,      
+        Before,         
+        After           
     }
 }

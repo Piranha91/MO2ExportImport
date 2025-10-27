@@ -164,7 +164,20 @@
                       SelectedItem="{Binding SelectedImportMode}" 
                       MinWidth="70" 
                       Margin="5"
-                      ToolTip="End: Add imported mods to the end of modlist | Spliced: Where possible, insert imported mods based on their relative position in the source mod list"/>
+                      ToolTip="End: Add to end | Spliced: Insert based on relative position | Beginning: Add to beginning | Before/After: Insert relative to anchor mod"/>
+    
+            <!-- NEW: Anchor Mod Selection -->
+            <StackPanel Orientation="Horizontal" 
+                        Visibility="{Binding IsAnchorSelectionVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Margin="10 0 0 0">
+                <TextBlock Text="Anchor Mod:" VerticalAlignment="Center" Margin="5"/>
+                <ComboBox ItemsSource="{Binding AvailableAnchorMods}" 
+                          SelectedItem="{Binding SelectedAnchorMod}"
+                          DisplayMemberPath="DisplayName"
+                          MinWidth="200"
+                          Margin="5"
+                          ToolTip="Select the mod to insert before or after"/>
+            </StackPanel>
             <Grid Margin="5 0 0 0">
                 <TextBox x:Name="FilterTextBox"
                          Width="200"

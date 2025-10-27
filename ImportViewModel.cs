@@ -96,11 +96,40 @@ namespace MO2ExportImport.ViewModels
         }
 
         private ImportMode _selectedImportMode = ImportMode.Spliced;
+        
+        private ObservableCollection<Mod> _availableAnchorMods;
+        public ObservableCollection<Mod> AvailableAnchorMods
+        {
+            get => _availableAnchorMods;
+            set => this.RaiseAndSetIfChanged(ref _availableAnchorMods, value);
+        }
+
+        private Mod _selectedAnchorMod;
+        public Mod SelectedAnchorMod
+        {
+            get => _selectedAnchorMod;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedAnchorMod, value);
+                _mainViewModel.SaveSettings();
+            }
+        }
+
+        // Visibility property to show/hide anchor selection
+        private bool _isAnchorSelectionVisible;
+        public bool IsAnchorSelectionVisible
+        {
+            get => _isAnchorSelectionVisible;
+            set => this.RaiseAndSetIfChanged(ref _isAnchorSelectionVisible, value);
+        }
 
         public ObservableCollection<ImportMode> ImportModes { get; } = new ObservableCollection<ImportMode>
         {
             ImportMode.End,
-            ImportMode.Spliced
+            ImportMode.Spliced,
+            ImportMode.Beginning,
+            ImportMode.Before,
+            ImportMode.After
         };
 
         public ImportMode SelectedImportMode
@@ -109,7 +138,17 @@ namespace MO2ExportImport.ViewModels
             set
             {
                 this.RaiseAndSetIfChanged(ref _selectedImportMode, value);
-                _mainViewModel.SaveSettings(); // Save the selected import mode to settings
+        
+                // Update anchor selection visibility
+                IsAnchorSelectionVisible = (value == ImportMode.Before || value == ImportMode.After);
+        
+                // Load available anchor mods when Before/After is selected
+                if (IsAnchorSelectionVisible)
+                {
+                    LoadAvailableAnchorMods();
+                }
+        
+                _mainViewModel.SaveSettings();
             }
         }
 
@@ -948,7 +987,7 @@ namespace MO2ExportImport.ViewModels
                     MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion,
                     _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering,
                     InterpolateMissingPluginGroups, TransferDownloads, IsSourceMo2Directory, 
-                    ImportSourceFolder);
+                    ImportSourceFolder, SelectedAnchorMod?.DisplayName);
                 importPopup.DataContext = viewModel;
                 importPopup.ShowDialog();
             }
@@ -1679,6 +1718,69 @@ namespace MO2ExportImport.ViewModels
         {
             CanUndo = _selectionHistory.CanUndo;
             CanRedo = _selectionHistory.CanRedo;
+        }
+        
+        private void LoadAvailableAnchorMods()
+        {
+            string profileToLoad = _selectedProfile;
+            if (profileToLoad == "All")
+            {
+                var actualProfiles = Profiles.Where(x => !x.Equals("All"));
+                if (actualProfiles == null || !actualProfiles.Any())
+                {
+                    return;
+                }
+                profileToLoad = actualProfiles.First();
+            }
+            
+            if (string.IsNullOrEmpty(Mo2Directory) || string.IsNullOrEmpty(profileToLoad))
+                return;
+            
+            try
+            {
+                var profilePath = Path.Combine(Mo2Directory, "profiles", profileToLoad);
+                var modlistPath = Path.Combine(profilePath, "modlist.txt");
+
+                if (!File.Exists(modlistPath))
+                    return;
+
+                var anchorMods = new ObservableCollection<Mod>();
+                var lines = File.ReadAllLines(modlistPath).Reverse();
+
+                foreach (var line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    var trimmedLine = line.Trim();
+                    if (trimmedLine.StartsWith("#"))
+                        continue;
+
+                    var modName = FormatHandler.TrimModActivationStatus(trimmedLine);
+            
+                    // Create a simple Mod object for the anchor selection
+                    var mod = new Mod
+                    {
+                        DisplayName = modName,
+                        SourceDirectoryName = modName
+                    };
+            
+                    anchorMods.Add(mod);
+                }
+
+                AvailableAnchorMods = anchorMods;
+        
+                // Auto-select first mod if none selected
+                if (SelectedAnchorMod == null && AvailableAnchorMods.Any())
+                {
+                    SelectedAnchorMod = AvailableAnchorMods.First();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading anchor mods: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

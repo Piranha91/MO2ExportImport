@@ -122,6 +122,15 @@ namespace MO2ExportImport.ViewModels
                 _exportViewModel.AutoCalculateSpace = settings?.ExportAutoCalculateSpace ?? true;
                 _importViewModel.Mo2Directory = settings?.ImportTargetMO2Dir ?? string.Empty;
                 _importViewModel.SelectedImportMode = settings?.ImportMode ?? ImportMode.Spliced;
+                if (settings?.ImportMode == ImportMode.Before || settings?.ImportMode == ImportMode.After)
+                {
+                    if (!string.IsNullOrEmpty(settings.AnchorModName) && 
+                        _importViewModel.AvailableAnchorMods != null)
+                    {
+                        _importViewModel.SelectedAnchorMod = _importViewModel.AvailableAnchorMods
+                            .FirstOrDefault(m => m.DisplayName == settings.AnchorModName);
+                    }
+                }
                 _importViewModel.IgnoreDisabled = settings?.ImportIgnoreDisabled ?? true; // Default to true if not set
                 _importViewModel.IgnoreSeparators = settings?.ImportIgnoreSeparators ?? false; // Default to false if not set
                 _importViewModel.AddNoDeleteFlags = settings?.ImportAddNoDeleteFlags ?? false;
@@ -154,6 +163,7 @@ namespace MO2ExportImport.ViewModels
                 ExportAutoCalculateSpace = _exportViewModel.AutoCalculateSpace,
                 ImportTargetMO2Dir = _importViewModel.Mo2Directory,
                 ImportMode = _importViewModel.SelectedImportMode,
+                AnchorModName = _importViewModel.SelectedAnchorMod?.DisplayName,
                 ImportIgnoreDisabled = _importViewModel.IgnoreDisabled,
                 ImportIgnoreSeparators = _importViewModel.IgnoreSeparators,
                 ImportAddNoDeleteFlags = _importViewModel.AddNoDeleteFlags,

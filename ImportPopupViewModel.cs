@@ -25,6 +25,7 @@ namespace MO2ExportImport.ViewModels
         private readonly ImportPopupView _view;
         private string _selectedProfile;
         private ImportMode _importMode;
+        private string _anchorModName;
         private bool _addNoDeleteFlags;
         private bool _removeNoDeleteFlags;
         private bool _matchModActivationState;
@@ -92,7 +93,7 @@ namespace MO2ExportImport.ViewModels
             bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, 
             string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, 
             bool interpolateMissingPluginGroups, bool transferDownloads, bool isSourceMo2Directory,
-            string importSourceFolder) 
+            string importSourceFolder, string anchorModName) 
         {
             _view = view;
             _mo2Directory = mo2Directory;
@@ -102,6 +103,7 @@ namespace MO2ExportImport.ViewModels
             _selectedModList = modList;
             _selectedProfile = selectedProfile;
             _importMode = importMode;
+            _anchorModName = anchorModName;
             _addNoDeleteFlags = addNoDeleteFlags;
             _removeNoDeleteFlags = removeNoDeleteFlags;
             _matchModActivationState = matchModActivationState;
@@ -455,6 +457,50 @@ namespace MO2ExportImport.ViewModels
                     
                     // Handle ImportMode for modlist.txt
                     Log("Importing mods into modlist.txt");
+                    
+                    // Track insertion index for Beginning, Before, and After modes
+                    int insertionIndex = 0;
+                    bool useInsertionIndex = false;
+                    
+                    // Determine initial insertion index based on mode
+                    if (_importMode == ImportMode.Beginning)
+                    {
+                        insertionIndex = 0;
+                        useInsertionIndex = true;
+                        Log("Beginning mode: Will insert mods at the beginning of modlist.txt");
+                    }
+                    else if (_importMode == ImportMode.Before && !string.IsNullOrEmpty(_anchorModName))
+                    {
+                        insertionIndex = profileModList.FindIndex(m => 
+                            FormatHandler.TrimModActivationStatus(m.Name).Equals(_anchorModName, StringComparison.OrdinalIgnoreCase));
+    
+                        if (insertionIndex >= 0)
+                        {
+                            useInsertionIndex = true;
+                            Log($"Before mode: Will insert mods before '{_anchorModName}' (index {insertionIndex})");
+                        }
+                        else
+                        {
+                            Log($"Warning: Anchor mod '{_anchorModName}' not found. Falling back to End mode.");
+                        }
+                    }
+                    else if (_importMode == ImportMode.After && !string.IsNullOrEmpty(_anchorModName))
+                    {
+                        insertionIndex = profileModList.FindIndex(m => 
+                            FormatHandler.TrimModActivationStatus(m.Name).Equals(_anchorModName, StringComparison.OrdinalIgnoreCase));
+    
+                        if (insertionIndex >= 0)
+                        {
+                            insertionIndex++; // Insert after means one position later
+                            useInsertionIndex = true;
+                            Log($"After mode: Will insert mods after '{_anchorModName}' (index {insertionIndex})");
+                        }
+                        else
+                        {
+                            Log($"Warning: Anchor mod '{_anchorModName}' not found. Falling back to End mode.");
+                        }
+                    }
+                    
                     foreach (var currentMod in validSourceMods)
                     {
                         var sourceListing = sourceModList.FirstOrDefault(x => x.Equals(currentMod.SourceListing));
@@ -485,14 +531,28 @@ namespace MO2ExportImport.ViewModels
                             simulator.LogModEvent(sourceListing as ModListing, "This is the last mod in the import source load order");
                         }
                         
+                        // INSERT THE MOD BASED ON MODE
                         if (_importMode == ImportMode.End)
                         {
                             var previousItem = profileModList.LastOrDefault()?.Name ?? "start";
                             profileModList.Add(currentMod.SourceListing);
                             simulator.LogModEvent(currentMod.SourceListing, "Added to mod list after " + previousItem + ".");
-                            Log($"- Added { FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
+                            Log($"- Added {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} to end of modlist.txt after {previousItem}");
                         }
-                        else // Spliced
+                        else if (useInsertionIndex) // Beginning, Before, or After mode
+                        {
+                            string modeDescription = _importMode == ImportMode.Beginning ? "at beginning" :
+                                _importMode == ImportMode.Before ? $"before {_anchorModName}" :
+                                $"after {_anchorModName}";
+        
+                            profileModList.Insert(insertionIndex, currentMod.SourceListing);
+                            simulator.LogModEvent(currentMod.SourceListing, $"Added to mod list {modeDescription} (index {insertionIndex}).");
+                            Log($"- Added {FormatHandler.TrimModActivationStatus(currentMod.DisplayName)} {modeDescription} at index {insertionIndex}");
+        
+                            // INCREMENT the insertion index for the next mod
+                            insertionIndex++;
+                        }
+                        else // Spliced mode (or fallback)
                         {
                             var spliceLog = new List<string>();
                             var previousItem = CommonFuncs.AddEntryInSplicedMode(profileModList, sourceModList, currentMod.SourceListing, spliceModeIgnoredModListings, StringType.Mod, spliceLog);
@@ -510,6 +570,49 @@ namespace MO2ExportImport.ViewModels
 
                     // Handle ImportMode for plugins.txt
                     Log("Importing plugins into plugins.txt");
+                    
+                    // Track insertion index for Beginning, Before, and After modes
+                    int pluginInsertionIndex = 0;
+                    bool usePluginInsertionIndex = false;
+
+                    // Determine initial insertion index based on mode
+                    if (_importMode == ImportMode.Beginning)
+                    {
+                        pluginInsertionIndex = 0;
+                        usePluginInsertionIndex = true;
+                        Log("Beginning mode: Will insert plugins at the beginning of plugins.txt");
+                    }
+                    else if (_importMode == ImportMode.Before && !string.IsNullOrEmpty(_anchorModName))
+                    {
+                        pluginInsertionIndex = FindFirstPluginFromMod(profilePluginsList, _anchorModName);
+    
+                        if (pluginInsertionIndex >= 0)
+                        {
+                            usePluginInsertionIndex = true;
+                            Log($"Before mode: Will insert plugins before first plugin from '{_anchorModName}' (index {pluginInsertionIndex})");
+                        }
+                        else
+                        {
+                            Log($"Warning: No plugins found from anchor mod '{_anchorModName}'. Falling back to End mode.");
+                        }
+                    }
+                    else if (_importMode == ImportMode.After && !string.IsNullOrEmpty(_anchorModName))
+                    {
+                        int lastPluginIndex = FindLastPluginFromMod(profilePluginsList, _anchorModName);
+    
+                        if (lastPluginIndex >= 0)
+                        {
+                            pluginInsertionIndex = lastPluginIndex + 1;
+                            usePluginInsertionIndex = true;
+                            Log($"After mode: Will insert plugins after last plugin from '{_anchorModName}' (index {pluginInsertionIndex})");
+                        }
+                        else
+                        {
+                            Log($"Warning: No plugins found from anchor mod '{_anchorModName}'. Falling back to End mode.");
+                        }
+                    }
+                    
+                    // Import each plugin
                     foreach (var currentPlugin in validPlugins)
                     {
                         if (_importMode == ImportMode.End)
@@ -519,19 +622,38 @@ namespace MO2ExportImport.ViewModels
                             simulator.LogPluginEvent(currentPlugin, "Added to plugin list after " + previousItem + ".");
                             Log($"- Added {currentPlugin.Name} to end of plugins.txt after {previousItem}");
                         }
-                        else // Spliced
+                        else if (usePluginInsertionIndex) // Beginning, Before, or After mode
+                        {
+                            string modeDescription = _importMode == ImportMode.Beginning ? "at beginning" :
+                                _importMode == ImportMode.Before ? $"before plugins from {_anchorModName}" :
+                                $"after plugins from {_anchorModName}";
+
+                            profilePluginsList.Insert(pluginInsertionIndex, currentPlugin);
+                            simulator.LogPluginEvent(currentPlugin,
+                                $"Added to plugin list {modeDescription} (index {pluginInsertionIndex}).");
+                            Log($"- Added {currentPlugin.Name} {modeDescription} at index {pluginInsertionIndex}");
+
+                            // INCREMENT the insertion index for the next plugin
+                            pluginInsertionIndex++;
+                        }
+                        else // Spliced mode (or fallback)
                         {
                             var spliceLog = new List<string>();
-                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList, currentPlugin, spliceModeIgnoredPluginListings, StringType.Plugin, spliceLog);
+                            var previousItem = CommonFuncs.AddEntryInSplicedMode(profilePluginsList, sourcePluginsList,
+                                currentPlugin, spliceModeIgnoredPluginListings, StringType.Plugin, spliceLog);
                             foreach (var entry in spliceLog)
                             {
                                 simulator.LogPluginEvent(currentPlugin, entry);
                             }
+
                             Log(string.Join(Environment.NewLine, spliceLog.Select(x => "-- " + x).ToArray()));
                             Log($"- Spliced {currentPlugin.Name} into plugins.txt after {previousItem}");
                             simulator.LogPluginEvent(currentPlugin, "Added to plugin list after " + previousItem + ".");
                         }
-                        simulator.LogPluginEvent(currentPlugin, Environment.NewLine + "The current load order is: " + Environment.NewLine + string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
+
+                        simulator.LogPluginEvent(currentPlugin,
+                            Environment.NewLine + "The current load order is: " + Environment.NewLine +
+                            string.Join(Environment.NewLine, profilePluginsList.Select(x => x.Name)));
                     }
 
                     if (_matchPluginActivationState)
@@ -674,6 +796,61 @@ namespace MO2ExportImport.ViewModels
                 Log($"An error occurred during the import process: {ex.Message}");
                 ScrollableMessageBox.Show($"An error occurred during the import process: {ExceptionHelper.GetFilteredStackTrace(ex)}", "Error");
             }
+        }
+        
+        private int FindFirstPluginFromMod(List<IListing> pluginsList, string modName)
+        {
+            // Get the mod directory path using _mo2Directory which is available in ImportPopupViewModel
+            var modPath = Path.Combine(_mo2Directory, "mods", modName);
+    
+            if (!Directory.Exists(modPath))
+                return -1;
+
+            // Get all plugin files from the mod
+            var modPlugins = Directory.GetFiles(modPath, "*.esp", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.GetFiles(modPath, "*.esm", SearchOption.TopDirectoryOnly))
+                .Concat(Directory.GetFiles(modPath, "*.esl", SearchOption.TopDirectoryOnly))
+                .Select(Path.GetFileName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Find the first plugin in the load order that belongs to this mod
+            for (int i = 0; i < pluginsList.Count; i++)
+            {
+                if (modPlugins.Contains(pluginsList[i].Name))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindLastPluginFromMod(List<IListing> pluginsList, string modName)
+        {
+            // Get the mod directory path using _mo2Directory which is available in ImportPopupViewModel
+            var modPath = Path.Combine(_mo2Directory, "mods", modName);
+    
+            if (!Directory.Exists(modPath))
+                return -1;
+
+            // Get all plugin files from the mod
+            var modPlugins = Directory.GetFiles(modPath, "*.esp", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.GetFiles(modPath, "*.esm", SearchOption.TopDirectoryOnly))
+                .Concat(Directory.GetFiles(modPath, "*.esl", SearchOption.TopDirectoryOnly))
+                .Select(Path.GetFileName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Find the last plugin in the load order that belongs to this mod
+            int lastIndex = -1;
+            for (int i = 0; i < pluginsList.Count; i++)
+            {
+                if (modPlugins.Contains(pluginsList[i].Name))
+                {
+                    lastIndex = i;
+                }
+            }
+
+            return lastIndex;
         }
 
         private async Task TransferDownloads(List<Mod> mods, string sourceDownloadDir, string destDownloadDir,

@@ -12,6 +12,7 @@ namespace MO2ExportImport.Models
         public bool ExportAutoCalculateSpace { get; set; } = true;
         public string ImportTargetMO2Dir { get; set; }
         public ImportMode ImportMode { get; set; } = ImportMode.Spliced;
+        public string AnchorModName { get; set; }
         public bool ImportIgnoreDisabled { get; set; } = true; // Default value
         public bool ImportIgnoreSeparators { get; set; } = false; // Default value
         public bool ImportAddNoDeleteFlags { get; set; } = false; // Default value
