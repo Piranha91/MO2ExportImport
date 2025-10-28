@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -132,7 +132,68 @@ namespace MO2ExportImport.ViewModels
                 CalculateSpace();
             }
             
+            ApplyPrefixes();
+            
             ShowModListPreview = true; 
+        }
+
+        private void ApplyPrefixes()
+        {
+            // Filter SourceModList to include only mods with corresponding directories
+
+            var validSourceMods = _selectedModList
+                .Where(x => x.SelectedInUI) // don't import mods that have been manually or automatically deselected
+                .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)))
+                .ToList();
+
+            if (_addNoDeleteFlags)
+            {
+                Log("Adding NoDelete flags to mods where required");
+                foreach (var mod in validSourceMods)
+                {
+                    mod.MakeNoDelete();
+                }
+            }
+            else if (_removeNoDeleteFlags)
+            {
+                Log("Removing NoDelete flags from mods where required");
+                foreach (var mod in validSourceMods)
+                {
+                    mod.RemoveNoDelete();
+                }
+            }
+
+            if (_importPrefixSeparators != null && _importPrefixSeparators.Length > 0)
+            {
+                Log("Adding prefix \"" + _importPrefixSeparators + "\" to each Separator name");
+
+                foreach (var mod in validSourceMods.Where(x => x.SourceListing.IsSeparator))
+                {
+                    mod.SetPrefix(_importPrefixSeparators);
+                }
+            }
+
+            if (_importPrefixMods != null && _importPrefixMods.Length > 0)
+            {
+                Log("Adding prefix \"" + _importPrefixMods + "\" to each Mod name");
+
+                foreach (var mod in validSourceMods.Where(x => !x.SourceListing.IsSeparator))
+                {
+                    mod.SetPrefix(_importPrefixMods);
+                }
+            }
+
+            if (_importPrefix != null && _importPrefix.Length > 0)
+            {
+                Log("Adding prefix \"" + _importPrefix + "\" to each Item name");
+
+                foreach (var mod in validSourceMods)
+                {
+                    var existingPrefix = mod.SourceListing.Prefix; // in case one was set above for separators or mods
+                    var completePrefix = existingPrefix + _importPrefix;
+                    mod.SetPrefix(completePrefix);
+                }
+            }
         }
 
         private void CalculateSpace()
@@ -200,53 +261,6 @@ namespace MO2ExportImport.ViewModels
                     .Where(mod => Directory.Exists(Path.Combine(_modSourceDirectory, mod.SourceDirectoryName)))
                     .ToList();
 
-                if (_addNoDeleteFlags)
-                {
-                    Log("Adding NoDelete flags to mods where required");
-                    foreach (var mod in validSourceMods)
-                    {
-                        mod.MakeNoDelete();
-                    }
-                }
-                else if (_removeNoDeleteFlags)
-                {
-                    Log("Removing NoDelete flags from mods where required");
-                    foreach(var mod in validSourceMods)
-                    {
-                        mod.RemoveNoDelete();
-                    }
-                }
-                
-                if (_importPrefixSeparators != null && _importPrefixSeparators.Length > 0)
-                {
-                    Log("Adding prefix \"" + _importPrefixSeparators + "\" to each Separator name");
-
-                    foreach (var mod in validSourceMods.Where(x => x.SourceListing.IsSeparator))
-                    {
-                        mod.SetPrefix(_importPrefixSeparators);
-                    }
-                }
-                
-                if (_importPrefixMods != null && _importPrefixMods.Length > 0)
-                {
-                    Log("Adding prefix \"" + _importPrefixMods + "\" to each Mod name");
-
-                    foreach (var mod in validSourceMods.Where(x => !x.SourceListing.IsSeparator))
-                    {
-                        mod.SetPrefix(_importPrefixMods);
-                    }
-                }
-
-                if (_importPrefix != null && _importPrefix.Length > 0)
-                {
-                    Log("Adding prefix \"" + _importPrefix + "\" to each Item name");
-
-                    foreach (var mod in validSourceMods)
-                    {
-                        mod.SetPrefix(_importPrefix);
-                    }
-                }
-                
                 foreach (var profile in ProfilesToImport())
                 {
                     var simulator = new ImportSimulatorViewModel();
@@ -527,8 +541,10 @@ namespace MO2ExportImport.ViewModels
                     
                     foreach (var currentMod in validSourceMods)
                     {
-                        var sourceListing = sourceModList.FirstOrDefault(x => x.Equals(currentMod.SourceListing));
-                        if (sourceListing is null)
+                        var sourceListing = currentMod.SourceListing;
+
+                        bool isInSourceList = sourceModList.FirstOrDefault(x => x.Equals(sourceListing)) != null;
+                        if (!isInSourceList)
                         {
                             continue;
                         }

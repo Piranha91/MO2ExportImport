@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -708,7 +708,7 @@ public class ModSimulatorNode : ISimulatorNode
     public ModSimulatorNode(ModListing sourceListing, ObservableCollection<ISimulatorNode> parentCollection)
     {
         SourceListing = sourceListing;
-        Label = sourceListing.Name;
+        Label = sourceListing.GetCurrentFolderName();
         if (SourceListing.IsSeparator)
         {
             // Remove the separator suffix and trim the result.
