@@ -34,6 +34,8 @@ namespace MO2ExportImport.ViewModels
         private List<string> _importEvents = new();
         private string _programVersion;
         private string _importPrefix;
+        private string _importPrefixSeparators;
+        private string _importPrefixMods;
         private List<Mod> _removedModsMatchingExisting = new();
         private bool _ignoreMatchedModsForOrdering;
         private bool _interpolateMissingPluginGroups;
@@ -91,7 +93,7 @@ namespace MO2ExportImport.ViewModels
             string importProfileSourceDirectory, string selectedProfile, ObservableCollection<Mod> modList, 
             ImportMode importMode, bool addNoDeleteFlags, bool removeNoDeleteFlags, bool matchModActivationState, 
             bool matchPluginActivationState, StreamWriter logWriter, string programVersion, bool autoCalculateSpace, 
-            string importPrefix, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, 
+            string importPrefix, string importPrefixSeparators, string importPrefixMods, List<Mod> removedMods_Matching_Existing, bool IgnoreMatchedModsForOrdering, 
             bool interpolateMissingPluginGroups, bool transferDownloads, bool isSourceMo2Directory,
             string importSourceFolder, string anchorModName) 
         {
@@ -111,6 +113,8 @@ namespace MO2ExportImport.ViewModels
             _logWriter = logWriter;
             _programVersion = programVersion;
             _importPrefix = importPrefix;
+            _importPrefixSeparators = importPrefixSeparators;
+            _importPrefixMods = importPrefixMods;
             _removedModsMatchingExisting = removedMods_Matching_Existing;
             _ignoreMatchedModsForOrdering = IgnoreMatchedModsForOrdering;
             _transferDownloads = transferDownloads;
@@ -212,10 +216,30 @@ namespace MO2ExportImport.ViewModels
                         mod.RemoveNoDelete();
                     }
                 }
+                
+                if (_importPrefixSeparators != null && _importPrefixSeparators.Length > 0)
+                {
+                    Log("Adding prefix \"" + _importPrefixSeparators + "\" to each Separator name");
+
+                    foreach (var mod in validSourceMods.Where(x => x.SourceListing.IsSeparator))
+                    {
+                        mod.SetPrefix(_importPrefixSeparators);
+                    }
+                }
+                
+                if (_importPrefixMods != null && _importPrefixMods.Length > 0)
+                {
+                    Log("Adding prefix \"" + _importPrefixMods + "\" to each Mod name");
+
+                    foreach (var mod in validSourceMods.Where(x => !x.SourceListing.IsSeparator))
+                    {
+                        mod.SetPrefix(_importPrefixMods);
+                    }
+                }
 
                 if (_importPrefix != null && _importPrefix.Length > 0)
                 {
-                    Log("Adding prefix \"" + _importPrefix + "\" to each mod name");
+                    Log("Adding prefix \"" + _importPrefix + "\" to each Item name");
 
                     foreach (var mod in validSourceMods)
                     {

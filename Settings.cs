@@ -24,6 +24,8 @@ namespace MO2ExportImport.Models
         public bool ImportTransferDownloads { get; set; } = false;
         public bool ImportAutoCalculateSpace { get; set; } = true;
         public string ImportPrefix { get; set; } = string.Empty;
+        public string ImportPrefixSeparators { get; set; } = string.Empty;
+        public string ImportPrefixMods { get; set; } = string.Empty;
         public ImportViewModel.MultiPluginMode ImportMultiPluginMode { get; set; } = ImportViewModel.MultiPluginMode.WinnerOnly;
         public ImportViewModel.PluginSelectionMode ImportPluginSelectionMode { get; set; } = ImportViewModel.PluginSelectionMode.EnabledOnly;
     }

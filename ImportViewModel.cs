@@ -334,6 +334,30 @@ namespace MO2ExportImport.ViewModels
                 _mainViewModel.SaveSettings();
             }
         }
+        
+        private string _importPrefixSeparators;
+
+        public string ImportPrefixSeparators
+        {
+            get => _importPrefixSeparators;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _importPrefixSeparators, value);
+                _mainViewModel.SaveSettings();
+            }
+        }
+        
+        private string _importPrefixMods;
+
+        public string ImportPrefixMods
+        {
+            get => _importPrefixMods;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _importPrefixMods, value);
+                _mainViewModel.SaveSettings();
+            }
+        }
 
         private bool _interpolateMissingPluginGroups;
 
@@ -996,7 +1020,7 @@ namespace MO2ExportImport.ViewModels
                 var viewModel = new ImportPopupViewModel(importPopup, Mo2Directory, _modsRootPath, profileSourceDir,
                     SelectedProfile, ModList, SelectedImportMode, AddNoDeleteFlags, StripNoDelete,
                     MatchModActivationState, MatchPluginActivationState, _logWriter, _mainViewModel.ProgramVersion,
-                    _autoCalculateSpace, ImportPrefix, _removedMods_Matching_Existing, IgnoreMatchedModsForOrdering,
+                    _autoCalculateSpace, ImportPrefix, ImportPrefixSeparators, ImportPrefixMods,_removedMods_Matching_Existing, IgnoreMatchedModsForOrdering,
                     InterpolateMissingPluginGroups, TransferDownloads, IsSourceMo2Directory, 
                     ImportSourceFolder, SelectedAnchorMod?.DisplayName);
                 importPopup.DataContext = viewModel;

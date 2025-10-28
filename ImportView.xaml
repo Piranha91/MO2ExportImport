@@ -176,13 +176,27 @@
                           IsChecked="{Binding AutoCalculateSpace}" 
                           Margin="10 0 0 0"
                           ToolTip="Automatically calculate and display available disk space before importing"/>
-                <TextBlock Text="Add Prefix to Imported Mod Names:" 
+                <TextBlock Text="Add Prefix to Imported Separators:" 
+                           Margin="10 0 0 0" 
+                           VerticalAlignment="Center"/>
+                <TextBox Text="{Binding ImportPrefixSeparators}" 
+                         MinWidth="100" 
+                         Margin="5 0 0 0"
+                         ToolTip="Add a prefix to all imported Separator names (e.g., 'Imported_' or 'Backup_')"/>
+                <TextBlock Text="Mods:" 
+                           Margin="10 0 0 0" 
+                           VerticalAlignment="Center"/>
+                <TextBox Text="{Binding ImportPrefixMods}" 
+                         MinWidth="100" 
+                         Margin="5 0 0 0"
+                         ToolTip="Add a prefix to all imported Mod names (e.g., 'Imported_' or 'Backup_')"/>
+                <TextBlock Text="All:" 
                            Margin="10 0 0 0" 
                            VerticalAlignment="Center"/>
                 <TextBox Text="{Binding ImportPrefix}" 
                          MinWidth="100" 
                          Margin="5 0 0 0"
-                         ToolTip="Add a prefix to all imported mod folder names (e.g., 'Imported_' or 'Backup_')"/>
+                         ToolTip="Add a prefix to all imported Item names (e.g., 'Imported_' or 'Backup_')"/>
             </WrapPanel>
         </GroupBox>
 
